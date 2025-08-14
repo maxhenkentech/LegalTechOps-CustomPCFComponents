@@ -30,9 +30,10 @@ An interactive risk assessment matrix that allows users to plot and visualize ri
 |----------|------|-------|-------------|---------|
 | `Impact` | Number | 1-5 | Impact level of the risk item | - |
 | `Probability` | Number | 1-5 | Probability level of the risk item | - |
-| `HighRiskColor` | String | Hex Color | Color for high-risk areas | #FF6B6B |
-| `MediumRiskColor` | String | Hex Color | Color for medium-risk areas | #FFD93D |
 | `LowRiskColor` | String | Hex Color | Color for low-risk areas | #6BCF7F |
+| `MediumRiskColor` | String | Hex Color | Color for medium-risk areas | #FFD93D |
+| `HighRiskColor` | String | Hex Color | Color for high-risk areas | #FF6B6B |
+| `CriticalRiskColor` | String | Hex Color | Color for critical-risk areas | #FF0000 |
 
 #### Use Cases
 - Legal risk assessments
