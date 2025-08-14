@@ -1,0 +1,55 @@
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# msbuild output directories (keep bin/Release for packaged component)
+bin/Debug/
+obj/
+
+# MSBuild Binary and Structured Log
+*.binlog
+
+# Node modules and npm files
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+.npm
+
+# PCF build outputs (keep specific release files)
+out/
+generated/ManifestTypes.d.ts
+
+# Visual Studio / VS Code
+.vs/
+.vscode/
+*.user
+*.suo
+*.sln.docstates
+
+# Temporary files
+*.tmp
+*.temp
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Power Platform CLI cache
+~/.pac/
+
+# NuGet packages (restore will handle these)
+packages/
+*.nupkg
+*.snupkg
+
+# User settings
+usersettings.json
+
+# Release Script
+release.sh

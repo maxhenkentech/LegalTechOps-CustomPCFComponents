@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<manifest>
+  <control namespace="LegalTechOps" constructor="RiskMatrix" version="0.0.1" display-name-key="Risk Matrix" description-key="Risk Matrix Component" control-type="standard">
+    <property name="Impact" display-name-key="Impact Score" description-key="Impact value (1-4 scale)" of-type="Whole.None" usage="bound" required="false" />
+    <property name="Probability" display-name-key="Probability Score" description-key="Probability value (1-4 scale)" of-type="Whole.None" usage="bound" required="false" />
+    <property name="LowColor" display-name-key="Low Risk Color" description-key="Hex color for low risk (e.g., #22c55e)" of-type="SingleLine.Text" usage="input" required="false" />
+    <property name="MediumColor" display-name-key="Medium Risk Color" description-key="Hex color for medium risk (e.g., #eab308)" of-type="SingleLine.Text" usage="input" required="false" />
+    <property name="HighColor" display-name-key="High Risk Color" description-key="Hex color for high risk (e.g., #f97316)" of-type="SingleLine.Text" usage="input" required="false" />
+    <property name="CriticalColor" display-name-key="Critical Risk Color" description-key="Hex color for critical risk (e.g., #ef4444)" of-type="SingleLine.Text" usage="input" required="false" />
+    <resources>
+      <code path="index.ts" order="1"/>
+    </resources>
+  </control>
+</manifest>
