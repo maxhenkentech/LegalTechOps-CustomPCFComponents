@@ -56,7 +56,11 @@ These components were created to address real-world business challenges encounte
 
 ## Installation
 
-### Option 1: Import the Packaged Solution (Recommended)
+### Option 1: Download from Releases (Recommended)
+
+**📥 [Download Latest Release](https://github.com/maxhenkentech/LegalTechOps-CustomPCFComponents/releases/latest)**
+
+Visit the [Releases page](https://github.com/maxhenkentech/LegalTechOps-CustomPCFComponents/releases) to download the latest solution packages.
 
 Choose the appropriate solution package for your needs:
 
@@ -71,7 +75,7 @@ Choose the appropriate solution package for your needs:
   - Cannot be modified after import
 
 #### Import Steps:
-1. Download the appropriate solution package from `bin/Release/`
+1. Download the appropriate solution package from the [Releases page](https://github.com/maxhenkentech/LegalTechOps-CustomPCFComponents/releases)
 2. Import the solution into your Power Platform environment:
    - Go to Power Apps > Solutions
    - Click "Import solution"
