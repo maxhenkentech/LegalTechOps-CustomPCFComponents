@@ -6,6 +6,8 @@
 export interface IInputs {
     Impact: ComponentFramework.PropertyTypes.WholeNumberProperty;
     Probability: ComponentFramework.PropertyTypes.WholeNumberProperty;
+    Size: ComponentFramework.PropertyTypes.EnumProperty<"0" | "1">;
+    ShowLabels: ComponentFramework.PropertyTypes.TwoOptionsProperty;
     LowColor: ComponentFramework.PropertyTypes.StringProperty;
     MediumColor: ComponentFramework.PropertyTypes.StringProperty;
     HighColor: ComponentFramework.PropertyTypes.StringProperty;

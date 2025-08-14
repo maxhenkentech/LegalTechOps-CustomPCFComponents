@@ -19,21 +19,26 @@ An interactive risk assessment matrix that allows users to plot and visualize ri
 <img src="Screenshots/riskmatrix.png" alt="Risk Matrix Example" width="50%">
 
 #### Features
-- **Interactive 5x5 Grid**: Visual risk matrix with hover effects and dynamic positioning
-- **Customizable Colors**: Configurable color schemes for different risk levels
+- **Interactive 4x4 Grid**: Visual risk matrix with hover effects and dynamic positioning
+- **Dual Size Options**: Choose between Small (compact) and Large (detailed) display modes
+- **Show/Hide Labels**: Toggle scale labels (Low, Medium, High, Critical) visibility for cleaner presentation
+- **Customizable Colors**: Configurable color schemes for different risk levels (Low, Medium, High, Critical)
 - **Real-time Updates**: Dynamic risk positioning based on Impact and Probability values
-- **Responsive Design**: Adapts to container size and maintains proper spacing
-- **Visual Feedback**: Clear indication of risk levels through color coding
+- **Responsive Design**: Optimized layout with precise positioning for all size configurations
+- **Visual Feedback**: Clear indication of risk levels through color coding and smooth hover effects
+- **Professional Styling**: Modern Fluent UI design system with smooth transitions
 
 #### Properties
 | Property | Type | Range | Description | Default |
 |----------|------|-------|-------------|---------|
-| `Impact` | Number | 1-5 | Impact level of the risk item | - |
-| `Probability` | Number | 1-5 | Probability level of the risk item | - |
-| `LowRiskColor` | String | Hex Color | Color for low-risk areas | #6BCF7F |
-| `MediumRiskColor` | String | Hex Color | Color for medium-risk areas | #FFD93D |
-| `HighRiskColor` | String | Hex Color | Color for high-risk areas | #FF6B6B |
-| `CriticalRiskColor` | String | Hex Color | Color for critical-risk areas | #FF0000 |
+| `Impact` | Number | 1-4 | Impact level of the risk item | - |
+| `Probability` | Number | 1-4 | Probability level of the risk item | - |
+| `Size` | Choice | Small/Large | Matrix size: Small (compact) or Large (detailed) | Small |
+| `ShowLabels` | Yes/No | - | Show or hide scale labels (Low, Medium, High, Critical) | Yes |
+| `LowColor` | String | Hex Color | Color for low-risk areas | #107c10 |
+| `MediumColor` | String | Hex Color | Color for medium-risk areas | #faa06b |
+| `HighColor` | String | Hex Color | Color for high-risk areas | #ff8c00 |
+| `CriticalColor` | String | Hex Color | Color for critical-risk areas | #d13438 |
 
 #### Use Cases
 - Legal risk assessments
@@ -195,6 +200,20 @@ If you encounter any issues or have suggestions for improvements, please open an
 - Use at your own risk in production environments
 - Community support available through GitHub issues
 - Contributors may provide assistance on a voluntary basis
+
+## Release Notes
+
+### Version 1.5.0.0 (Current)
+- **NEW:** Size configuration options (Small/Large) for different display contexts
+- **NEW:** ShowLabels toggle to show/hide scale labels for cleaner presentation
+- Enhanced marker positioning with pixel-perfect centering
+- Improved responsive layout system with 4 distinct configurations
+- Optimized label positioning for all size variants
+
+### Previous Versions
+- Initial release with basic 4x4 risk matrix functionality
+- Custom color configuration support
+- Responsive design implementation
 
 ## License
 
