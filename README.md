@@ -16,7 +16,7 @@ This solution currently contains the following custom components:
 
 An interactive risk assessment matrix that allows users to plot and visualize risk items based on Impact and Probability ratings.
 
-<img src="Screenshots/riskmatrix.png" alt="Risk Matrix Example" width="50%">
+<img src="Screenshots/riskmatrix.png" alt="Risk Matrix Example" width="40%" height="150px"> <img src="Screenshots/riskmatrixnolabels.png" alt="Risk Matrix Example" width="40%" height="150px">
 
 #### Features
 - **Interactive 4x4 Grid**: Visual risk matrix with hover effects and dynamic positioning
@@ -136,7 +136,6 @@ Choose the appropriate solution package for your needs:
 │   │   └── pcfconfig.json
 │   └── Other/                # Solution metadata
 ├── bin/Release/              # Packaged solution output
-├── release.sh                # Automated build script
 └── README.md
 ```
 
@@ -144,17 +143,8 @@ Choose the appropriate solution package for your needs:
 
 1. Make your changes to the source files in component directories under `src/`
 2. Test locally using `npm start` in the specific component folder
-3. Build all components and solution packages using the build script:
-   ```bash
-   ./release.sh
-   ```
+3. Build the solution using the standard Power Platform CLI commands
 4. Test the packaged component in your Power Platform environment
-
-**Build Script Features:**
-- Automatically discovers all PCF components in the `src/` directory
-- Installs NPM dependencies for each component
-- Builds both managed and unmanaged solution packages
-- Provides colored output and error handling
 
 ## Troubleshooting
 
