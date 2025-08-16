@@ -16,7 +16,7 @@ This solution currently contains the following custom components:
 
 An interactive risk assessment matrix that allows users to plot and visualize risk items based on Impact and Probability ratings.
 
-<img src="Screenshots/riskmatrix.png" alt="Risk Matrix Example" width="40%" height="150px"> <img src="Screenshots/riskmatrixnolabels.png" alt="Risk Matrix Example" width="40%" height="150px">
+<img src="Screenshots/riskmatrix.png" alt="Risk Matrix with Labels" height="180px"> <img src="Screenshots/riskmatrixnolabels.png" alt="Risk Matrix without Labels" height="180px">
 
 #### Features
 - **Interactive 4x4 Grid**: Visual risk matrix with hover effects and dynamic positioning
