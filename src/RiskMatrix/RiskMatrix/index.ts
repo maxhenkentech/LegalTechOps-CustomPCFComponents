@@ -5,10 +5,49 @@ export class RiskMatrix implements ComponentFramework.StandardControl<IInputs, I
     private _matrixContainer: HTMLDivElement;
     private _marker: HTMLDivElement;
     private _currentSize = 0; // Default to Small
-    private _showLabels = true; // Default to show labels
+    private _showCategoryLabels = true; // Default to show category labels
+    private _showAxisLabels = true; // Default to show axis labels
+    private _gridSize = 4; // Default to 4x4 grid
+    private _impactLabel = "Impact"; // Default impact label
+    private _probabilityLabel = "Probability"; // Default probability label
+    private _showRiskLabel = true; // Default to show risk label
 
-    // Size configurations - redesigned with proper layout spacing
-    private _sizeConfigs: Record<string, {
+    // Helper function to get Fluent UI icon SVG
+    private getFluentIconSvg(iconType: 'success' | 'info' | 'warning' | 'critical', color: string): string {
+        const size = 12;
+        
+        switch (iconType) {
+            case 'success':
+                // CheckmarkCircle20Regular equivalent
+                return `<svg width="${size}" height="${size}" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M10 2a8 8 0 1 1 0 16 8 8 0 0 1 0-16Zm3.36 6.65a.5.5 0 0 0-.71-.7L9 11.6 7.35 9.95a.5.5 0 1 0-.7.7l2 2c.2.2.5.2.7 0l4-4Z" fill="${color}"/>
+                </svg>`;
+            
+            case 'info':
+                // Info20Regular equivalent
+                return `<svg width="${size}" height="${size}" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M10 2a8 8 0 1 1 0 16 8 8 0 0 1 0-16ZM9.5 8.5a.5.5 0 0 0 1 0V7a.5.5 0 0 0-1 0v1.5Zm0 4a.5.5 0 0 0 1 0v-2a.5.5 0 0 0-1 0v2Z" fill="${color}"/>
+                </svg>`;
+            
+            case 'warning':
+                // Warning20Regular equivalent
+                return `<svg width="${size}" height="${size}" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M8.68 2.79a1.5 1.5 0 0 1 2.64 0l6.5 11.5A1.5 1.5 0 0 1 16.5 17h-13a1.5 1.5 0 0 1-1.32-2.21l6.5-11.5ZM10 6a.75.75 0 0 0-.75.75v3.5a.75.75 0 0 0 1.5 0v-3.5A.75.75 0 0 0 10 6Zm0 7a1 1 0 1 0 0 2 1 1 0 0 0 0-2Z" fill="${color}"/>
+                </svg>`;
+            
+            case 'critical':
+                // Flash20Regular equivalent
+                return `<svg width="${size}" height="${size}" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M7.43 2.28c.4-.54 1.27-.3 1.34.38l.56 5.34h3.17c.77 0 1.18.9.67 1.47l-5.5 6.25c-.4.46-1.08.3-1.24-.28L5.5 11h-2c-.65 0-1.06-.68-.74-1.23l4.67-7.49Z" fill="${color}"/>
+                </svg>`;
+            
+            default:
+                return '';
+        }
+    }
+
+    // Get dynamic size configuration based on grid size
+    private getSizeConfig(): {
         width: number;
         height: number;
         cellSize: number;
@@ -16,79 +55,112 @@ export class RiskMatrix implements ComponentFramework.StandardControl<IInputs, I
         labelFontSize: number;
         markerSize: number;
         padding: number;
-        // Layout zones
         impactLabelWidth: number;
         yAxisLabelWidth: number;
         gridStartX: number;
         gridStartY: number;
         xAxisLabelHeight: number;
         probabilityLabelHeight: number;
-    }> = {
-        "0_true": { // Small with labels
-            width: 225, // Reduced by 10px from 235
-            height: 180,
-            cellSize: 35,
-            fontSize: 9,
-            labelFontSize: 12,
-            markerSize: 16,
-            padding: 10,
-            // Layout zones
-            impactLabelWidth: 35, // Reduced by 10px from 45 to move Y-axis labels left
-            yAxisLabelWidth: 45,
-            gridStartX: 85, // Moved further left by 10px from 95
-            gridStartY: 20,
-            xAxisLabelHeight: 15,
-            probabilityLabelHeight: 20
-        },
-        "0_false": { // Small without labels
-            width: 180,
-            height: 170, // Reduced by 10px from 180
-            cellSize: 35,
-            fontSize: 9,
-            labelFontSize: 12,
-            markerSize: 16,
-            padding: 10,
-            // Layout zones
-            impactLabelWidth: 45, // Reverted back for proper Impact label positioning
-            yAxisLabelWidth: 0, // No space for scale labels
-            gridStartX: 50, // Reverted back to original position
-            gridStartY: 20,
-            xAxisLabelHeight: 0, // No space for scale labels
-            probabilityLabelHeight: 20
-        },
-        "1_true": { // Large with labels
-            width: 310, // Reduced by 10px from 320
-            height: 240,
-            cellSize: 50,
-            fontSize: 10,
-            labelFontSize: 16,
-            markerSize: 24, // Reduced to 80% of 30px (30 * 0.8 = 24)
-            padding: 12,
-            // Layout zones
-            impactLabelWidth: 40, // Reverted back to original 40
-            yAxisLabelWidth: 55,
-            gridStartX: 110,
-            gridStartY: 15,
-            xAxisLabelHeight: 20,
-            probabilityLabelHeight: 25
-        },
-        "1_false": { // Large without labels
-            width: 245,
-            height: 230, // Reduced by 10px from 240
-            cellSize: 50,
-            fontSize: 10,
-            labelFontSize: 16,
-            markerSize: 24, // Reduced to 80% of 30px (30 * 0.8 = 24)
-            padding: 12,
-            // Layout zones
-            impactLabelWidth: 40, // Reverted back for proper Impact label positioning
-            yAxisLabelWidth: 0, // No space for scale labels
-            gridStartX: 55, // Reverted back to original position
-            gridStartY: 15,
-            xAxisLabelHeight: 0, // No space for scale labels
-            probabilityLabelHeight: 25
+    } {
+        const baseConfigs = {
+            small: {
+                cellSize: 35,
+                fontSize: 9,
+                labelFontSize: 12,
+                markerSize: 16,
+                padding: 10,
+                impactLabelWidth: this._showAxisLabels ? (this._showCategoryLabels ? 35 : 45) : 0,
+                yAxisLabelWidth: this._showCategoryLabels ? 45 : 0,
+                xAxisLabelHeight: this._showCategoryLabels ? 15 : 0,
+                probabilityLabelHeight: this._showAxisLabels ? 20 : 0
+            },
+            large: {
+                cellSize: 50,
+                fontSize: 10,
+                labelFontSize: 16,
+                markerSize: 24,
+                padding: 12,
+                impactLabelWidth: this._showAxisLabels ? 40 : 0,
+                yAxisLabelWidth: this._showCategoryLabels ? 55 : 0,
+                xAxisLabelHeight: this._showCategoryLabels ? 20 : 0,
+                probabilityLabelHeight: this._showAxisLabels ? 25 : 0
+            }
+        };
+
+        const config = this._currentSize === 0 ? baseConfigs.small : baseConfigs.large;
+        
+        // Calculate dynamic dimensions based on grid size
+        const gridWidth = this._gridSize * config.cellSize;
+        const gridHeight = this._gridSize * config.cellSize;
+        
+        let gridStartX = config.impactLabelWidth + config.yAxisLabelWidth - 15; // Base positioning with left adjustment
+
+        // Positioning adjustments based on label visibility and size
+        if (!this._showCategoryLabels && !this._showAxisLabels) {
+            // No labels at all - position grid at left edge with minimal padding
+            gridStartX = 10;
+        } else if (!this._showCategoryLabels) {
+            // Only axis labels, no category labels - adjust spacing from Y-axis label
+            if (this._currentSize === 1) {
+                // Large version without category labels
+                gridStartX += 7;
+            } else {
+                // Small version without category labels
+                gridStartX += 2;
+                // Move everything except y-axis label 5px to the left for small size, ShowAxisLabels true, ShowCategoryLabels false
+                if (this._showAxisLabels && !this._showCategoryLabels) {
+                    gridStartX -= 5;
+                }
+            }
+        } else if (!this._showAxisLabels) {
+            // Only category labels, no axis labels - position based on category label width
+            gridStartX = config.yAxisLabelWidth + 10;
+            if (this._gridSize === 2) {
+                gridStartX -= 10; // Tighter spacing for 2x2 grid
+            } else {
+                gridStartX -= 5; // Tighter spacing for 3x3 and 4x4 grids
+            }
+        } else {
+            // Both axis and category labels shown
+            if (this._currentSize === 1 && this._gridSize === 2) {
+                // 2x2 large version with labels
+                gridStartX -= 15;
+            } else if (this._currentSize === 1) {
+                // Other large versions with both labels
+                gridStartX += 5;
+            } else if (this._currentSize === 0 && this._gridSize === 2) {
+                // 2x2 small version with labels
+                gridStartX += 5;
+            } else {
+                // All other configurations with both label types
+                gridStartX += 10;
+            }
         }
-    };
+        
+        const gridStartY = this._currentSize === 0 ? 20 : 15;
+        // Add space for risk label if shown - with extra spacing for large version
+        const riskLabelSpace = this._showRiskLabel ? (this._currentSize === 0 ? 20 : 35) : 0; // Large version gets 10px more space
+        const adjustedGridStartY = gridStartY + riskLabelSpace;
+        
+        const totalWidth = gridStartX + gridWidth + 15; // Add some right padding
+        const totalHeight = adjustedGridStartY + gridHeight + config.xAxisLabelHeight + config.probabilityLabelHeight;
+        
+        return {
+            width: totalWidth,
+            height: totalHeight,
+            cellSize: config.cellSize,
+            fontSize: config.fontSize,
+            labelFontSize: config.labelFontSize,
+            markerSize: config.markerSize,
+            padding: config.padding,
+            impactLabelWidth: config.impactLabelWidth,
+            yAxisLabelWidth: config.yAxisLabelWidth,
+            gridStartX: gridStartX,
+            gridStartY: adjustedGridStartY,
+            xAxisLabelHeight: config.xAxisLabelHeight,
+            probabilityLabelHeight: config.probabilityLabelHeight
+        };
+    }
 
     /**
      * Empty constructor.
@@ -116,8 +188,7 @@ export class RiskMatrix implements ComponentFramework.StandardControl<IInputs, I
     }
 
     private createRiskMatrix(): void {
-        const configKey = `${this._currentSize}_${this._showLabels}`;
-        const config = this._sizeConfigs[configKey];
+        const config = this.getSizeConfig();
         
         // Clear existing content
         this._container.innerHTML = '';
@@ -137,6 +208,11 @@ export class RiskMatrix implements ComponentFramework.StandardControl<IInputs, I
 
         // Create labels
         this.createLabels();
+        
+        // Create risk label (will be updated in updateView)
+        if (this._showRiskLabel) {
+            this.createRiskLabel();
+        }
         
         // Create grid
         this.createGrid();
@@ -164,43 +240,144 @@ export class RiskMatrix implements ComponentFramework.StandardControl<IInputs, I
         this._container.appendChild(this._matrixContainer);
     }
 
-    private createLabels(): void {
-        const configKey = `${this._currentSize}_${this._showLabels}`;
-        const config = this._sizeConfigs[configKey];
-        
-        // Zone 1: Impact label (vertical) - positioned in dedicated left zone, further from scale labels
-        const impactLabel = document.createElement("div");
-        impactLabel.textContent = "Impact";
-        
-        // Calculate base position and adjust for different configurations
-        let impactLabelLeft = config.impactLabelWidth / 4;
-        if (this._showLabels) {
-            impactLabelLeft -= 10; // Move 10px further left for show labels configurations
-        } else {
-            impactLabelLeft -= 5; // Move 5px further left for without labels configurations
+    // Get labels based on grid size
+    private getGridLabels(): string[] {
+        switch (this._gridSize) {
+            case 2:
+                return ["High", "Low"];
+            case 3:
+                return ["High", "Medium", "Low"];
+            case 4:
+            default:
+                return ["Critical", "High", "Medium", "Low"];
         }
-        
-        impactLabel.style.position = "absolute";
-        impactLabel.style.left = `${impactLabelLeft}px`;
-        impactLabel.style.top = `${config.gridStartY + (2 * config.cellSize)}px`;
-        impactLabel.style.transform = "rotate(-90deg)";
-        impactLabel.style.transformOrigin = "center";
-        impactLabel.style.fontSize = `${config.labelFontSize}px`;
-        impactLabel.style.fontWeight = "600";
-        impactLabel.style.color = "#323130";
-        impactLabel.style.letterSpacing = "0.5px";
-        impactLabel.style.textAlign = "center";
-        impactLabel.style.whiteSpace = "nowrap"; // Prevent text wrapping
-        this._matrixContainer.appendChild(impactLabel);
+    }
 
-        // Zone 2: Y-axis scale labels (positioned between impact label and grid) - only if showLabels is true
-        if (this._showLabels) {
-            const impactLabels = ["Critical", "High", "Medium", "Low"];
+    // Get current risk level and color based on impact and probability
+    private getCurrentRiskLevel(impact: number, probability: number, lowColor: string, mediumColor: string, highColor: string, criticalColor: string): { level: string, color: string } {
+        // Convert scale to 0-(gridSize-1) for array indexing
+        const maxValue = this._gridSize;
+        const impactIndex = Math.max(0, Math.min(this._gridSize - 1, maxValue - Math.round(impact))); // Invert because highest impact is at top (index 0)
+        const probabilityIndex = Math.max(0, Math.min(this._gridSize - 1, Math.round(probability) - 1));
+
+        // Create the same risk matrix as in updateMatrixColors
+        let riskMatrix: string[][];
+        
+        if (this._gridSize === 2) {
+            riskMatrix = [
+                [mediumColor, highColor],
+                [lowColor, mediumColor]
+            ];
+        } else if (this._gridSize === 3) {
+            riskMatrix = [
+                [mediumColor, highColor, criticalColor],
+                [lowColor, mediumColor, highColor],
+                [lowColor, lowColor, mediumColor]
+            ];
+        } else {
+            riskMatrix = [
+                [mediumColor, highColor, criticalColor, criticalColor],
+                [mediumColor, highColor, highColor, criticalColor],
+                [lowColor, mediumColor, highColor, highColor],
+                [lowColor, lowColor, mediumColor, mediumColor]
+            ];
+        }
+
+        const currentColor = riskMatrix[impactIndex][probabilityIndex];
+        
+        // Determine risk level based on color
+        let riskLevel: string;
+        if (currentColor === lowColor) {
+            riskLevel = "LOW";
+        } else if (currentColor === mediumColor) {
+            riskLevel = "MEDIUM";
+        } else if (currentColor === highColor) {
+            riskLevel = "HIGH";
+        } else {
+            riskLevel = "CRITICAL";
+        }
+
+        return { level: riskLevel, color: currentColor };
+    }
+
+    private createLabels(): void {
+        const config = this.getSizeConfig();
+        
+        // Get custom labels with defaults
+        const impactLabelText = this._impactLabel || "Impact";
+        const probabilityLabelText = this._probabilityLabel || "Probability";
+        
+        // Zone 1: Impact label (vertical) - positioned in dedicated left zone - only if showAxisLabels is true
+        if (this._showAxisLabels) {
+            const impactLabelDiv = document.createElement("div");
+            impactLabelDiv.textContent = impactLabelText;
+            
+            // Position consistently based on configuration
+            let impactLabelLeft: number;
+            if (this._showCategoryLabels) {
+                impactLabelLeft = 8; // Position for configurations with category labels
+            } else {
+                impactLabelLeft = 8; // Maintain consistent position when no category labels
+            }
+            
+            // Calculate the center of the grid vertically
+            const gridCenterY = config.gridStartY + (this._gridSize * config.cellSize / 2);
+            
+            impactLabelDiv.style.position = "absolute";
+            impactLabelDiv.style.left = `${impactLabelLeft}px`;
+            impactLabelDiv.style.top = `${gridCenterY}px`;
+            impactLabelDiv.style.transform = "rotate(-90deg) translateX(-50%)"; // Rotate and center the text
+            impactLabelDiv.style.transformOrigin = "0 0"; // Rotate from top-left corner
+            impactLabelDiv.style.fontSize = `${config.labelFontSize}px`;
+            impactLabelDiv.style.fontWeight = "600";
+            impactLabelDiv.style.color = "#323130";
+            impactLabelDiv.style.letterSpacing = "0.5px";
+            impactLabelDiv.style.textAlign = "center"; // Center the text for proper centering
+            impactLabelDiv.style.whiteSpace = "nowrap"; // Prevent text wrapping
+            impactLabelDiv.style.width = "auto"; // Let text determine its own width
+            this._matrixContainer.appendChild(impactLabelDiv);
+        }
+
+        // Zone 2: Y-axis scale labels (positioned between impact label and grid) - only if showCategoryLabels is true
+        if (this._showCategoryLabels) {
+            const impactLabels = this.getGridLabels();
             impactLabels.forEach((label, index) => {
                 const labelDiv = document.createElement("div");
                 labelDiv.textContent = label;
                 labelDiv.style.position = "absolute";
-                labelDiv.style.left = `${config.impactLabelWidth}px`;
+                
+                // Positioning adjustments for different size and grid configurations
+                let labelLeft = config.impactLabelWidth - 15; // Default positioning
+                
+                if (!this._showAxisLabels) {
+                    // When axis labels are hidden, position category labels based on grid size
+                    if (this._gridSize === 2) {
+                        labelLeft = -5; // Positioning for 2x2 grid
+                    } else if (this._gridSize === 3) {
+                        labelLeft = 0; // Positioning for 3x3 grid
+                    } else {
+                        labelLeft = 0; // Positioning for 4x4 grid
+                    }
+                } else if (this._currentSize === 1 && this._showCategoryLabels) {
+                    if (this._gridSize === 2) {
+                        // 2x2 large version with labels
+                        labelLeft = config.impactLabelWidth - 35;
+                    } else {
+                        // Other large versions with labels
+                        labelLeft = config.impactLabelWidth - 15;
+                    }
+                } else if (this._currentSize === 0 && this._showCategoryLabels) {
+                    // Small versions with labels
+                    if (this._gridSize === 2) {
+                        // 2x2 small version with labels
+                        labelLeft = config.impactLabelWidth - 17;
+                    } else {
+                        // Other small versions with labels
+                        labelLeft = config.impactLabelWidth - 12;
+                    }
+                }
+                
+                labelDiv.style.left = `${labelLeft}px`;
                 labelDiv.style.top = `${config.gridStartY + (index * config.cellSize)}px`;
                 labelDiv.style.width = `${config.yAxisLabelWidth}px`;
                 labelDiv.style.height = `${config.cellSize}px`;
@@ -216,15 +393,15 @@ export class RiskMatrix implements ComponentFramework.StandardControl<IInputs, I
             });
         }
 
-        // Zone 3: X-axis scale labels (positioned below grid) - only if showLabels is true
-        if (this._showLabels) {
-            const probabilityLabels = ["Low", "Medium", "High", "Critical"];
+        // Zone 3: X-axis scale labels (positioned below grid) - only if showCategoryLabels is true
+        if (this._showCategoryLabels) {
+            const probabilityLabels = this.getGridLabels().slice().reverse(); // Reverse for X-axis (Low to High/Critical)
             probabilityLabels.forEach((label, index) => {
                 const labelDiv = document.createElement("div");
                 labelDiv.textContent = label;
                 labelDiv.style.position = "absolute";
                 labelDiv.style.left = `${config.gridStartX + (index * config.cellSize)}px`;
-                labelDiv.style.top = `${config.gridStartY + (4 * config.cellSize)}px`;
+                labelDiv.style.top = `${config.gridStartY + (this._gridSize * config.cellSize)}px`;
                 labelDiv.style.width = `${config.cellSize}px`;
                 labelDiv.style.height = `${config.xAxisLabelHeight}px`;
                 labelDiv.style.fontSize = `${config.fontSize}px`;
@@ -238,34 +415,88 @@ export class RiskMatrix implements ComponentFramework.StandardControl<IInputs, I
             });
         }
 
-        // Zone 4: Probability label (horizontal) - positioned at bottom
-        const probabilityLabel = document.createElement("div");
-        probabilityLabel.textContent = "Probability";
-        
-        // Calculate base position and adjust for specific configurations
-        let probabilityLabelTop = config.gridStartY + (4 * config.cellSize) + config.xAxisLabelHeight;
-        if ((this._currentSize === 0 && !this._showLabels) || (this._currentSize === 1 && !this._showLabels)) {
-            probabilityLabelTop += 5; // Move down 5px for small without labels and large without labels
+        // Zone 4: Probability label (horizontal) - positioned at bottom - only if showAxisLabels is true
+        if (this._showAxisLabels) {
+            const probabilityLabelDiv = document.createElement("div");
+            probabilityLabelDiv.textContent = probabilityLabelText;
+            
+            // Calculate base position and adjust for specific configurations
+            let probabilityLabelTop = config.gridStartY + (this._gridSize * config.cellSize) + config.xAxisLabelHeight;
+            if (!this._showCategoryLabels) {
+                // When no category labels, position probability label closer to grid
+                if (this._currentSize === 1) {
+                    // Large version spacing
+                    probabilityLabelTop = config.gridStartY + (this._gridSize * config.cellSize) + 5;
+                } else {
+                    // Small version spacing
+                    probabilityLabelTop = config.gridStartY + (this._gridSize * config.cellSize) + 2;
+                }
+            } else if (this._currentSize === 1) {
+                // Large version with category labels
+                probabilityLabelTop = config.gridStartY + (this._gridSize * config.cellSize) + config.xAxisLabelHeight + 3;
+            }
+            
+            probabilityLabelDiv.style.position = "absolute";
+            probabilityLabelDiv.style.left = `${config.gridStartX + (this._gridSize * config.cellSize / 2)}px`;
+            probabilityLabelDiv.style.top = `${probabilityLabelTop}px`;
+            probabilityLabelDiv.style.fontSize = `${config.labelFontSize}px`;
+            probabilityLabelDiv.style.fontWeight = "600";
+            probabilityLabelDiv.style.color = "#323130";
+            probabilityLabelDiv.style.letterSpacing = "0.5px";
+            probabilityLabelDiv.style.transform = "translateX(-50%)";
+            probabilityLabelDiv.style.textAlign = "center";
+            this._matrixContainer.appendChild(probabilityLabelDiv);
         }
+    }
+
+    private createRiskLabel(): void {
+        const config = this.getSizeConfig();
         
-        probabilityLabel.style.position = "absolute";
-        probabilityLabel.style.left = `${config.gridStartX + (2 * config.cellSize)}px`;
-        probabilityLabel.style.top = `${probabilityLabelTop}px`;
-        probabilityLabel.style.fontSize = `${config.labelFontSize}px`;
-        probabilityLabel.style.fontWeight = "600";
-        probabilityLabel.style.color = "#323130";
-        probabilityLabel.style.letterSpacing = "0.5px";
-        probabilityLabel.style.transform = "translateX(-50%)";
-        probabilityLabel.style.textAlign = "center";
-        this._matrixContainer.appendChild(probabilityLabel);
+        // Create risk label container as a chip-style label
+        const riskLabelDiv = document.createElement("div");
+        riskLabelDiv.id = "riskLabel";
+        riskLabelDiv.style.position = "absolute";
+        riskLabelDiv.style.left = `${config.gridStartX + (this._gridSize * config.cellSize / 2)}px`;
+        riskLabelDiv.style.top = `${this._currentSize === 0 ? 12 : 16}px`; // Move large view down by 7px (9 + 7 = 16)
+        riskLabelDiv.style.transform = "translateX(-50%)";
+        riskLabelDiv.style.fontSize = "0.75rem"; // Smaller chip font size
+        riskLabelDiv.style.fontWeight = "500";
+        riskLabelDiv.style.textAlign = "center";
+        riskLabelDiv.style.letterSpacing = "0.2px";
+        riskLabelDiv.style.padding = "2px 8px"; // Compact chip padding
+        riskLabelDiv.style.borderRadius = "16px"; // Chip border radius
+        riskLabelDiv.style.border = "1px solid #ff8c00"; // Default orange border
+        riskLabelDiv.style.backgroundColor = "rgba(255, 140, 0, 0.15)"; // Default orange background
+        riskLabelDiv.style.color = "#ff8c00"; // Default orange text
+        riskLabelDiv.style.boxShadow = "0 1px 2px rgba(0,0,0,0.08)"; // Minimal shadow for chip
+        riskLabelDiv.style.transition = "all 0.2s ease";
+        riskLabelDiv.style.cursor = "default";
+        riskLabelDiv.style.userSelect = "none";
+        riskLabelDiv.style.whiteSpace = "nowrap";
+        riskLabelDiv.style.display = "flex";
+        riskLabelDiv.style.alignItems = "center";
+        riskLabelDiv.style.gap = "4px";
+        riskLabelDiv.innerHTML = "UNKNOWN"; // Will be updated in updateView with icon and text
+        
+        // Add subtle hover effect
+        riskLabelDiv.addEventListener('mouseenter', () => {
+            riskLabelDiv.style.transform = "translateX(-50%) scale(1.05)";
+            riskLabelDiv.style.boxShadow = "0 2px 4px rgba(0,0,0,0.12)";
+        });
+        
+        riskLabelDiv.addEventListener('mouseleave', () => {
+            riskLabelDiv.style.transform = "translateX(-50%) scale(1)";
+            riskLabelDiv.style.boxShadow = "0 1px 2px rgba(0,0,0,0.08)";
+        });
+        
+        this._matrixContainer.appendChild(riskLabelDiv);
     }
 
     private createGrid(): void {
-        const configKey = `${this._currentSize}_${this._showLabels}`;
-        const config = this._sizeConfigs[configKey];
+        const config = this.getSizeConfig();
         
-        for (let row = 0; row < 4; row++) {
-            for (let col = 0; col < 4; col++) {
+        for (let row = 0; row < this._gridSize; row++) {
+            for (let col = 0; col < this._gridSize; col++) {
                 const cell = document.createElement("div");
                 cell.style.position = "absolute";
                 cell.style.left = `${config.gridStartX + (col * config.cellSize)}px`;
@@ -297,16 +528,37 @@ export class RiskMatrix implements ComponentFramework.StandardControl<IInputs, I
     }
 
     private updateMatrixColors(lowColor: string, mediumColor: string, highColor: string, criticalColor: string): void {
-        // Risk level mapping: each cell gets a color based on combined impact (row) and probability (col)
-        const riskMatrix = [
-            [mediumColor, highColor, criticalColor, criticalColor], // Critical impact row
-            [lowColor, mediumColor, highColor, criticalColor],      // High impact row  
-            [lowColor, lowColor, mediumColor, highColor],           // Medium impact row
-            [lowColor, lowColor, lowColor, mediumColor]             // Low impact row
-        ];
+        // Create risk level mapping based on grid size
+        let riskMatrix: string[][];
+        
+        if (this._gridSize === 2) {
+            // 2x2 grid: Low, Medium, High risk levels
+            // Rows are impact (High to Low), Columns are probability (Low to High)
+            riskMatrix = [
+                [mediumColor, highColor],    // High impact row
+                [lowColor, mediumColor]      // Low impact row
+            ];
+        } else if (this._gridSize === 3) {
+            // 3x3 grid: Low, Medium, High risk levels
+            // Rows are impact (High to Low), Columns are probability (Low to High)
+            riskMatrix = [
+                [mediumColor, highColor, criticalColor],     // High impact row
+                [lowColor, mediumColor, highColor],          // Medium impact row
+                [lowColor, lowColor, mediumColor]            // Low impact row
+            ];
+        } else {
+            // 4x4 grid: Low, Medium, High, Critical risk levels
+            // Rows are impact (Critical to Low), Columns are probability (Low to Critical)
+            riskMatrix = [
+                [mediumColor, highColor, criticalColor, criticalColor],   // Critical impact row
+                [mediumColor, highColor, highColor, criticalColor],        // High impact row
+                [lowColor, mediumColor, highColor, highColor],             // Medium impact row
+                [lowColor, lowColor, mediumColor, mediumColor]            // Low impact row
+            ];
+        }
 
-        for (let row = 0; row < 4; row++) {
-            for (let col = 0; col < 4; col++) {
+        for (let row = 0; row < this._gridSize; row++) {
+            for (let col = 0; col < this._gridSize; col++) {
                 const cell = this._matrixContainer.querySelector(`[data-row="${row}"][data-col="${col}"]`) as HTMLDivElement;
                 if (cell) {
                     cell.style.backgroundColor = riskMatrix[row][col];
@@ -325,15 +577,45 @@ export class RiskMatrix implements ComponentFramework.StandardControl<IInputs, I
         return "#" + (0x1000000 + (R < 255 ? R < 1 ? 0 : R : 255) * 0x10000 + (B < 255 ? B < 1 ? 0 : B : 255) * 0x100 + (G < 255 ? G < 1 ? 0 : G : 255)).toString(16).slice(1);
     }
 
-    private updateMarkerPosition(impact: number, probability: number): void {
-        const configKey = `${this._currentSize}_${this._showLabels}`;
-        const config = this._sizeConfigs[configKey];
+    // Calculate the optimal text color (black or white) based on background color brightness
+    private getOptimalTextColor(backgroundColor: string): string {
+        // Remove # if present
+        const hex = backgroundColor.replace('#', '');
         
-        // Convert 1-4 scale to 0-3 for array indexing
-        const impactIndex = Math.max(0, Math.min(3, 4 - Math.round(impact))); // Invert because Critical is at top (index 0)
-        const probabilityIndex = Math.max(0, Math.min(3, Math.round(probability) - 1));
+        // Convert to RGB
+        const r = parseInt(hex.substr(0, 2), 16);
+        const g = parseInt(hex.substr(2, 2), 16);
+        const b = parseInt(hex.substr(4, 2), 16);
+        
+        // Calculate relative luminance using the formula from WCAG guidelines
+        const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+        
+        // Return black for light backgrounds, white for dark backgrounds
+        return luminance > 0.5 ? '#000000' : '#ffffff';
+    }
 
-        // Position marker in perfect center of the appropriate cell with adjusted positioning
+    // Convert hex color to rgba with specified opacity
+    private hexToRgba(hex: string, alpha: number): string {
+        // Remove # if present
+        const color = hex.replace('#', '');
+        
+        // Convert to RGB
+        const r = parseInt(color.substr(0, 2), 16);
+        const g = parseInt(color.substr(2, 2), 16);
+        const b = parseInt(color.substr(4, 2), 16);
+        
+        return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+    }
+
+    private updateMarkerPosition(impact: number, probability: number): void {
+        const config = this.getSizeConfig();
+        
+        // Convert scale to 0-(gridSize-1) for array indexing
+        const maxValue = this._gridSize;
+        const impactIndex = Math.max(0, Math.min(this._gridSize - 1, maxValue - Math.round(impact))); // Invert because highest impact is at top (index 0)
+        const probabilityIndex = Math.max(0, Math.min(this._gridSize - 1, Math.round(probability) - 1));
+
+        // Position marker in center of the appropriate cell
         const cellCenterX = config.gridStartX + (probabilityIndex * config.cellSize) + (config.cellSize / 2);
         const cellCenterY = config.gridStartY + (impactIndex * config.cellSize) + (config.cellSize / 2);
         
@@ -345,6 +627,55 @@ export class RiskMatrix implements ComponentFramework.StandardControl<IInputs, I
         this._marker.style.top = `${markerY}px`;
     }
 
+    private updateRiskLabel(impact: number, probability: number, lowColor: string, mediumColor: string, highColor: string, criticalColor: string): void {
+        if (!this._showRiskLabel) return;
+        
+        const riskLabelDiv = this._matrixContainer.querySelector("#riskLabel") as HTMLDivElement;
+        if (riskLabelDiv) {
+            const riskInfo = this.getCurrentRiskLevel(impact, probability, lowColor, mediumColor, highColor, criticalColor);
+            
+            // Use the actual custom colors from the matrix
+            let chipColor: string;
+            let backgroundColor: string;
+            let borderColor: string;
+            let iconSvg: string;
+            
+            if (riskInfo.level === "LOW") {
+                chipColor = lowColor; // Use custom low color
+                backgroundColor = this.hexToRgba(lowColor, 0.15);
+                borderColor = lowColor;
+                // Fluent UI CheckmarkCircle icon
+                iconSvg = this.getFluentIconSvg('success', chipColor);
+            } else if (riskInfo.level === "MEDIUM") {
+                chipColor = mediumColor; // Use custom medium color
+                backgroundColor = this.hexToRgba(mediumColor, 0.15);
+                borderColor = mediumColor;
+                // Fluent UI Info icon
+                iconSvg = this.getFluentIconSvg('info', chipColor);
+            } else if (riskInfo.level === "HIGH") {
+                chipColor = highColor; // Use custom high color
+                backgroundColor = this.hexToRgba(highColor, 0.15);
+                borderColor = highColor;
+                // Fluent UI Warning icon
+                iconSvg = this.getFluentIconSvg('warning', chipColor);
+            } else {
+                chipColor = criticalColor; // Use custom critical color
+                backgroundColor = this.hexToRgba(criticalColor, 0.15);
+                borderColor = criticalColor;
+                // Fluent UI Flash icon
+                iconSvg = this.getFluentIconSvg('critical', chipColor);
+            }
+            
+            // Update chip content with Fluent UI icon and text
+            riskLabelDiv.innerHTML = `${iconSvg}<span>${riskInfo.level}</span>`;
+            
+            // Apply chip styling
+            riskLabelDiv.style.backgroundColor = backgroundColor;
+            riskLabelDiv.style.color = chipColor;
+            riskLabelDiv.style.borderColor = borderColor;
+        }
+    }
+
     /**
      * Called when any value in the property bag has changed. This includes field values, data-sets, global values such as container height and width, offline status, control metadata values such as label, visible, etc.
      * @param context The entire property bag available to control via Context Object; It contains values as set up by the customizer mapped to names defined in the manifest, as well as utility functions
@@ -354,14 +685,41 @@ export class RiskMatrix implements ComponentFramework.StandardControl<IInputs, I
         const sizeRaw = context.parameters.Size?.raw || "0"; // Default to Small (0)
         const sizeValue = parseInt(sizeRaw, 10) || 0;
         
-        // Get showLabels value with default
-        const showLabelsValue = context.parameters.ShowLabels?.raw !== false; // Default to true (show labels)
+        // Get showCategoryLabels value with default
+        const showCategoryLabelsValue = context.parameters.ShowCategoryLabels?.raw !== false; // Default to true (show category labels)
         
-        // Check if size or showLabels has changed
-        if (this._currentSize !== sizeValue || this._showLabels !== showLabelsValue) {
+        // Get showAxisLabels value with default
+        const showAxisLabelsValue = context.parameters.ShowAxisLabels?.raw !== false; // Default to true (show axis labels)
+        
+        // Get grid size value with default
+        const gridSizeRaw = context.parameters.GridSize?.raw || "4"; // Default to 4x4 grid
+        const gridSizeValue = parseInt(gridSizeRaw, 10) || 4;
+        
+        // Get custom labels with defaults
+        const impactLabelValue = context.parameters.ImpactLabel?.raw || "Impact";
+        const probabilityLabelValue = context.parameters.ProbabilityLabel?.raw || "Probability";
+        
+        // Get showRiskLabel value with default
+        const showRiskLabelValue = context.parameters.ShowRiskLabel?.raw !== false; // Default to true (show risk label)
+        
+        // Check if size, showCategoryLabels, showAxisLabels, gridSize, showRiskLabel, or custom labels have changed
+        if (this._currentSize !== sizeValue || 
+            this._showCategoryLabels !== showCategoryLabelsValue ||
+            this._showAxisLabels !== showAxisLabelsValue ||
+            this._gridSize !== gridSizeValue ||
+            this._impactLabel !== impactLabelValue ||
+            this._probabilityLabel !== probabilityLabelValue ||
+            this._showRiskLabel !== showRiskLabelValue) {
+            
             this._currentSize = sizeValue;
-            this._showLabels = showLabelsValue;
-            // Recreate the matrix with new size and label configuration
+            this._showCategoryLabels = showCategoryLabelsValue;
+            this._showAxisLabels = showAxisLabelsValue;
+            this._gridSize = gridSizeValue;
+            this._impactLabel = impactLabelValue;
+            this._probabilityLabel = probabilityLabelValue;
+            this._showRiskLabel = showRiskLabelValue;
+            
+            // Recreate the matrix with new configuration
             this.createRiskMatrix();
         }
         
@@ -380,6 +738,9 @@ export class RiskMatrix implements ComponentFramework.StandardControl<IInputs, I
 
         // Update marker position
         this.updateMarkerPosition(impact, probability);
+
+        // Update risk label
+        this.updateRiskLabel(impact, probability, lowColor, mediumColor, highColor, criticalColor);
     }
 
     /**
