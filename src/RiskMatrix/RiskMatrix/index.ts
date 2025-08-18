@@ -1,10 +1,11 @@
 import { IInputs, IOutputs } from "./generated/ManifestTypes";
 
 export class RiskMatrix implements ComponentFramework.StandardControl<IInputs, IOutputs> {
-    private _container!: HTMLDivElement;
-    private _matrixContainer!: HTMLDivElement;
-    private _grid!: HTMLDivElement;
-    private _marker!: HTMLDivElement;
+    private _container: HTMLDivElement | null = null;
+    private _matrixContainer: HTMLDivElement | null = null;
+    private _grid: HTMLDivElement | null = null;
+    private _marker: HTMLDivElement | null = null;
+    private _tooltip: HTMLDivElement | null = null;
 
     private _currentSize = 0;
     private _showCategoryLabels = true;
@@ -14,9 +15,6 @@ export class RiskMatrix implements ComponentFramework.StandardControl<IInputs, I
     private _impactLabel = "Impact";
     private _probabilityLabel = "Probability";
 
-    constructor() {}
-
-    // --- Sizing config only (no manual XY positions) ---
     private getSizeConfig() {
         const isLarge = this._currentSize === 1;
         return {
@@ -24,17 +22,23 @@ export class RiskMatrix implements ComponentFramework.StandardControl<IInputs, I
             font: isLarge ? 10 : 9,
             labelFont: isLarge ? 16 : 12,
             marker: isLarge ? 24 : 16,
+            chipFont: isLarge ? 14 : 12,
+            chipPadV: isLarge ? 1 : 0, // Reduced vertical padding for pill
+            chipPadH: isLarge ? 10 : 8,
+            // large-only gaps to the grid
+            gapAxisToGrid: isLarge ? 5 : 0,     // Impact ↔ grid and Probability ↔ grid
+            gapYcatsToGrid: isLarge ? 3 : 0,    // Y categories ↔ grid
+            // fixed base gap between axes and category labels (both sizes; Impact can override on large)
+            gapAxisToCats: 5
         };
     }
 
-    // Utility: hex lighten/darken
     private adjustColorBrightness(color: string, percent: number): string {
         const num = parseInt(color.replace("#",""), 16);
         const amt = Math.round(2.55 * percent);
         const R = (num >> 16) + amt;
         const G = (num & 0x0000FF) + amt;
         const B = (num >> 8 & 0x00FF) + amt;
-        // NOTE: channels swapped in original; fix order to RGB correctly
         const r = Math.max(0, Math.min(255, R));
         const g = Math.max(0, Math.min(255, B));
         const b = Math.max(0, Math.min(255, G));
@@ -49,17 +53,33 @@ export class RiskMatrix implements ComponentFramework.StandardControl<IInputs, I
         return `rgba(${r}, ${g}, ${b}, ${alpha})`;
     }
 
-    private getFluentIconSvg(iconType: 'success' | 'info' | 'warning' | 'critical', color: string): string {
-        const size = 12;
-        switch (iconType) {
-            case 'success':
-                return `<svg width="${size}" height="${size}" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M10 2a8 8 0 1 1 0 16 8 8 0 0 1 0-16Zm3.36 6.65a.5.5 0 0 0-.71-.7L9 11.6 7.35 9.95a.5.5 0 1 0-.7.7l2 2c.2.2.5.2.7 0l4-4Z" fill="${color}"/></svg>`;
-            case 'info':
-                return `<svg width="${size}" height="${size}" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M10 2a8 8 0 1 1 0 16 8 8 0 0 1 0-16ZM9.5 8.5a.5.5 0 0 0 1 0V7a.5.5 0 0 0-1 0v1.5Zm0 4a.5.5 0 0 0 1 0v-2a.5.5 0 0 0-1 0v2Z" fill="${color}"/></svg>`;
-            case 'warning':
-                return `<svg width="${size}" height="${size}" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M8.68 2.79a1.5 1.5 0 0 1 2.64 0l6.5 11.5A1.5 1.5 0 0 1 16.5 17h-13a1.5 1.5 0 0 1-1.32-2.21l6.5-11.5ZM10 6a.75.75 0 0 0-.75.75v3.5a.75.75 0 0 0 1.5 0v-3.5A.75.75 0 0 0 10 6Zm0 7a1 1 0 1 0 0 2 1 1 0 0 0 0-2Z" fill="${color}"/></svg>`;
-            case 'critical':
-                return `<svg width="${size}" height="${size}" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M7.43 2.28c.4-.54 1.27-.3 1.34.38l.56 5.34h3.17c.77 0 1.18.9.67 1.47l-5.5 6.25c-.4.46-1.08.3-1.24-.28L5.5 11h-2c-.65 0-1.06-.68-.74-1.23l4.67-7.49Z" fill="${color}"/></svg>`;
+    private getFluentIconSvg(icon: 'success' | 'info' | 'warning' | 'critical', color: string): string {
+        const sz = 20;
+        const strokeW = 1.8;
+        switch (icon) {
+            case 'success': // Low
+                return `<svg width="${sz}" height="${sz}" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="12" cy="12" r="10" fill="none" stroke="${color}" stroke-width="${strokeW}"/>
+                    <path d="M8 12l3 3 5-6" fill="none" stroke="${color}" stroke-width="${strokeW}" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>`;
+            case 'info': // Medium
+                return `<svg width="${sz}" height="${sz}" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="12" cy="12" r="10" fill="none" stroke="${color}" stroke-width="${strokeW}"/>
+                    <line x1="12" y1="10" x2="12" y2="16" stroke="${color}" stroke-width="${strokeW}" stroke-linecap="round"/>
+                    <circle cx="12" cy="7.5" r="1.2" fill="${color}"/>
+                </svg>`;
+            case 'warning': // High → triangle badge with rounded corners
+                return `<svg width="${sz}" height="${sz}" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 4c.4 0 .76.21.96.56l8.2 14.2c.37.64-.09 1.44-.96 1.44H3.8c-.87 0-1.33-.8-.96-1.44l8.2-14.2c.2-.35.56-.56.96-.56z" 
+                        fill="none" stroke="${color}" stroke-width="${strokeW}" stroke-linejoin="round"/>
+                    <line x1="12" y1="9" x2="12" y2="14" stroke="${color}" stroke-width="${strokeW}" stroke-linecap="round"/>
+                    <circle cx="12" cy="17" r="1.2" fill="${color}"/>
+                </svg>`;
+            case 'critical': // Critical → circle + lightning
+                return `<svg width="${sz}" height="${sz}" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="12" cy="12" r="10" fill="none" stroke="${color}" stroke-width="${strokeW}"/>
+                    <path d="M13 6l-5 7h3l-1 5 5-7h-3z" fill="${color}" />
+                </svg>`;
         }
     }
 
@@ -81,168 +101,140 @@ export class RiskMatrix implements ComponentFramework.StandardControl<IInputs, I
         this.createRiskMatrix();
     }
 
-    // --- NEW: Grid-based layout, auto-sized container, consistent 10px padding ---
+    // Grid-based layout; real spacer tracks so container height is correct
     private createRiskMatrix(): void {
         const cfg = this.getSizeConfig();
-
-        // Clear
+        if (!this._container) return;
         this._container.innerHTML = "";
 
-        // Add a one-time style tag (scoped by class names)
         const styleId = "risk-matrix-styles";
         if (!document.getElementById(styleId)) {
             const s = document.createElement("style");
             s.id = styleId;
             s.textContent = `
-            .rmx-container {
-                padding: 10px; /* exact 10px all sides */
-                background: #fafafa;
-                border: 1px solid #e1e5e9;
-                border-radius: 8px;
-                box-shadow: 0 2px 8px rgba(0,0,0,0.1), 0 1px 3px rgba(0,0,0,0.1);
-                font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Roboto', 'Helvetica Neue', sans-serif;
-                display: inline-block; /* shrink-wrap to content */
+            .rmx-container{
+                padding:12px 12px 18px 12px;
+                background:#fafafa;border:1px solid #e1e5e9;border-radius:8px;
+                box-shadow:0 2px 8px rgba(0,0,0,.1),0 1px 3px rgba(0,0,0,.1);
+                font-family:'Segoe UI',-apple-system,BlinkMacSystemFont,'Roboto','Helvetica Neue',sans-serif;
+                display:inline-block
             }
-            .rmx-grid {
-                display: grid;
-                gap: 0; /* cell borders handle separation */
+            .rmx-grid{display:grid;gap:0}
+            .rmx-impact-label{writing-mode:vertical-rl;transform:rotate(180deg);justify-self:center;align-self:center;color:#323130;font-weight:600;letter-spacing:.5px}
+            .rmx-ycat{display:flex;align-items:center;justify-content:flex-end;color:#605e5c;font-weight:500;padding-right:8px}
+            .rmx-xcat{display:flex;align-items:center;justify-content:center;color:#605e5c;font-weight:500}
+            .rmx-prob-label{justify-self:center;align-self:start;color:#323130;font-weight:600;letter-spacing:.5px}
+            .rmx-cell{border:1px solid #d2d0ce;border-radius:4px;position:relative;transition:transform .2s ease,box-shadow .2s ease}
+            .rmx-cell:hover{box-shadow:inset 0 0 0 2px rgba(0,120,212,.3);transform:scale(1.02)}
+            .rmx-marker{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+                display:flex;align-items:center;justify-content:center;border-radius:50%;
+                color:#fff;background:#323130;border:2px solid #fff;box-shadow:0 2px 4px rgba(0,0,0,.2);font-weight:600;
+                animation: rmx-bob 2.6s ease-in-out infinite; }
+            @keyframes rmx-bob {
+                0%,100% { transform: translate(-50%,-50%); }
+                50%     { transform: translate(-50%, calc(-50% - 3px)); }
             }
-            .rmx-impact-label {
-                writing-mode: vertical-rl;
-                transform: rotate(180deg);
-                justify-self: center;
-                align-self: center;
-                color: #323130;
-                font-weight: 600;
-                letter-spacing: .5px;
+            .rmx-tooltip{
+                position:absolute; left:50%; top:0;
+                transform:translate(-50%, -110%);
+                padding:6px 8px; border-radius:8px; border:1px solid transparent;
+                background:#fff; box-shadow:0 4px 10px rgba(0,0,0,.12);
+                font-size:12px; font-weight:600; color:#323130; white-space:nowrap;
+                pointer-events:none; opacity:0; transition:opacity .15s ease, transform .15s ease;
             }
-            .rmx-ycat {
-                display: flex; align-items: center; justify-content: flex-end;
-                color: #605e5c; font-weight: 500; padding-right: 8px;
+            .rmx-cell:hover .rmx-tooltip{ opacity:1; transform:translate(-50%,-120%); }
+            .rmx-chip{display:inline-flex;align-items:center;gap:6px;border-radius:16px;border:1px solid transparent;
+                box-shadow:0 1px 2px rgba(0,0,0,.08);user-select:none;white-space:nowrap;cursor:default;justify-self:center;
+                transition:transform .2s ease,box-shadow .2s ease;
+                padding-top:0px;padding-bottom:0px; /* Ensure vertical padding is minimal */
             }
-            .rmx-xcat {
-                display: flex; align-items: center; justify-content: center;
-                color: #605e5c; font-weight: 500;
-            }
-            .rmx-prob-label {
-                justify-self: center; align-self: start;
-                color: #323130; font-weight: 600; letter-spacing: .5px;
-            }
-            .rmx-cell {
-                border: 1px solid #d2d0ce;
-                border-radius: 4px;
-                position: relative; /* for marker centering */
-                transition: transform .2s ease, box-shadow .2s ease;
-            }
-            .rmx-cell:hover {
-                box-shadow: inset 0 0 0 2px rgba(0,120,212,.3);
-                transform: scale(1.02);
-            }
-            .rmx-marker {
-                position: absolute;
-                left: 50%; top: 50%;
-                transform: translate(-50%, -50%);
-                display: flex; align-items: center; justify-content: center;
-                border-radius: 50%;
-                color: #fff; background: #323130; border: 2px solid #fff;
-                box-shadow: 0 2px 4px rgba(0,0,0,.2);
-                font-weight: 600;
-            }
-            .rmx-chip {
-                display: inline-flex; align-items: center; gap: 4px;
-                padding: 2px 8px; border-radius: 16px; border: 1px solid transparent;
-                box-shadow: 0 1px 2px rgba(0,0,0,.08);
-                user-select: none; white-space: nowrap; cursor: default;
-                justify-self: center;
-                transition: transform .2s ease, box-shadow .2s ease;
-            }
-            .rmx-chip:hover {
-                transform: scale(1.05);
-                box-shadow: 0 2px 4px rgba(0,0,0,.12);
-            }
+            .rmx-chip:hover{transform:scale(1.05);box-shadow:0 2px 4px rgba(0,0,0,.12)}
             `;
             document.head.appendChild(s);
         }
 
-        // Main container (auto grows to content; padding fixed at 10px)
         this._matrixContainer = document.createElement("div");
         this._matrixContainer.className = "rmx-container";
-        // CSS variables for sizes
         this._matrixContainer.style.setProperty("--cell", `${cfg.cell}px`);
         this._matrixContainer.style.setProperty("--marker", `${cfg.marker}px`);
         this._matrixContainer.style.setProperty("--font", `${cfg.font}px`);
         this._matrixContainer.style.setProperty("--labelfont", `${cfg.labelFont}px`);
 
-        // Build grid template dynamically based on which labels are shown
         const showYCat = this._showCategoryLabels;
         const showXCat = this._showCategoryLabels;
         const showImpactAxis = this._showAxisLabels;
         const showProbAxis = this._showAxisLabels;
 
-        // Columns: [ImpactAxis?] [Y cats?] [Grid n cols]
+        // SPECIAL: Impact axis ↔ Y categories gap:
+        // - default = cfg.gapAxisToCats (5px)
+        // - if LARGE && ShowCategoryLabels → increase to 8px (Impact only)
+        const impactAxisCatsGap = (this._currentSize === 1 && showYCat) ? 8 : cfg.gapAxisToCats;
+
+        // --- Grid template with ALL spacers tracked explicitly ---
         const cols: string[] = [];
-        if (showImpactAxis) cols.push("auto");
-        if (showYCat) cols.push("auto");
+        if (showImpactAxis) { cols.push("auto", `${impactAxisCatsGap}px`); }   // Impact axis + spacer to Y cats
+        if (showYCat)       { cols.push("auto"); if (cfg.gapYcatsToGrid) cols.push(`${cfg.gapYcatsToGrid}px`); }
         cols.push(`repeat(${this._gridSize}, var(--cell))`);
 
-        // Rows: [Chip?] [Grid n rows] [X cats?] [ProbabilityAxis?]
         const rows: string[] = [];
-        if (this._showRiskLabel) rows.push("auto");
-        rows.push(`repeat(${this._gridSize}, var(--cell))`);
-        if (showXCat) rows.push("auto");
-        if (showProbAxis) rows.push("auto");
+        if (this._showRiskLabel) { rows.push("auto", "10px"); }               // chip + 10px spacer
+        rows.push(`repeat(${this._gridSize}, var(--cell))`);                   // grid
+        if (showXCat)      { if (cfg.gapYcatsToGrid) rows.push(`${cfg.gapYcatsToGrid}px`); rows.push("auto"); } // spacer to grid + X cats
+        if (showProbAxis)  { rows.push(`${cfg.gapAxisToCats}px`, "auto"); }    // 5px spacer + Probability axis
+        rows.push("6px");                                                      // bottom safety spacer
 
         this._grid = document.createElement("div");
         this._grid.className = "rmx-grid";
         this._grid.style.gridTemplateColumns = cols.join(" ");
         this._grid.style.gridTemplateRows = rows.join(" ");
 
-        // 1) Risk chip (row 1, spanning the grid columns) if enabled
+        // Compute grid start indices (track count, not pixel sizes)
+        const leftCols =
+            (showImpactAxis ? 2 : 0) +                    // axis + spacer to cats
+            (showYCat ? 1 + (cfg.gapYcatsToGrid ? 1 : 0) : 0);
+        const gridColStart = leftCols + 1;
+        const gridRowStart = this._showRiskLabel ? 3 : 1; // chip + spacer
+
+        // Chip
         if (this._showRiskLabel) {
             const chip = document.createElement("div");
             chip.id = "riskLabel";
             chip.className = "rmx-chip";
-            chip.style.fontSize = "0.75rem";
-            // Column start index depends on left-side label columns
-            const startCol = (showImpactAxis ? 1 : 0) + (showYCat ? 1 : 0) + 1; // 1-based grid line
-            chip.style.gridColumn = `${startCol} / span ${this._gridSize}`;
+            chip.style.fontSize = `${cfg.chipFont}px`;
+            chip.style.padding = `${cfg.chipPadV}px ${cfg.chipPadH}px`;
+            chip.style.gridColumn = `${gridColStart} / span ${this._gridSize}`;
             chip.style.gridRow = "1";
             chip.textContent = "UNKNOWN";
             this._grid.appendChild(chip);
         }
 
-        // 2) Impact axis label (vertical), spans all grid rows
+        // Impact axis
         if (showImpactAxis) {
             const impactEl = document.createElement("div");
             impactEl.className = "rmx-impact-label";
             impactEl.style.fontSize = "var(--labelfont)";
             impactEl.textContent = this._impactLabel || "Impact";
-            // Row start depends on whether chip row exists
-            const gridRowsStart = this._showRiskLabel ? 2 : 1;
-            impactEl.style.gridRow = `${gridRowsStart} / span ${this._gridSize}`;
+            impactEl.style.gridRow = `${gridRowStart} / span ${this._gridSize}`;
             impactEl.style.gridColumn = "1";
             this._grid.appendChild(impactEl);
         }
 
-        // 3) Y category labels (left of grid), one per grid row
+        // Y categories
         if (showYCat) {
-            const colIndex = showImpactAxis ? 2 : 1;
-            const rowStart = this._showRiskLabel ? 2 : 1;
+            const yCatCol = showImpactAxis ? 3 : 1; // axis(1) + spacer(2) → Y cats at col 3
             const labels = this.getGridLabels();
-            labels.forEach((label, i) => {
+            for (let i = 0; i < this._gridSize; i++) {
                 const y = document.createElement("div");
                 y.className = "rmx-ycat";
                 y.style.fontSize = "var(--font)";
-                y.textContent = label;
-                y.style.gridColumn = `${colIndex}`;
-                y.style.gridRow = `${rowStart + i}`;
-                this._grid.appendChild(y);
-            });
+                y.textContent = labels[i] ?? "";
+                y.style.gridColumn = `${yCatCol}`;
+                y.style.gridRow = `${gridRowStart + i}`;
+                this._grid!.appendChild(y);
+            }
         }
 
-        // 4) Grid cells
-        const gridColStart = (showImpactAxis ? 1 : 0) + (showYCat ? 1 : 0) + 1;
-        const gridRowStart = this._showRiskLabel ? 2 : 1;
+        // Grid cells
         for (let r = 0; r < this._gridSize; r++) {
             for (let c = 0; c < this._gridSize; c++) {
                 const cell = document.createElement("div");
@@ -251,38 +243,42 @@ export class RiskMatrix implements ComponentFramework.StandardControl<IInputs, I
                 cell.style.gridRow = `${gridRowStart + r}`;
                 cell.setAttribute("data-row", String(r));
                 cell.setAttribute("data-col", String(c));
-                this._grid.appendChild(cell);
+                this._grid!.appendChild(cell);
             }
         }
 
-        // 5) X category labels (below grid), Low->High left->right
+        // X categories
         if (showXCat) {
-            const rowIndex = gridRowStart + this._gridSize;
+            const xCatsRow = gridRowStart + this._gridSize + (cfg.gapYcatsToGrid ? 1 : 0);
             const labels = this.getGridLabels().slice().reverse();
             for (let c = 0; c < this._gridSize; c++) {
                 const x = document.createElement("div");
                 x.className = "rmx-xcat";
                 x.style.fontSize = "var(--font)";
                 x.textContent = labels[c];
-                x.style.gridRow = `${rowIndex}`;
+                x.style.gridRow = `${xCatsRow}`;
                 x.style.gridColumn = `${gridColStart + c}`;
-                this._grid.appendChild(x);
+                this._grid!.appendChild(x);
             }
         }
 
-        // 6) Probability axis label (bottom, centered under grid)
+        // Probability axis
         if (showProbAxis) {
             const prob = document.createElement("div");
             prob.className = "rmx-prob-label";
             prob.style.fontSize = "var(--labelfont)";
             prob.textContent = this._probabilityLabel || "Probability";
-            const row = gridRowStart + this._gridSize + (showXCat ? 1 : 0);
-            prob.style.gridRow = `${row}`;
+            const probRow =
+                gridRowStart +
+                this._gridSize +
+                (showXCat ? (cfg.gapYcatsToGrid ? 1 : 0) + 1 : 0) + // spacer + X cats (if present)
+                1; // 5px spacer before axis
+            prob.style.gridRow = `${probRow}`;
             prob.style.gridColumn = `${gridColStart} / span ${this._gridSize}`;
-            this._grid.appendChild(prob);
+            this._grid!.appendChild(prob);
         }
 
-        // Marker element (centered via absolute within a cell)
+        // Marker + tooltip
         this._marker = document.createElement("div");
         this._marker.className = "rmx-marker";
         this._marker.style.width = `var(--marker)`;
@@ -290,36 +286,28 @@ export class RiskMatrix implements ComponentFramework.StandardControl<IInputs, I
         this._marker.style.fontSize = `${Math.floor(this.getSizeConfig().marker * 0.6)}px`;
         this._marker.textContent = "!";
 
-        // Append grid to container and container to host
-        this._matrixContainer.appendChild(this._grid);
-        this._container.appendChild(this._matrixContainer);
+        this._tooltip = document.createElement("div");
+        this._tooltip.className = "rmx-tooltip";
+        this._tooltip.textContent = "—";
+
+        this._matrixContainer!.appendChild(this._grid!);
+        this._container!.appendChild(this._matrixContainer!);
     }
 
     private colorMatrix(low: string, med: string, high: string, crit: string) {
+        if (!this._grid) return;
         let riskMatrix: string[][];
         if (this._gridSize === 2) {
-            riskMatrix = [
-                [med, high],
-                [low, med]
-            ];
+            riskMatrix = [[med, high],[low, med]];
         } else if (this._gridSize === 3) {
-            riskMatrix = [
-                [med, high, crit],
-                [low, med, high],
-                [low, low, med]
-            ];
+            riskMatrix = [[med, high, crit],[low, med, high],[low, low, med]];
         } else {
-            riskMatrix = [
-                [med, high, crit, crit],
-                [med, high, high, crit],
-                [low, med, high, high],
-                [low, low, med, med]
-            ];
+            riskMatrix = [[med, high, crit, crit],[med, high, high, crit],[low, med, high, high],[low, low, med, med]];
         }
 
         for (let r = 0; r < this._gridSize; r++) {
             for (let c = 0; c < this._gridSize; c++) {
-                const cell = this._grid.querySelector(`.rmx-cell[data-row="${r}"][data-col="${c}"]`) as HTMLDivElement;
+                const cell = this._grid.querySelector(`.rmx-cell[data-row="${r}"][data-col="${c}"]`) as HTMLDivElement | null;
                 if (cell) {
                     const base = riskMatrix[r][c];
                     cell.style.backgroundColor = base;
@@ -329,10 +317,7 @@ export class RiskMatrix implements ComponentFramework.StandardControl<IInputs, I
         }
     }
 
-    private getCurrentRiskLevel(
-        impact: number, probability: number,
-        low: string, med: string, high: string, crit: string
-    ) {
+    private getCurrentRiskLevel(impact: number, probability: number, low: string, med: string, high: string, crit: string) {
         const size = this._gridSize;
         const impactIndex = Math.max(0, Math.min(size - 1, size - Math.round(impact)));
         const probIndex = Math.max(0, Math.min(size - 1, Math.round(probability) - 1));
@@ -346,46 +331,55 @@ export class RiskMatrix implements ComponentFramework.StandardControl<IInputs, I
         }
         const color = riskMatrix[impactIndex][probIndex];
         const level = color === low ? "LOW" : color === med ? "MEDIUM" : color === high ? "HIGH" : "CRITICAL";
-        return { level, color };
+        return { level, color, impactIndex, probIndex };
     }
 
     private updateMarkerPosition(impact: number, probability: number) {
-        // Map to matrix indices
+        if (!this._grid || !this._marker || !this._tooltip) return;
         const size = this._gridSize;
         const impactIndex = Math.max(0, Math.min(size - 1, size - Math.round(impact)));
         const probIndex = Math.max(0, Math.min(size - 1, Math.round(probability) - 1));
 
-        // Remove marker from any old parent
-        if (this._marker.parentElement) {
-            this._marker.parentElement.removeChild(this._marker);
+        if (this._marker.parentElement) this._marker.parentElement.removeChild(this._marker);
+        if (this._tooltip.parentElement) this._tooltip.parentElement.removeChild(this._tooltip);
+
+        const cell = this._grid.querySelector(`.rmx-cell[data-row="${impactIndex}"][data-col="${probIndex}"]`) as HTMLDivElement | null;
+        if (cell) {
+            cell.appendChild(this._marker);
+            cell.appendChild(this._tooltip);
         }
-        // Append into the target cell (centers via CSS)
-        const cell = this._grid.querySelector(`.rmx-cell[data-row="${impactIndex}"][data-col="${probIndex}"]`);
-        if (cell) cell.appendChild(this._marker);
     }
 
-    private updateRiskChip(impact: number, probability: number, low: string, med: string, high: string, crit: string) {
-        if (!this._showRiskLabel) return;
-        const chip = this._grid.querySelector("#riskLabel") as HTMLDivElement;
-        if (!chip) return;
-
+    private updateRiskChipAndTooltip(impact: number, probability: number, low: string, med: string, high: string, crit: string) {
         const { level, color } = this.getCurrentRiskLevel(impact, probability, low, med, high, crit);
-        const bg = this.hexToRgba(color, 0.15);
-        chip.style.backgroundColor = bg;
-        chip.style.borderColor = color;
-        chip.style.color = color;
 
-        let icon: string = "";
-        if (level === "LOW") icon = this.getFluentIconSvg("success", color);
-        else if (level === "MEDIUM") icon = this.getFluentIconSvg("info", color);
-        else if (level === "HIGH") icon = this.getFluentIconSvg("warning", color);
-        else icon = this.getFluentIconSvg("critical", color);
+        if (this._showRiskLabel && this._grid) {
+            const chip = this._grid.querySelector("#riskLabel") as HTMLDivElement | null;
+            if (chip) {
+                const bg = this.hexToRgba(color, 0.15);
+                chip.style.backgroundColor = bg;
+                chip.style.borderColor = color;
+                chip.style.color = color;
 
-        chip.innerHTML = `${icon}<span>${level}</span>`;
+                let icon = "";
+                if (level === "LOW") icon = this.getFluentIconSvg("success", color);
+                else if (level === "MEDIUM") icon = this.getFluentIconSvg("info", color);
+                else if (level === "HIGH") icon = this.getFluentIconSvg("warning", color);
+                else icon = this.getFluentIconSvg("critical", color);
+
+                chip.innerHTML = `${icon}<span>${level}</span>`;
+            }
+        }
+
+        if (this._tooltip) {
+            this._tooltip.textContent = level;
+            this._tooltip.style.borderColor = color;
+            this._tooltip.style.color = color;
+            this._tooltip.style.backgroundColor = "#fff";
+        }
     }
 
     public updateView(context: ComponentFramework.Context<IInputs>): void {
-        // Inputs
         const sizeValue = parseInt(context.parameters.Size?.raw || "0", 10) || 0;
         const showCategoryLabelsValue = context.parameters.ShowCategoryLabels?.raw !== false;
         const showAxisLabelsValue = context.parameters.ShowAxisLabels?.raw !== false;
@@ -394,7 +388,6 @@ export class RiskMatrix implements ComponentFramework.StandardControl<IInputs, I
         const probabilityLabelValue = context.parameters.ProbabilityLabel?.raw || "Probability";
         const showRiskLabelValue = context.parameters.ShowRiskLabel?.raw !== false;
 
-        // Rebuild if layout-affecting inputs changed
         if (
             this._currentSize !== sizeValue ||
             this._showCategoryLabels !== showCategoryLabelsValue ||
@@ -415,22 +408,18 @@ export class RiskMatrix implements ComponentFramework.StandardControl<IInputs, I
             this.createRiskMatrix();
         }
 
-        // Colors
         const lowColor = context.parameters.LowColor?.raw || "#107c10";
         const mediumColor = context.parameters.MediumColor?.raw || "#faa06b";
         const highColor = context.parameters.HighColor?.raw || "#ff8c00";
         const criticalColor = context.parameters.CriticalColor?.raw || "#d13438";
 
-        // Values
         const impact = context.parameters.Impact?.raw || 1;
         const probability = context.parameters.Probability?.raw || 1;
 
-        // Apply updates
         this.colorMatrix(lowColor, mediumColor, highColor, criticalColor);
         this.updateMarkerPosition(impact, probability);
-        this.updateRiskChip(impact, probability, lowColor, mediumColor, highColor, criticalColor);
+        this.updateRiskChipAndTooltip(impact, probability, lowColor, mediumColor, highColor, criticalColor);
 
-        // Update sizes (CSS vars) if size changed
         const cfg = this.getSizeConfig();
         if (this._matrixContainer) {
             this._matrixContainer.style.setProperty("--cell", `${cfg.cell}px`);
@@ -438,8 +427,23 @@ export class RiskMatrix implements ComponentFramework.StandardControl<IInputs, I
             this._matrixContainer.style.setProperty("--font", `${cfg.font}px`);
             this._matrixContainer.style.setProperty("--labelfont", `${cfg.labelFont}px`);
         }
+        const chip = this._grid?.querySelector("#riskLabel") as HTMLDivElement | null;
+        if (chip) {
+            chip.style.fontSize = `${cfg.chipFont}px`;
+            chip.style.padding = `${cfg.chipPadV}px ${cfg.chipPadH}px`;
+        }
     }
 
     public getOutputs(): IOutputs { return {}; }
-    public destroy(): void {}
+
+    public destroy(): void {
+        if (this._marker?.parentElement) this._marker.parentElement.removeChild(this._marker);
+        if (this._tooltip?.parentElement) this._tooltip.parentElement.removeChild(this._tooltip);
+        if (this._matrixContainer?.parentElement) this._matrixContainer.parentElement.removeChild(this._matrixContainer);
+        this._grid = null;
+        this._marker = null;
+        this._tooltip = null;
+        this._matrixContainer = null;
+        this._container = null;
+    }
 }

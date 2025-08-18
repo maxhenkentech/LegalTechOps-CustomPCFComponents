@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <manifest>
-  <control namespace="LegalTechOps" constructor="RiskMatrix" version="1.7.0" display-name-key="Risk Matrix" description-key="Risk Matrix Component" control-type="standard">
+  <control namespace="LegalTechOps" constructor="RiskMatrix" version="1.7.1" display-name-key="Risk Matrix" description-key="Risk Matrix Component" control-type="standard">
     <property name="Impact" display-name-key="Impact Score" description-key="Impact value (1-4 scale)" of-type="Whole.None" usage="bound" required="false" />
     <property name="Probability" display-name-key="Probability Score" description-key="Probability value (1-4 scale)" of-type="Whole.None" usage="bound" required="false" />
     <property name="Size" display-name-key="Matrix Size" description-key="Select the size of the risk matrix display" of-type="Enum" usage="input" required="false" default-value="1">
