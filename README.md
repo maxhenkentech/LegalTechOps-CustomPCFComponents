@@ -16,11 +16,11 @@ This solution currently contains the following custom components:
 
 An interactive risk assessment matrix that allows users to plot and visualize risk items based on Impact and Probability ratings.
 
-<img src="Screenshots/Risk%20Matrix/riskmatrix.png" alt="Risk Matrix with Labels" height="180px"> <img src="Screenshots/Risk%20Matrix/riskmatrixnolabels.png" alt="Risk Matrix without Labels" height="180px">
+<img src="Screenshots/Risk%20Matrix/4x4%20ootb.png" alt="Risk Matrix with Labels" height="180px"> <img src="Screenshots/Risk%20Matrix/2x2%20custom.png" alt="Risk Matrix without Labels" height="180px">
 
 *Risk Matrix component showing standard configuration with labels (left) and clean presentation without category labels (right)*
 
-<img src="Screenshots/Risk%20Matrix/customLabels.png" alt="Risk Matrix with Modern Pill Style" height="180px"> <img src="Screenshots/Risk%20Matrix/nocats.png" alt="Risk Matrix Compact View" height="180px">
+<img src="Screenshots/Risk%20Matrix/3x3%20custom.png" alt="Custom 3x3 Matrix" height="180px"> <img src="Screenshots/Risk%20Matrix/4x4%20custom.png" alt="Custom 4x4 Matrix" height="180px">
 
 *Modern pill-style risk indicator with dynamic color-coding (left) and compact small-size configuration (right)*
 
