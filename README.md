@@ -28,7 +28,7 @@ An interactive risk assessment matrix that allows users to plot and visualize ri
 - **Flexible Grid Sizes**: Choose from 2x2, 3x3, or 4x4 grid configurations to match your risk assessment needs
 - **Dynamic Risk Labels**: Real-time risk level display at the top of the matrix (LOW, MEDIUM, HIGH, CRITICAL)
 - **Custom Axis Labels**: Configurable X and Y axis labels (default: "Impact" and "Probability")
-- **Dual Size Options**: Choose between Small (compact) and Large (detailed) display modes
+- **Multiple Size Options**: Choose between Small (compact), Large (detailed), and Huge (extra-large) display modes
 - **Granular Label Control**: 
   - **Show Category Labels**: Toggle scale labels (Low, Medium, High, Critical) visibility
   - **Show Axis Labels**: Toggle axis title labels (Impact/Probability) visibility
@@ -43,7 +43,7 @@ An interactive risk assessment matrix that allows users to plot and visualize ri
 |----------|------|-------|-------------|---------|
 | `Impact` | Number | 1-2, 1-3, or 1-4 | Impact level of the risk item (range depends on grid size) | - |
 | `Probability` | Number | 1-2, 1-3, or 1-4 | Probability level of the risk item (range depends on grid size) | - |
-| `Size` | Choice | Small/Large | Matrix size: Small (compact) or Large (detailed) | Small |
+| `Size` | Choice | Small/Large/Huge | Matrix size: Small (compact), Large (detailed), or Huge (extra-large) | Small |
 | `GridSize` | Choice | 2x2/3x3/4x4 | Grid configuration: 2x2, 3x3, or 4x4 matrix | 4x4 |
 | `ShowCategoryLabels` | Yes/No | - | Show or hide scale labels (Low, Medium, High, Critical) | Yes |
 | `ShowAxisLabels` | Yes/No | - | Show or hide axis title labels (Impact/Probability) | Yes |
@@ -136,7 +136,7 @@ Choose the appropriate solution package for your needs:
 1. After importing the solution, the Risk Matrix control will be available in your Power Apps
 2. Add the control to a form or canvas app
 3. Bind the Impact and Probability properties to your data fields
-4. Optionally customize the risk colors using the color properties
+4. Optionally customize the risk colors and select the desired matrix size (Small, Large, or Huge) using the `Size` property
 
 ## Development
 
@@ -208,14 +208,15 @@ If you encounter any issues or have suggestions for improvements, please open an
 
 ## Release Notes
 
-### Version 2.0.0.0 (Current)
+### Version 1.8.0.0 (Current)
 - **NEW:** Flexible grid size configurations (2x2, 3x3, 4x4) for different risk assessment needs
 - **NEW:** Dynamic risk level display at the top of the matrix showing current risk (LOW, MEDIUM, HIGH, CRITICAL)
 - **NEW:** Custom axis labels - configure your own X and Y axis titles (default: "Impact" and "Probability")
 - **NEW:** Granular label control with separate toggles for category labels and axis labels
+- **NEW:** **Huge** size option for extra-large matrix display
 - **ENHANCED:** Optimized positioning system for all grid sizes and label visibility combinations
 - **ENHANCED:** Improved responsive design with grid-specific spacing adjustments
-- **ENHANCED:** Professional layout optimization for both small and large display modes
+- **ENHANCED:** Professional layout optimization for all display modes (Small, Large, Huge)
 
 ### Version 1.5.0.0
 - **NEW:** Size configuration options (Small/Large) for different display contexts

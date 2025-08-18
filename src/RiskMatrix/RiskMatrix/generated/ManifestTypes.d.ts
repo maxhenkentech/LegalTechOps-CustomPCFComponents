@@ -6,7 +6,7 @@
 export interface IInputs {
     Impact: ComponentFramework.PropertyTypes.WholeNumberProperty;
     Probability: ComponentFramework.PropertyTypes.WholeNumberProperty;
-    Size: ComponentFramework.PropertyTypes.EnumProperty<"0" | "1">;
+    Size: ComponentFramework.PropertyTypes.EnumProperty<"0" | "1" | "2">;
     ShowCategoryLabels: ComponentFramework.PropertyTypes.TwoOptionsProperty;
     ShowAxisLabels: ComponentFramework.PropertyTypes.TwoOptionsProperty;
     GridSize: ComponentFramework.PropertyTypes.EnumProperty<"2" | "3" | "4">;

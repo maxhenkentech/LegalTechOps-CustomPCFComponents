@@ -16,21 +16,24 @@ export class RiskMatrix implements ComponentFramework.StandardControl<IInputs, I
     private _probabilityLabel = "Probability";
 
     private getSizeConfig() {
+        // 0 = small, 1 = large, 2 = huge
         const isLarge = this._currentSize === 1;
-        return {
-            cell: isLarge ? 50 : 35,
-            font: isLarge ? 10 : 9,
-            labelFont: isLarge ? 16 : 12,
-            marker: isLarge ? 24 : 16,
-            chipFont: isLarge ? 14 : 12,
-            chipPadV: isLarge ? 1 : 0, // Reduced vertical padding for pill
-            chipPadH: isLarge ? 10 : 8,
-            // large-only gaps to the grid
-            gapAxisToGrid: isLarge ? 5 : 0,     // Impact ↔ grid and Probability ↔ grid
-            gapYcatsToGrid: isLarge ? 3 : 0,    // Y categories ↔ grid
-            // fixed base gap between axes and category labels (both sizes; Impact can override on large)
-            gapAxisToCats: 5
-        };
+        const isHuge = this._currentSize === 2;
+
+        const cell = isHuge ? 70 : isLarge ? 50 : 35;
+        const font = isHuge ? 12 : isLarge ? 10 : 9;
+        const labelFont = isHuge ? 22 : isLarge ? 16 : 12;
+        const marker = isHuge ? 32 : isLarge ? 24 : 16;
+        const chipFont = isHuge ? 16 : isLarge ? 14 : 12;
+        const chipPadV = isHuge ? 2 : isLarge ? 1 : 0;
+        const chipPadH = isHuge ? 12 : isLarge ? 10 : 8;
+
+        // Keep behavior the same as large for huge regarding layout gaps
+        const gapAxisToGrid = (isLarge || isHuge) ? 5 : 0; // Impact/Probability ↔ grid
+        const gapYcatsToGrid = (isLarge || isHuge) ? 3 : 0; // Y categories ↔ grid
+        const gapAxisToCats = 5; // base gap both sizes; Impact can override on large/huge
+
+        return { cell, font, labelFont, marker, chipFont, chipPadV, chipPadH, gapAxisToGrid, gapYcatsToGrid, gapAxisToCats };
     }
 
     private adjustColorBrightness(color: string, percent: number): string {
@@ -167,8 +170,9 @@ export class RiskMatrix implements ComponentFramework.StandardControl<IInputs, I
 
         // SPECIAL: Impact axis ↔ Y categories gap:
         // - default = cfg.gapAxisToCats (5px)
-        // - if LARGE && ShowCategoryLabels → increase to 8px (Impact only)
-        const impactAxisCatsGap = (this._currentSize === 1 && showYCat) ? 8 : cfg.gapAxisToCats;
+        // - if LARGE/HUGE && ShowCategoryLabels → increase to 8px (Impact only)
+        const isLargeOrHuge = this._currentSize !== 0;
+        const impactAxisCatsGap = (isLargeOrHuge && showYCat) ? 8 : cfg.gapAxisToCats;
 
         // --- Grid template with ALL spacers tracked explicitly ---
         const cols: string[] = [];
@@ -380,7 +384,7 @@ export class RiskMatrix implements ComponentFramework.StandardControl<IInputs, I
     }
 
     public updateView(context: ComponentFramework.Context<IInputs>): void {
-        const sizeValue = parseInt(context.parameters.Size?.raw || "0", 10) || 0;
+        const sizeValue = parseInt(context.parameters.Size?.raw || "0", 10) || 0; // accepts 0,1,2 (small, large, huge)
         const showCategoryLabelsValue = context.parameters.ShowCategoryLabels?.raw !== false;
         const showAxisLabelsValue = context.parameters.ShowAxisLabels?.raw !== false;
         const gridSizeValue = parseInt(context.parameters.GridSize?.raw || "4", 10) || 4;
