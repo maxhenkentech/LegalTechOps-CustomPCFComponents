@@ -49,6 +49,7 @@
   
   <ItemGroup>
     <ProjectReference Include="src/RiskMatrix/RiskMatrix.pcfproj" />
+    <ProjectReference Include="src/APISchemaBuilder/APISchemaBuilder.pcfproj" />
   </ItemGroup>
 
   <Import Project="$(MSBuildToolsPath)\Microsoft.Common.targets" />

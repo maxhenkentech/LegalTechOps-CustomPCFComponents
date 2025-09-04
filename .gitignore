@@ -53,3 +53,4 @@ usersettings.json
 
 # Release Script
 release.sh
+init-component.sh
