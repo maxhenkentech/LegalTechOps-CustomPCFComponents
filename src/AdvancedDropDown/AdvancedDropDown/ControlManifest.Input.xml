@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<manifest>
+  <control namespace="lops" constructor="AdvancedDropDown" version="3.0.3" display-name-key="lops.AdvancedDropDown" description-key="AdvancedDropDown description" control-type="virtual">
+    <property name="optionsInput" display-name-key="OptionSet" description-key="OptionSet" of-type="OptionSet" usage="bound" required="true" />  
+  <property name="icon" display-name-key="Icon" description-key="Icon" of-type="SingleLine.Text" usage="input" required="false" />
+    <property name="sortBy" display-name-key="Sort by" description-key="Sort by" of-type="Enum" usage="input" required="false" default-value="Value">      
+      <value name="Value" display-name-key="Value" description-key="Sort by the value of the options" default="true">Value</value>
+      <value name="Text" display-name-key="Text" description-key="Sort by the text of the options, corresponding to the user language">Text</value>
+    </property>
+    <property name="hideHiddenOptions" display-name-key="Hide hidden options" description-key="Hide options marked as hidden in the option set" of-type="TwoOptions" usage="input" required="false" default-value="true" />
+        <property name="showColorIcon" display-name-key="Show option color icon" description-key="Display color icon on the left of each option" of-type="TwoOptions" usage="input" required="false" default-value="false" />
+    <property name="showColorBorder" display-name-key="Show option color border" description-key="Display colored border around the dropdown control" of-type="TwoOptions" usage="input" required="false" default-value="false" />
+    <property name="showColorBackground" display-name-key="Show option color background" description-key="Display selected option color as background" of-type="Enum" usage="input" required="false" default-value="No">
+      <value name="No" display-name-key="No" description-key="No color background">No</value>
+      <value name="Lighter" display-name-key="Lighter color" description-key="Lighter version of the option color">Lighter</value>
+      <value name="Full" display-name-key="Full color" description-key="Full option color">Full</value>
+    </property>
+    <property name="makeFontBold" display-name-key="Make font bold" description-key="Display dropdown text in bold font weight" of-type="TwoOptions" usage="input" required="false" default-value="false" />
+    <resources>      
+      <code path="index.ts" order="1"/>      
+  <css path="CSS/AdvancedDropDown.css" order="1" />
+      <platform-library name="React" version="16.8.6" />
+      <platform-library name="Fluent" version="8.29.0" />
+    </resources>   
+  </control>
+</manifest>
