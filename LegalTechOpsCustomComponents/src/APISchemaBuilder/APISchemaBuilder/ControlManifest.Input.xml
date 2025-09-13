@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<manifest>
+  <control namespace="lops" constructor="APISchemaBuilder" version="2.1.4" display-name-key="API Schema Builder" description-key="Visual drag-and-drop component for building API response schemas" control-type="standard">
+    
+    <property name="schemaField" display-name-key="Schema Field" description-key="Field to store the API schema JSON" of-type="SingleLine.TextArea" usage="bound" required="true" />
+    
+    <resources>
+      <code path="index.ts" order="1"/>
+      <css path="css/APISchemaBuilder.css" order="1" />
+    </resources>
+    
+    <feature-usage>
+      <uses-feature name="WebAPI" required="true" />
+    </feature-usage>
+    
+  </control>
+</manifest>

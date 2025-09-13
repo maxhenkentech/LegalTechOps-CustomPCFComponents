@@ -1,0 +1,43 @@
+
+/*.LegalTechOps\.AdvancedOptions .ComboBox{  
+    -webkit-appearance: none; 
+    -moz-appearance: none; 
+    -ms-appearance: none; 
+    -o-appearance: none; 
+    appearance: none;   
+    border: 1px solid transparent;    
+    outline-color: transparent; 
+    outline-width: 0;
+    outline-style: none;   
+    box-shadow: none;
+    width:100%;
+}*/
+
+.LegalTechOps\.AdvancedOptions .ComboBox .option{          
+    text-align: left;
+    line-height: 30px;    
+}
+
+.LegalTechOps_AdvancedOptions_item{    
+    display: inline-flex;   
+    line-height:14px;   
+} 
+
+.option-content {
+    display: flex;
+    align-items: center;
+}
+
+.colorIcon {
+    flex-shrink: 0;
+}
+
+.color-indicator {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    margin-right: 8px;
+    border: 1px solid #ccc;
+    flex-shrink: 0;
+}

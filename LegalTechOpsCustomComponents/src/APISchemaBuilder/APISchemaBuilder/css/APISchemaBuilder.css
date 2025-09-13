@@ -1,0 +1,774 @@
+.api-schema-builder {
+  width: 100%;
+  height: 600px;
+  display: flex;
+  flex-direction: column;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: #f9f9f9;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.asb-header {
+  padding: 16px;
+  background: white;
+  border-bottom: 1px solid #ddd;
+  flex-shrink: 0;
+}
+
+.asb-header h3 {
+  margin: 0 0 12px 0;
+  color: #333;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.asb-content {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
+.asb-panel {
+  background: white;
+  border-right: 1px solid #ddd;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.asb-fields-panel {
+  width: 300px;
+  min-width: 250px;
+}
+
+.asb-canvas-panel {
+  flex: 1;
+  background: #f5f5f5;
+  position: relative;
+}
+
+.asb-preview-panel {
+  width: 350px;
+  border-right: none;
+  min-width: 300px;
+}
+
+.asb-field-item {
+  padding: 8px 12px;
+  margin: 4px;
+  background: #e7f3ff;
+  border: 1px solid #b3d7ff;
+  border-radius: 4px;
+  cursor: move;
+  user-select: none;
+  transition: all 0.2s ease;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+}
+
+.asb-field-item:hover {
+  background: #d1edff;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.asb-field-item.asb-relationship {
+  background: #fff2e7;
+  border-color: #ffb366;
+}
+
+.asb-field-item.asb-relationship:hover {
+  background: #ffe7d1;
+}
+
+.asb-drop-zone {
+  min-height: 60px;
+  border: 2px dashed #ccc;
+  border-radius: 8px;
+  position: relative;
+  padding: 20px;
+  margin: 16px;
+  background: white;
+  transition: all 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* When drop zone has content, it grows with content */
+.asb-drop-zone.has-content {
+  min-height: 60px;
+  height: fit-content;
+}
+
+/* Empty drop zone styling */
+.asb-drop-zone:empty,
+.asb-drop-zone:has(p:only-child) {
+  min-height: 120px;
+  align-items: center;
+  justify-content: center;
+}
+
+.asb-drop-zone.drag-over {
+  border-color: #007acc;
+  background: #f0f8ff;
+  transform: scale(1.02);
+}
+
+.asb-drop-zone p {
+  text-align: center;
+  color: #666;
+  margin: 0;
+  font-style: italic;
+}
+
+.asb-node {
+  margin: 4px 0;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  background: white;
+  position: relative;
+  transition: all 0.2s ease;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.asb-node.dragging {
+  opacity: 0.5;
+  transform: rotate(2deg);
+  z-index: 1000;
+}
+
+.asb-node-header {
+  padding: 8px 12px;
+  background: #f8f9fa;
+  border-bottom: 1px solid #ddd;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.asb-drag-handle {
+  color: #666;
+  font-weight: bold;
+  cursor: move;
+  user-select: none;
+  font-size: 14px;
+}
+
+.asb-drag-handle:hover {
+  color: #007acc;
+}
+
+.asb-node-drop-zone {
+  min-height: 40px;
+  border: 1px dashed #ddd;
+  margin: 8px 12px;
+  padding: 12px;
+  background: #fafafa;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.asb-node-drop-zone.drag-over {
+  border-color: #007acc;
+  background: #f0f8ff;
+}
+
+.asb-node-drop-zone .asb-drop-hint {
+  margin: 0;
+  color: #999;
+  font-size: 12px;
+  text-align: center;
+  font-style: italic;
+}
+
+.asb-node-children {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* Node type specific styling */
+.asb-node-field .asb-node-header {
+  background: #e7f3ff;
+  border-bottom-color: #b3d7ff;
+}
+
+.asb-node-object .asb-node-header {
+  background: #fff2e7;
+  border-bottom-color: #ffb366;
+}
+
+.asb-node-array .asb-node-header {
+  background: #f0fff0;
+  border-bottom-color: #90ee90;
+}
+
+.asb-node:hover {
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.asb-node-object {
+  border-left: 4px solid #28a745;
+}
+
+.asb-node-array {
+  border-left: 4px solid #dc3545;
+}
+
+.asb-node-field {
+  border-left: 4px solid #007bff;
+}
+
+.asb-node-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+  gap: 8px;
+}
+
+.asb-node-children {
+  margin-left: 20px;
+  padding-left: 12px;
+  border-left: 2px solid #eee;
+}
+
+.asb-btn {
+  padding: 6px 12px;
+  border: 1px solid #ddd;
+  background: white;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.asb-btn:hover {
+  background: #f0f0f0;
+  transform: translateY(-1px);
+}
+
+.asb-btn-primary {
+  background: #007acc;
+  color: white;
+  border-color: #007acc;
+}
+
+.asb-btn-primary:hover {
+  background: #005a9e;
+  border-color: #005a9e;
+}
+
+.asb-btn-danger {
+  background: #dc3545;
+  color: white;
+  border-color: #dc3545;
+}
+
+.asb-btn-danger:hover {
+  background: #c82333;
+  border-color: #c82333;
+}
+
+.asb-input {
+  padding: 6px 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 13px;
+  transition: all 0.2s ease;
+  background: white;
+}
+
+.asb-input:focus {
+  outline: none;
+  border-color: #007acc;
+  box-shadow: 0 0 0 2px rgba(0, 122, 204, 0.1);
+  background: #fafbfc;
+}
+
+.asb-input:focus::after {
+  content: "Press Enter or click away to save";
+  position: absolute;
+  background: #333;
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  top: -30px;
+  left: 0;
+  white-space: nowrap;
+  z-index: 1000;
+}
+
+.asb-section-header {
+  padding: 12px 16px;
+  background: #f8f9fa;
+  border-bottom: 1px solid #dee2e6;
+  font-weight: 600;
+  font-size: 14px;
+  color: #495057;
+  margin: 0;
+}
+
+.asb-scrollable {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px;
+}
+
+.asb-toolbar {
+  padding: 12px 16px;
+  background: #f8f9fa;
+  border-bottom: 1px solid #dee2e6;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.asb-preview-content {
+  padding: 16px;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 12px;
+  line-height: 1.4;
+  white-space: pre-wrap;
+  background: #f8f9fa;
+  border-radius: 4px;
+  overflow: auto;
+  flex: 1;
+}
+
+/* Responsive design */
+@media (max-width: 1200px) {
+  .asb-fields-panel {
+    width: 250px;
+  }
+  
+  .asb-preview-panel {
+    width: 300px;
+  }
+}
+
+@media (max-width: 768px) {
+  .asb-content {
+    flex-direction: column;
+  }
+  
+  .asb-fields-panel,
+  .asb-preview-panel {
+    width: 100%;
+    height: 200px;
+  }
+  
+  .asb-canvas-panel {
+    height: 300px;
+  }
+}
+
+/* Animation for drag feedback */
+.asb-field-item.dragging {
+  opacity: 0.5;
+  transform: rotate(5deg);
+}
+
+/* Loading states */
+.asb-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  color: #666;
+}
+
+/* Field and Relationship sections */
+.asb-field-section {
+  margin-bottom: 20px;
+}
+
+.asb-relationship-section {
+  margin-bottom: 20px;
+  border-top: 1px solid #e1e1e1;
+  padding-top: 15px;
+}
+
+.asb-field-section h6,
+.asb-relationship-section h6 {
+  font-size: 12px;
+  font-weight: 600;
+  color: #666;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+}
+
+.asb-hint {
+  font-size: 10px;
+  font-weight: normal;
+  color: #999;
+  text-transform: none;
+}
+
+.asb-relationship-item {
+  padding: 8px 12px;
+  margin: 4px;
+  background: #f0f8ff;
+  border: 1px solid #b3d7ff;
+  border-radius: 4px;
+  cursor: move;
+  user-select: none;
+  transition: all 0.2s ease;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.asb-relationship-item:hover {
+  background: #e7f3ff;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.asb-relationship-item.dragging {
+  opacity: 0.5;
+  transform: rotate(5deg);
+}
+
+.asb-field-name {
+  flex: 1;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.asb-field-type {
+  font-size: 11px;
+  color: #666;
+  background: rgba(0,0,0,0.1);
+  padding: 2px 6px;
+  border-radius: 2px;
+  margin-left: 8px;
+}
+
+.asb-loading::after {
+  content: "";
+  width: 16px;
+  height: 16px;
+  margin-left: 8px;
+  border: 2px solid #ddd;
+  border-top-color: #007acc;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Error states */
+.asb-error {
+  padding: 12px;
+  background: #f8d7da;
+  border: 1px solid #f5c6cb;
+  border-radius: 4px;
+  color: #721c24;
+  margin: 8px;
+}
+
+/* Drop Indicator */
+.asb-drop-indicator {
+  position: absolute;
+  height: 3px;
+  background: linear-gradient(90deg, #007acc, #0099ff);
+  border-radius: 2px;
+  pointer-events: none;
+  z-index: 1000;
+  transition: all 0.1s ease;
+  box-shadow: 0 1px 3px rgba(0, 122, 204, 0.3);
+}
+
+.asb-drop-indicator::before {
+  content: '';
+  position: absolute;
+  left: -4px;
+  top: -2px;
+  width: 8px;
+  height: 8px;
+  background: #007acc;
+  border-radius: 50%;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.asb-drop-indicator::after {
+  content: '';
+  position: absolute;
+  right: -4px;
+  top: -2px;
+  width: 8px;
+  height: 8px;
+  background: #007acc;
+  border-radius: 50%;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+/* Enhanced drag over states */
+.asb-drop-zone.drag-over {
+  border-color: #007acc;
+  background: rgba(0, 122, 204, 0.05);
+  transform: scale(1.02);
+}
+
+.asb-node-drop-zone.drag-over {
+  background: rgba(0, 122, 204, 0.1);
+  border-color: #007acc;
+}
+
+/* Enhanced dragging states */
+.asb-field-item.dragging {
+  opacity: 0.6;
+  transform: rotate(5deg);
+  z-index: 1000;
+}
+
+.asb-node.dragging {
+  opacity: 0.7;
+  transform: rotate(2deg);
+  z-index: 1000;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Section Headers */
+.asb-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 12px;
+  margin-bottom: 8px;
+  padding: 12px 16px;
+  background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+  border-radius: 8px;
+  border-left: 4px solid #007acc;
+}
+
+.asb-section-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #2c3e50;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.asb-section-badge {
+  background: #007acc;
+  color: white;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  min-width: 20px;
+  text-align: center;
+}
+
+.asb-section-description {
+  margin: 0 0 16px 0;
+  padding: 0 16px;
+  font-size: 13px;
+  color: #6c757d;
+  font-style: italic;
+  text-align: left;
+}
+
+.asb-relationship-section {
+  margin-bottom: 24px;
+}
+
+/* Relationship Pills */
+.asb-relationship-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  margin: 4px 0;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: linear-gradient(135deg, #e3f2fd, #f3e5f5);
+  border: 1px solid #b39ddb;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.asb-relationship-pill:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(121, 85, 179, 0.2);
+  background: linear-gradient(135deg, #d1c4e9, #e1bee7);
+}
+
+.asb-lookup-pill {
+  background: linear-gradient(135deg, #e8f5e8, #f1f8e9);
+  border-color: #81c784;
+}
+
+.asb-lookup-pill:hover {
+  background: linear-gradient(135deg, #c8e6c9, #dcedc8);
+  box-shadow: 0 2px 8px rgba(76, 175, 80, 0.2);
+}
+
+.asb-collection-pill {
+  background: linear-gradient(135deg, #e3f2fd, #f3e5f5);
+  border-color: #b39ddb;
+}
+
+.asb-collection-pill:hover {
+  background: linear-gradient(135deg, #d1c4e9, #e1bee7);
+  box-shadow: 0 2px 8px rgba(121, 85, 179, 0.2);
+}
+
+.asb-relationship-text {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  min-width: 0; /* Allows text to shrink */
+}
+
+.asb-relationship-name {
+  font-weight: 500;
+  color: #2c3e50;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex-shrink: 1;
+}
+
+.asb-relationship-type {
+  background: rgba(255, 255, 255, 0.8);
+  padding: 2px 6px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 500;
+  color: #666;
+  flex-shrink: 0; /* Keeps type tag visible */
+  white-space: nowrap;
+}
+
+.asb-expand-icon {
+  flex-shrink: 0;
+  font-size: 12px;
+  color: #666;
+  transition: transform 0.2s ease;
+}
+
+.asb-drag-handle {
+  flex-shrink: 0;
+  color: #999;
+  cursor: grab;
+  font-size: 12px;
+}
+
+.asb-drag-handle:active {
+  cursor: grabbing;
+}
+
+/* Collection Label Styling */
+.asb-collection-label {
+  font-size: 12px;
+  color: #7b68ee;
+  font-weight: 600;
+  margin-right: 8px;
+  flex-shrink: 0;
+}
+
+/* Field Name Pill Styling */
+.asb-field-pill {
+  font-size: 11px;
+  background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+  color: #1565c0;
+  font-weight: 500;
+  padding: 3px 8px;
+  border-radius: 12px;
+  margin-right: 8px;
+  flex-shrink: 0;
+  border: 1px solid #90caf9;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 150px;
+}
+
+/* Collection Labels */
+.asb-collection-label {
+  background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+  color: #1565c0;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  margin-right: 8px;
+  border: 1px solid #90caf9;
+}
+
+/* Draggable Relationship Headers */
+.asb-draggable-relationship {
+  cursor: move;
+  padding: 8px 12px;
+  margin: 4px 0;
+  background: linear-gradient(135deg, #f3e5f5, #e1bee7);
+  border: 1px solid #ce93d8;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.asb-draggable-relationship:hover {
+  background: linear-gradient(135deg, #e8eaf6, #c5cae9);
+  border-color: #9c27b0;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(156, 39, 176, 0.2);
+}
+
+.asb-draggable-relationship .asb-drag-handle {
+  color: #9c27b0;
+  margin-right: 8px;
+  font-weight: bold;
+}
+
+/* Improved Drop Zone Sizing */
+.asb-node-drop-zone {
+  min-height: 40px;
+  border: 2px dashed #ddd;
+  border-radius: 6px;
+  margin: 8px 0;
+  padding: 12px;
+  background: rgba(248, 249, 250, 0.5);
+  transition: all 0.2s ease;
+}
+
+.asb-node-drop-zone.has-children {
+  min-height: 60px;
+  border-style: solid;
+  border-color: #e9ecef;
+  background: rgba(255, 255, 255, 0.8);
+  padding: 8px;
+}
+
+.asb-node-drop-zone .asb-drop-hint {
+  margin: 0;
+  color: #6c757d;
+  font-style: italic;
+  text-align: center;
+  padding: 8px;
+}
+
+.asb-node-children {
+  min-height: 20px;
+}
