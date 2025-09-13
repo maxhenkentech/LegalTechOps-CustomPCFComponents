@@ -164,7 +164,6 @@ if [ ${#PCF_COMPONENTS[@]} -eq 0 ]; then
 fi
 
 # Build each PCF component
-RELEASE_VERSION=""
 for component in "${PCF_COMPONENTS[@]}"; do
     print_status "🔨 Building component: $component"
     component_dir="src/$component"
@@ -216,8 +215,8 @@ root_manifests=("ControlManifest.Input.xml" "src/ControlManifest.Input.xml")
 for manifest in "${root_manifests[@]}"; do
     if [ -f "$manifest" ]; then
         print_status "Updating root manifest: $manifest"
-        new_version=$(increment_version "$manifest" "$VERSION_PART" 2>/dev/null)
-        if [ $? -eq 0 ] && [ -z "$RELEASE_VERSION" ] && [ -n "$new_version" ]; then
+        new_version=$(increment_version "$manifest" "$VERSION_PART")
+        if [ $? -eq 0 ] && [ -z "$RELEASE_VERSION" ]; then
             RELEASE_VERSION="$new_version"
         fi
     fi
