@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Risk Matrix Preview</title>
+    <link rel="stylesheet" href="src/styles.css">
+    <style>
+        body { font-family: Segoe UI, Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .controls { 
+            background: white; 
+            margin-bottom: 20px; 
+            padding: 20px; 
+            border-radius: 8px; 
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .control-group { 
+            display: inline-block; 
+            margin: 10px 15px 10px 0; 
+            vertical-align: top;
+        }
+        .control-group label { 
+            display: block; 
+            font-weight: 600; 
+            margin-bottom: 5px; 
+            color: #323130;
+        }
+        .control-group input { 
+            padding: 8px; 
+            border: 1px solid #d1d1d1; 
+            border-radius: 4px; 
+            width: 100px;
+            font-size: 14px;
+        }
+        .control-group input[type="color"] { width: 60px; height: 40px; }
+        #matrix-container { 
+            background: white; 
+            padding: 20px; 
+            border-radius: 8px; 
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            width: 100%; 
+            height: 500px; 
+            box-sizing: border-box;
+        }
+        .status { 
+            padding: 10px; 
+            margin: 10px 0; 
+            border-radius: 4px; 
+            font-size: 14px;
+        }
+        .error { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; }
+        .success { background: #f0fdf4; color: #16a34a; border: 1px solid #bbf7d0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Risk Matrix Component Preview</h1>
+        
+        <div class="controls">
+            <h3>Test Inputs</h3>
+            <div class="control-group">
+                <label>Impact (1-4):</label>
+                <input type="number" id="impact" min="1" max="4" value="2">
+            </div>
+            <div class="control-group">
+                <label>Probability (1-4):</label>
+                <input type="number" id="probability" min="1" max="4" value="3">
+            </div>
+            <div class="control-group">
+                <label>Low Color:</label>
+                <input type="color" id="lowColor" value="#1ee894">
+            </div>
+            <div class="control-group">
+                <label>Medium Color:</label>
+                <input type="color" id="mediumColor" value="#ffea00">
+            </div>
+            <div class="control-group">
+                <label>High Color:</label>
+                <input type="color" id="highColor" value="#ffa000">
+            </div>
+            <div class="control-group">
+                <label>Critical Color:</label>
+                <input type="color" id="criticalColor" value="#ef5350">
+            </div>
+        </div>
+
+        <div id="status"></div>
+        <div id="matrix-container"></div>
+    </div>
+
+    <script src="out/controls/index.js"></script>
+    <script>
+        let controlInstance;
+        let mockContext = {
+            parameters: {
+                impact: { raw: 2 },
+                probability: { raw: 3 },
+                lowColor: { raw: "#1ee894" },
+                mediumColor: { raw: "#ffea00" },
+                highColor: { raw: "#ffa000" },
+                criticalColor: { raw: "#ef5350" }
+            }
+        };
+
+        function showStatus(message, isError = false) {
+            const status = document.getElementById('status');
+            status.className = 'status ' + (isError ? 'error' : 'success');
+            status.textContent = message;
+        }
+
+        function updateMatrix() {
+            const impact = parseInt(document.getElementById('impact').value) || 1;
+            const probability = parseInt(document.getElementById('probability').value) || 1;
+            
+            mockContext.parameters.impact.raw = Math.min(4, Math.max(1, impact));
+            mockContext.parameters.probability.raw = Math.min(4, Math.max(1, probability));
+            mockContext.parameters.lowColor.raw = document.getElementById('lowColor').value;
+            mockContext.parameters.mediumColor.raw = document.getElementById('mediumColor').value;
+            mockContext.parameters.highColor.raw = document.getElementById('highColor').value;
+            mockContext.parameters.criticalColor.raw = document.getElementById('criticalColor').value;
+
+            if (controlInstance) {
+                try {
+                    controlInstance.updateView(mockContext);
+                    showStatus(`Updated: Impact=${mockContext.parameters.impact.raw}, Probability=${mockContext.parameters.probability.raw}`);
+                } catch (e) {
+                    showStatus('Update error: ' + e.message, true);
+                }
+            }
+        }
+
+        // Add event listeners
+        ['impact', 'probability', 'lowColor', 'mediumColor', 'highColor', 'criticalColor'].forEach(id => {
+            document.getElementById(id).addEventListener('input', updateMatrix);
+        });
+
+        // Initialize when page loads
+        window.onload = function() {
+            try {
+                const container = document.getElementById('matrix-container');
+                
+                if (typeof Amadeus === 'undefined' || !Amadeus.LegalOps || !Amadeus.LegalOps.RiskMatrix) {
+                    throw new Error('RiskMatrix class not found. Make sure to build first with "npm run build"');
+                }
+                
+                controlInstance = new Amadeus.LegalOps.RiskMatrix();
+                controlInstance.init(mockContext, () => {}, {}, container);
+                showStatus('Risk Matrix loaded successfully!');
+                
+            } catch (e) {
+                showStatus('Initialization error: ' + e.message, true);
+                document.getElementById('matrix-container').innerHTML = 
+                    '<div style="padding: 20px; text-align: center; color: #666;">' +
+                    '<h3>Component Not Ready</h3>' +
+                    '<p>Run <code>npm install && npm run build</code> first, then refresh this page.</p>' +
+                    '<p style="font-size: 12px; margin-top: 20px;">Error: ' + e.message + '</p>' +
+                    '</div>';
+            }
+        };
+    </script>
+</body>
+</html>

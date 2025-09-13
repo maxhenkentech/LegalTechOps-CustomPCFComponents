@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest>
+  <control
+    namespace="Amadeus.LegalOps"
+    constructor="RiskMatrix"
+    version="1.0.0"
+    display-name-key="Control_DisplayName"
+    description-key="Control_Description"
+    control-type="standard">
+
+    <resources>
+      <code path="index.ts" order="1" />
+      <css path="styles.css" />
+      <resx path="strings/strings.resx" version="1.0.0" />
+    </resources>
+
+    <!-- Numeric inputs -->
+    <property
+      name="impact"
+      display-name-key="Property_Impact_DisplayName"
+      description-key="Property_Impact_Description"
+      of-type="Whole.None"
+      usage="bound"
+      required="false" />
+    <property
+      name="probability"
+      display-name-key="Property_Probability_DisplayName"
+      description-key="Property_Probability_Description"
+      of-type="Whole.None"
+      usage="bound"
+      required="false" />
+
+    <!-- Optional color inputs (hex) -->
+    <property
+      name="lowColor"
+      display-name-key="Property_LowColor_DisplayName"
+      description-key="Property_LowColor_Description"
+      of-type="SingleLine.Text"
+      usage="input"
+      required="false" />
+    <property
+      name="mediumColor"
+      display-name-key="Property_MediumColor_DisplayName"
+      description-key="Property_MediumColor_Description"
+      of-type="SingleLine.Text"
+      usage="input"
+      required="false" />
+    <property
+      name="highColor"
+      display-name-key="Property_HighColor_DisplayName"
+      description-key="Property_HighColor_Description"
+      of-type="SingleLine.Text"
+      usage="input"
+      required="false" />
+    <property
+      name="criticalColor"
+      display-name-key="Property_CriticalColor_DisplayName"
+      description-key="Property_CriticalColor_Description"
+      of-type="SingleLine.Text"
+      usage="input"
+      required="false" />
+  </control>
+</manifest>

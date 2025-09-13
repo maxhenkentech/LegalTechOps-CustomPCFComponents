@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest>
+  <control namespace="LegalOps" constructor="RiskMatrixComponent" version="1.0.0" display-name-key="RiskMatrix_Display_Key" description-key="RiskMatrix_Desc_Key" control-type="standard">
+    <property name="sampleText" display-name-key="SampleText_Display_Key" description-key="SampleText_Desc_Key" of-type="SingleLine.Text" usage="bound" required="false" />
+    <resources>
+      <code path="index.ts" order="1"/>
+      <css path="css/RiskMatrixComponent.css" order="1"/>
+    </resources>
+  </control>
+</manifest>

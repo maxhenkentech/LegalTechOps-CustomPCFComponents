@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0</value>
+  </resheader>
+
+  <data name="Control_DisplayName" xml:space="preserve">
+    <value>Risk Matrix</value>
+  </data>
+  <data name="Control_Description" xml:space="preserve">
+    <value>Custom PCF control for Risk Matrix visualizations.</value>
+  </data>
+
+  <data name="Property_BoundValue_DisplayName" xml:space="preserve">
+    <value>Bound Value</value>
+  </data>
+  <data name="Property_BoundValue_Description" xml:space="preserve">
+    <value>Optional bound text value used by the control.</value>
+  </data>
+
+  <data name="Property_Impact_DisplayName" xml:space="preserve">
+    <value>Impact (1–4)</value>
+  </data>
+  <data name="Property_Impact_Description" xml:space="preserve">
+    <value>Impact level where 1=Low and 4=Critical.</value>
+  </data>
+
+  <data name="Property_Probability_DisplayName" xml:space="preserve">
+    <value>Probability (1–4)</value>
+  </data>
+  <data name="Property_Probability_Description" xml:space="preserve">
+    <value>Probability level where 1=Low and 4=Critical.</value>
+  </data>
+
+  <data name="Property_LowColor_DisplayName" xml:space="preserve">
+    <value>Low color (hex)</value>
+  </data>
+  <data name="Property_LowColor_Description" xml:space="preserve">
+    <value>Hex color for Low cells, e.g. #1ee894.</value>
+  </data>
+
+  <data name="Property_MediumColor_DisplayName" xml:space="preserve">
+    <value>Medium color (hex)</value>
+  </data>
+  <data name="Property_MediumColor_Description" xml:space="preserve">
+    <value>Hex color for Medium cells, e.g. #ffea00.</value>
+  </data>
+
+  <data name="Property_HighColor_DisplayName" xml:space="preserve">
+    <value>High color (hex)</value>
+  </data>
+  <data name="Property_HighColor_Description" xml:space="preserve">
+    <value>Hex color for High cells, e.g. #ffa000.</value>
+  </data>
+
+  <data name="Property_CriticalColor_DisplayName" xml:space="preserve">
+    <value>Critical color (hex)</value>
+  </data>
+  <data name="Property_CriticalColor_Description" xml:space="preserve">
+    <value>Hex color for Critical cells, e.g. #ef5350.</value>
+  </data>
+</root>

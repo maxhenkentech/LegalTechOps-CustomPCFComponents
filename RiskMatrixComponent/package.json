@@ -1,0 +1,21 @@
+{
+  "name": "risk-matrix-component",
+  "version": "1.0.0",
+  "description": "Risk Matrix PCF Component for Legal Operations",
+  "main": "index.ts",
+  "scripts": {
+    "build": "pcf-scripts build",
+    "clean": "pcf-scripts clean",
+    "rebuild": "pcf-scripts rebuild",
+    "start": "pcf-scripts start"
+  },
+  "keywords": ["pcf", "powerplatform", "component"],
+  "author": "Legal Operations",
+  "license": "MIT",
+  "dependencies": {},
+  "devDependencies": {
+    "@types/powerapps-component-framework": "^1.3.4",
+    "pcf-scripts": "^1",
+    "pcf-start": "^1"
+  }
+}

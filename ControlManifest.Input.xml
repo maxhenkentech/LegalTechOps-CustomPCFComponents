@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest>
+  <control namespace="LegalOperations" constructor="RiskMatrix" version="1.0.0" display-name-key="RiskMatrix" description-key="Risk Matrix Component" control-type="standard">
+    <property name="riskValue" display-name-key="Risk Value" description-key="The risk value" of-type="TwoOptions" usage="bound" required="false" />
+    <resources>
+      <code path="index.ts" order="1"/>
+      <css path="css/RiskMatrix.css" order="1" />
+    </resources>
+  </control>
+</manifest>

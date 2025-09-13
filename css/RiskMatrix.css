@@ -1,0 +1,33 @@
+.risk-matrix-container {
+    padding: 10px;
+    font-family: Arial, sans-serif;
+}
+
+.risk-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.risk-cell {
+    padding: 20px;
+    text-align: center;
+    border-radius: 4px;
+    font-weight: bold;
+}
+
+.risk-cell.low {
+    background-color: #4CAF50;
+    color: white;
+}
+
+.risk-cell.medium {
+    background-color: #FF9800;
+    color: white;
+}
+
+.risk-cell.high {
+    background-color: #F44336;
+    color: white;
+}

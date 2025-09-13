@@ -1,0 +1,44 @@
+.risk-matrix-container {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+.risk-matrix-header {
+    border-bottom: 1px solid #e0e0e0;
+    padding-bottom: 8px;
+    margin-bottom: 10px;
+}
+
+.risk-matrix-header h3 {
+    margin: 0;
+    color: #333;
+    font-size: 16px;
+}
+
+.risk-matrix-content {
+    color: #666;
+}
+
+.risk-matrix-content p {
+    margin: 5px 0;
+}
+
+.hello-world {
+    font-family: "Segoe UI", Arial, sans-serif;
+    font-size: 24px;
+    font-weight: bold;
+    color: #0078d4;
+    text-align: center;
+    padding: 20px;
+    border: 2px solid #0078d4;
+    border-radius: 8px;
+    background-color: #f3f9ff;
+}
+
+/* paste file if it exists */
+    border-radius: 8px;
+    background-color: #f3f9ff;
+}
+
+/* paste file if it exists */
