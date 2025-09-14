@@ -91,19 +91,19 @@ export const dropdownStyles = (props: IDropdownStyleProps, selectedColor?: strin
   // Use completely different values for tall vs short to force re-render
   const heightValues = isShort 
     ? { 
-        padding: "2px 8px", // Increased padding to prevent text cutoff
-        paddingRight: "28px",
-        minHeight: "18px", // Slightly taller
-        maxHeight: "26px", // Slightly taller
-        height: "26px", // Slightly taller
+        padding: "4px 8px", // Increased padding to prevent text cutoff
+        paddingRight: "32px", // More space for caret
+        minHeight: "24px", // Slightly taller
+        maxHeight: "32px", // Slightly taller
+        height: "32px", // Slightly taller
         lineHeight: "1.3" // Better line height for readability
       }
     : {
-        padding: "4px 8px", 
-        paddingRight: "28px",
-        minHeight: "28px",
-        maxHeight: "36px", 
-        height: "auto",
+        padding: "8px 8px", // Better padding for tall version
+        paddingRight: "32px", // More space for caret
+        minHeight: "32px", // Increased from 28px
+        maxHeight: "40px", // Increased from 36px
+        height: "40px", // Set explicit height
         lineHeight: "1.4"
       };
 
@@ -190,8 +190,12 @@ export const dropdownStyles = (props: IDropdownStyleProps, selectedColor?: strin
         width: "100%",
         maxWidth: "100%",
         boxSizing: "border-box",
-        overflow: "hidden", // Prevent scrollbars on root
-        fontFamily: "'Segoe UI', 'Segoe UI Web (West European)', 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Roboto', 'Helvetica Neue', sans-serif"
+        overflow: "visible", // Changed from hidden to visible
+        fontFamily: "'Segoe UI', 'Segoe UI Web (West European)', 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Roboto', 'Helvetica Neue', sans-serif",
+        minHeight: isShort ? "36px" : "44px", // Increased minimum height to match container
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "flex-start"  // Ensure left alignment
       },
       dropdown: [{
         borderRadius: "6px",
@@ -208,12 +212,14 @@ export const dropdownStyles = (props: IDropdownStyleProps, selectedColor?: strin
       dropdownItem: [{
         display: "flex",
         alignItems: "center",
+        justifyContent: "flex-start",  // Ensure left alignment
         padding: "6px 12px",
         minHeight: "30px",
         fontSize: "14px",
         color: "#323130",
         backgroundColor: "transparent",
         cursor: "pointer",
+        textAlign: "left",  // Explicit text alignment
         selectors: {
           ":hover": {
             backgroundColor: "#f3f2f1",
@@ -229,12 +235,14 @@ export const dropdownStyles = (props: IDropdownStyleProps, selectedColor?: strin
       dropdownItemSelected: [{
         display: "flex",
         alignItems: "center",
+        justifyContent: "flex-start",  // Ensure left alignment
         padding: "6px 12px",
         minHeight: "30px",
         fontSize: "14px",
         backgroundColor: "#deecf9",
         color: "#323130",
         fontWeight: "600",
+        textAlign: "left",  // Explicit text alignment
         selectors: {
           ":hover": {
             backgroundColor: "#c7e0f4",

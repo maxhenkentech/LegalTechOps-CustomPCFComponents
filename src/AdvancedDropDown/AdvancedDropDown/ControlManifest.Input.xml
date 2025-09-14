@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <manifest>
-  <control namespace="lops" constructor="AdvancedDropDown" version="3.0.0" display-name-key="lops.AdvancedDropDown" description-key="AdvancedDropDown description" control-type="virtual">
+  <control namespace="lops" constructor="AdvancedDropDown" version="3.0.8" display-name-key="lops.AdvancedDropDown" description-key="AdvancedDropDown description" control-type="virtual">
     <property name="optionsInput" display-name-key="OptionSet" description-key="OptionSet" of-type="OptionSet" usage="bound" required="true" />  
-    <property name="componentHeight" display-name-key="Component Height" description-key="Set the height of the dropdown component" of-type="Enum" usage="input" required="false" default-value="Tall">
+    <property name="componentHeight" display-name-key="Component Height" description-key="Set the height of the dropdown component" of-type="Enum" usage="input" required="false" default-value="Short">
       <value name="Tall" display-name-key="Tall" description-key="Standard height dropdown">Tall</value>
       <value name="Short" display-name-key="Short" description-key="Compact height dropdown (75% of standard)">Short</value>
     </property>
@@ -12,7 +12,7 @@
       <value name="Text" display-name-key="Text" description-key="Sort by the text of the options, corresponding to the user language">Text</value>
     </property>
     <property name="hideHiddenOptions" display-name-key="Hide hidden choice options" description-key="Hide options marked as hidden in the option set" of-type="TwoOptions" usage="input" required="false" default-value="true" />
-    <property name="showColorIcon" display-name-key="Show option color icon" description-key="Display color icon on the left of each option" of-type="TwoOptions" usage="input" required="false" default-value="false" />
+    <property name="showColorIcon" display-name-key="Show option color icon" description-key="Display color icon on the left of each option" of-type="TwoOptions" usage="input" required="false" default-value="true" />
     <property name="iconColorOverride" display-name-key="Color Override" description-key="Override colors with custom hex color (e.g. #FF0000 or FF0000)" of-type="SingleLine.Text" usage="input" required="false" />
     <property name="showColorBorder" display-name-key="Show option color border" description-key="Display colored border around the dropdown control" of-type="TwoOptions" usage="input" required="false" default-value="false" />
     <property name="showColorBackground" display-name-key="Show option color background" description-key="Display selected option color as background" of-type="Enum" usage="input" required="false" default-value="No">

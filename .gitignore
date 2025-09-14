@@ -55,3 +55,7 @@ usersettings.json
 release.sh
 init-component.sh
 ReleaseNotes.md
+deployment-logs
+deploymentEnvironments.json
+deployScript.sh
+PCF Gallery Descriptions

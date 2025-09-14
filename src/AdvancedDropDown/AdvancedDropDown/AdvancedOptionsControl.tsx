@@ -281,6 +281,7 @@ export const AdvancedOptionsControl = ({rawOptions, selectedKey, onChange, isDis
       <div className={`${className} option-content`} style={{
         display: 'flex',
         alignItems: 'center',
+        justifyContent: 'flex-start',  // Ensure left alignment
         width: '100%',
         overflow: 'hidden'
       }}>
@@ -376,16 +377,51 @@ export const AdvancedOptionsControl = ({rawOptions, selectedKey, onChange, isDis
           overflow: 'hidden',
           textOverflow: 'ellipsis',
           whiteSpace: 'nowrap',
-          flex: 1
+          flex: 1,
+          textAlign: 'left'  // Explicitly set text alignment to left
         }}>{option?.text || ""}</span>
       </div>
     );
 
-    // Only wrap with tooltip if there's a description
-    if (description && description.trim() !== "") {
+    // Wrap with tooltip - use description if available, otherwise use option text as tooltip
+    const tooltipContent = (description && description.trim() !== "") ? description : option?.text || "";
+    
+    if (tooltipContent && tooltipContent.trim() !== "") {
       return (
-        <TooltipHost content={description}>
-          {content}
+        <TooltipHost 
+          content={tooltipContent}
+          delay={1} // TooltipDelay.medium
+          directionalHint={3} // topCenter
+          styles={{
+            root: { 
+              width: '100%',
+              display: 'block' // Changed to block to prevent flex interference
+            }
+          }}
+          tooltipProps={{
+            styles: {
+              root: {
+                maxWidth: '250px',
+                padding: '8px 12px',
+                backgroundColor: '#323130',
+                color: '#ffffff',
+                fontSize: '12px',
+                borderRadius: '4px',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+                border: 'none',
+                wordWrap: 'break-word'
+              }
+            }
+          }}
+        >
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'flex-start',
+            width: '100%'
+          }}>
+            {content}
+          </div>
         </TooltipHost>
       );
     }
@@ -408,7 +444,11 @@ const _onRenderTitle = (options: IDropdownOption[] | undefined): React.ReactElem
           width: '100%', 
           maxWidth: '100%', 
           boxSizing: 'border-box',
-          overflow: 'hidden' 
+          overflow: 'visible',
+          minHeight: config.componentHeight === "Short" ? '36px' : '44px', // Increased minimum height
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'flex-start'  // Ensure left alignment for main container
         }}>
           <Dropdown        
               placeHolder="---"
