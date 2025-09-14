@@ -32,11 +32,11 @@ This solution currently contains the following custom components:
 
 An enhanced dropdown control that extends the standard Power Platform choice field with advanced visual customization options, including color coding, custom icons, and flexible sizing.
 
-<!-- Screenshots placeholder for Advanced Dropdown -->
+<img src="Screenshots/Advanced%20Dropdown/AdvancedDropDown.png" alt="All Options" height="220px">
 *Screenshots of the Advanced Dropdown component with various customization options will be added here*
 
 #### Features
-- **Custom Icon Support**: Choose from the complete [Fluent UI Icon Library](https://learn.microsoft.com/en-us/windows/apps/design/style/segoe-fluent-icons-font) for option indicators
+- **Custom Icon Support**: Choose from the vast majority of icons in the [Microsoft Segoe UI Symbol Font](https://learn.microsoft.com/en-us/windows/apps/design/style/segoe-ui-symbol-font) for option indicators
   - **📖 [Browse All 1,800+ Available Icons](FLUENT_ICONS.md)** - Complete reference with previews
 - **Color Customization**: 
   - **Color Icons**: Display colored circular indicators for each option
@@ -56,7 +56,7 @@ An enhanced dropdown control that extends the standard Power Platform choice fie
 |----------|------|---------|-------------|---------|
 | `optionsInput` | OptionSet | - | **Required.** The choice field to display as an advanced dropdown | - |
 | `componentHeight` | Choice | Tall/Short | Component height: Tall (standard) or Short (compact 75% height) | Tall |
-| `icon` | Text | [Fluent UI Icon Name](https://learn.microsoft.com/en-us/windows/apps/design/style/segoe-fluent-icons-font) | Icon to display for each option (e.g., "FullCircleMask", "Circle", "StatusCircleOuter") | FullCircleMask |
+| `icon` | Text | [Segoe UI Symbol Font](https://learn.microsoft.com/en-us/windows/apps/design/style/segoe-ui-symbol-font) | Icon to display for each option (e.g., "FullCircleMask", "Circle", "StatusCircleOuter") | FullCircleMask |
 | `sortBy` | Choice | Value/Text | Sort options by numeric Value or alphabetical Text | Value |
 | `hideHiddenOptions` | Yes/No | - | Hide options marked as hidden in the choice field definition | Yes |
 | `showColorIcon` | Yes/No | - | Display colored circular icon on the left of each option | No |
@@ -66,7 +66,7 @@ An enhanced dropdown control that extends the standard Power Platform choice fie
 | `makeFontBold` | Yes/No | - | Display dropdown text in bold font weight for better readability | No |
 
 #### Icon Reference
-The component uses the [Microsoft Fluent UI Icon Library](https://learn.microsoft.com/en-us/windows/apps/design/style/segoe-fluent-icons-font). 
+The component supports the vast majority of icons from the [Microsoft Segoe UI Symbol Font](https://learn.microsoft.com/en-us/windows/apps/design/style/segoe-ui-symbol-font). 
 
 **📖 [Complete Icon Reference with Previews](FLUENT_ICONS.md)** - Browse all 1,800+ available icons
 
@@ -252,7 +252,7 @@ Choose the appropriate solution package for your needs:
 3. Bind the `optionsInput` property to your choice field
 4. Configure visual options:
    - Set `showColorIcon` to Yes to display colored icons
-   - Choose an icon from the [Fluent UI Icon Library](https://learn.microsoft.com/en-us/windows/apps/design/style/segoe-fluent-icons-font)
+   - Choose an icon from the [Microsoft Segoe UI Symbol Font](https://learn.microsoft.com/en-us/windows/apps/design/style/segoe-ui-symbol-font)
    - Enable color borders or backgrounds as needed
    - Adjust component height (Tall/Short) based on your form layout
 
@@ -341,10 +341,22 @@ If you encounter any issues or have suggestions for improvements, please open an
 
 ## Release Notes
 
-### Version 8.1.0 (Current)
+### Version 7.1.0 (Current)
+#### 🔽 Advanced Dropdown Component
+- **ENHANCED:** Optimized bundle size from 51.4KB to 43.8KB by removing unnecessary dependencies
+- **ENHANCED:** Simplified icon validation system for better performance and reliability
+- **ENHANCED:** Full MDL2 icon support with comprehensive 1,800+ icon reference documentation
+- **NEW:** [Complete Icon Reference with Previews](FLUENT_ICONS.md) - Browse all available icons
+- **ENHANCED:** Updated documentation with accurate Microsoft Segoe UI Symbol Font references
+- **FIXED:** Icon availability and validation system improvements
+
+#### 🎯 Risk Matrix Component
+- **MAINTAINED:** All existing functionality from version 1.8.0.0
+
+### Version 8.1.0 (Previous - Documentation Version)
 #### 🔽 Advanced Dropdown Component (NEW)
 - **NEW:** Enhanced dropdown control with advanced visual customization options
-- **NEW:** Complete [Fluent UI Icon Library](https://learn.microsoft.com/en-us/windows/apps/design/style/segoe-fluent-icons-font) support for custom icons
+- **NEW:** Support for the vast majority of icons from the [Microsoft Segoe UI Symbol Font](https://learn.microsoft.com/en-us/windows/apps/design/style/segoe-ui-symbol-font)
 - **NEW:** Color customization system with three modes:
   - Color Icons: Circular colored indicators for each option
   - Color Borders: Colored borders around the dropdown

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <manifest>
-  <control namespace="lops" constructor="AdvancedDropDown" version="8.12.0" display-name-key="lops.AdvancedDropDown" description-key="AdvancedDropDown description" control-type="virtual">
+  <control namespace="lops" constructor="AdvancedDropDown" version="7.1.0" display-name-key="lops.AdvancedDropDown" description-key="AdvancedDropDown description" control-type="virtual">
     <property name="optionsInput" display-name-key="OptionSet" description-key="OptionSet" of-type="OptionSet" usage="bound" required="true" />  
     <property name="componentHeight" display-name-key="Component Height" description-key="Set the height of the dropdown component" of-type="Enum" usage="input" required="false" default-value="Tall">
       <value name="Tall" display-name-key="Tall" description-key="Standard height dropdown">Tall</value>

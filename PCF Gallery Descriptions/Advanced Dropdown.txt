@@ -1,0 +1,3 @@
+A control that transforms standard Power Apps choice fields into visually rich dropdowns with advanced customization options.
+The Advanced Dropdown Component supports the vast majority of Microsoft's Segoe UI Symbol Font icons, color coding with three intensity levels, flexible sizing, and smart sorting capabilities.
+It features custom icon support with 1,800+ available icons, color customization for icons/borders/backgrounds, component height options, and graceful fallbacks - making it perfect for status indicators, priority selectors, category selection, or any scenario requiring visually enhanced choice fields.

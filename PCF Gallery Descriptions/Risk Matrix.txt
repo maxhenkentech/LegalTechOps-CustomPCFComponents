@@ -1,0 +1,3 @@
+A control that brings interactive risk assessment directly into your Power Apps.
+The Risk Matrix Component lets you plot and visualize risks on configurable 2x2, 3x3, or 4x4 grids with customizable axis labels, colors, and size options.
+It features dynamic risk labeling (LOW, MEDIUM, HIGH, CRITICAL), responsive design, and modern Fluent UI styling - making it perfect for legal, compliance, and project risk evaluations, or for any other scenario where you need a matrix.
