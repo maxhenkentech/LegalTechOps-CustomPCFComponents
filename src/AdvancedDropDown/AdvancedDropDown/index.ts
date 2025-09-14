@@ -111,8 +111,15 @@ export class AdvancedDropDown implements ComponentFramework.ReactControl<IInputs
 	}
 
 
-	private parseIconConfig(defaultIcon : string,  iconConfig ?: string, sortBy ?: "Text"|"Value", hideHiddenOptions?: boolean, showColorIcon?: boolean, showColorBorder?: boolean, showColorBackground?: "No" | "Lighter" | "Full", makeFontBold?: boolean): IConfig{
+	private parseIconConfig(defaultIcon : string,  iconConfig ?: string, sortBy ?: "Text"|"Value", hideHiddenOptions?: boolean, showColorIcon?: boolean, showColorBorder?: boolean, showColorBackground?: "No" | "Lighter" | "Full", makeFontBold?: boolean, componentHeight?: "Tall" | "Short", iconColorOverride?: string): IConfig{
 		const isJSON = iconConfig && iconConfig.includes("{");
+		
+		// Normalize hex color (ensure it starts with #)
+		let normalizedIconColor: string | undefined;
+		if (iconColorOverride) {
+			normalizedIconColor = iconColorOverride.startsWith('#') ? iconColorOverride : `#${iconColorOverride}`;
+		}
+		
 		this.config = { 
 			jsonConfig : isJSON === true ? JSON.parse(iconConfig as string) as ISetupSchema : undefined,
 			defaultIconName : (!isJSON ? iconConfig : defaultIcon) ?? defaultIcon, 
@@ -121,7 +128,9 @@ export class AdvancedDropDown implements ComponentFramework.ReactControl<IInputs
 			showColorIcon: showColorIcon ?? false,
 			showColorBorder: showColorBorder ?? false,
 			showColorBackground: showColorBackground ?? "No",
-			makeFontBold: makeFontBold ?? false
+			makeFontBold: makeFontBold ?? false,
+			componentHeight: componentHeight ?? "Tall",
+			iconColorOverride: normalizedIconColor
 		}
 		return this.config;
 	}
@@ -162,6 +171,7 @@ export class AdvancedDropDown implements ComponentFramework.ReactControl<IInputs
 
 	private renderControl(context: ComponentFramework.Context<IInputs>) : React.ReactElement {
 		console.log("entered renderControl in index.ts", context.updatedProperties);
+		console.log("🔧 Raw componentHeight parameter:", context.parameters.componentHeight?.raw);
 	
 		this.isDisabled = context.mode.isControlDisabled;
 		this.currentValue = context.parameters.optionsInput.raw;	
@@ -169,9 +179,14 @@ export class AdvancedDropDown implements ComponentFramework.ReactControl<IInputs
 		// Get configuration options
 		const hideHiddenOptions = context.parameters.hideHiddenOptions?.raw ?? true;
 		const showColorIcon = context.parameters.showColorIcon?.raw ?? false;
+		const componentHeight = context.parameters.componentHeight?.raw ?? "Tall";
+		const iconColorOverride = context.parameters.iconColorOverride?.raw || undefined;
 		const showColorBorder = context.parameters.showColorBorder?.raw ?? false;
 		const showColorBackground = context.parameters.showColorBackground?.raw ?? "No";
 		const makeFontBold = context.parameters.makeFontBold?.raw ?? false;
+		
+		console.log("🎯 Final componentHeight value:", componentHeight);
+		console.log("🎨 Icon Color Override:", iconColorOverride);
 
 		// Determine which options to use - test mode or actual data
 		let sourceOptions: ComponentFramework.PropertyHelper.OptionMetadata[];
@@ -203,7 +218,7 @@ export class AdvancedDropDown implements ComponentFramework.ReactControl<IInputs
 			onChange: this.onChange, 
 			isDisabled : this.isDisabled, 
 			defaultValue : this.defaultValue, 
-			config: this.config ?? this.parseIconConfig(
+			config: this.parseIconConfig( // Always regenerate config for real-time updates
 				"CircleShapeSolid",  
 				context.parameters.icon?.raw ?? undefined, 
 				context.parameters.sortBy.raw,
@@ -211,7 +226,9 @@ export class AdvancedDropDown implements ComponentFramework.ReactControl<IInputs
 				showColorIcon,
 				showColorBorder,
 				showColorBackground,
-				makeFontBold
+				makeFontBold,
+				componentHeight,
+				iconColorOverride
 			),
 			selectedColor: selectedColor       
 		};           
@@ -231,7 +248,7 @@ export class AdvancedDropDown implements ComponentFramework.ReactControl<IInputs
 
 	/** 
 	 * It is called by the framework prior to a control receiving new data. 
-	 * @returns an object based on nomenclature defined in manifest, expecting object[s] for property marked as “bound” or “output”
+	 * @returns an object based on nomenclature defined in manifest, expecting object[s] for property marked as "bound" or "output"
 	 */
 	public getOutputs(): IOutputs
 	{

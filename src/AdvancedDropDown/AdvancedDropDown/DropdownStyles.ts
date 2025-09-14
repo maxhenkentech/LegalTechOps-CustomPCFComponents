@@ -50,35 +50,91 @@ const lightenColor = (color: string, amount = 0.7): string => {
   return `#${toHex(newR)}${toHex(newG)}${toHex(newB)}`;
 };
 
-export const dropdownStyles = (props: IDropdownStyleProps, selectedColor?: string, showColorBackground?: "No" | "Lighter" | "Full", showColorBorder?: boolean, makeFontBold?: boolean):Partial<IDropdownStyles> => ({    
+// Helper function to darken a hex color
+const darkenColor = (color: string, amount = 0.3): string => {
+  if (!color || !color.startsWith('#')) return color;
+  
+  // Convert hex to RGB
+  const hex = color.replace('#', '');
+  const r = parseInt(hex.substr(0, 2), 16);
+  const g = parseInt(hex.substr(2, 2), 16);
+  const b = parseInt(hex.substr(4, 2), 16);
+  
+  // Darken by reducing the RGB values
+  const newR = Math.round(r * (1 - amount));
+  const newG = Math.round(g * (1 - amount));
+  const newB = Math.round(b * (1 - amount));
+  
+  // Convert back to hex
+  const toHex = (n: number) => n.toString(16).padStart(2, '0');
+  return `#${toHex(newR)}${toHex(newG)}${toHex(newB)}`;
+};
+
+export const dropdownStyles = (props: IDropdownStyleProps, selectedColor?: string, showColorBackground?: "No" | "Lighter" | "Full", showColorBorder?: boolean, makeFontBold?: boolean, componentHeight?: "Tall" | "Short", iconColorOverride?: string):Partial<IDropdownStyles> => {
+  const isShort = componentHeight === "Short";
+  console.log("🎨 DropdownStyles - componentHeight:", componentHeight, "isShort:", isShort);
+  
+  // Use completely different values for tall vs short to force re-render
+  const heightValues = isShort 
+    ? { 
+        padding: "2px 8px", // Increased padding to prevent text cutoff
+        paddingRight: "28px",
+        minHeight: "18px", // Slightly taller
+        maxHeight: "26px", // Slightly taller
+        height: "26px", // Slightly taller
+        lineHeight: "1.3" // Better line height for readability
+      }
+    : {
+        padding: "4px 8px", 
+        paddingRight: "28px",
+        minHeight: "28px",
+        maxHeight: "36px", 
+        height: "auto",
+        lineHeight: "1.4"
+      };
+
+  console.log("🎨 Applied height values:", heightValues);
+
+  return ({    
       title: [{
         color: "#323130",
-        display: "block",
+        display: "flex",
+        alignItems: "center",
         fontWeight: makeFontBold ? "600" : "400",
-        fontSize: "14px",
+        fontSize: "14px", // Keep font size constant
+        lineHeight: heightValues.lineHeight,
         fontFamily: "'Segoe UI', 'Segoe UI Web (West European)', 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Roboto', 'Helvetica Neue', sans-serif",
         borderWidth: "1px",
         borderStyle: "solid",
-        borderColor: (showColorBackground !== "No" && selectedColor) ? "#605e5c" : 
-                    (showColorBorder && selectedColor ? selectedColor : 
-                    (props.isOpen ? "#0078d4" : "#d2d0ce")),
+        borderColor: iconColorOverride && (showColorBorder || showColorBackground !== "No") ? iconColorOverride :
+                    (showColorBorder && selectedColor) ? selectedColor : 
+                    (props.isOpen ? "#0078d4" : "#d2d0ce"),
         borderRadius: "6px",
-        backgroundColor: showColorBackground === "Full" && selectedColor ? selectedColor :
+        backgroundColor: iconColorOverride && showColorBackground === "Full" ? iconColorOverride :
+                        iconColorOverride && showColorBackground === "Lighter" ? lightenColor(iconColorOverride, 0.8) :
+                        showColorBackground === "Full" && selectedColor ? selectedColor :
                         showColorBackground === "Lighter" && selectedColor ? lightenColor(selectedColor, 0.8) :
                         "#f3f2f1",
-        padding: "2px 8px",
-        minHeight: "20px",
-        height: "auto",
+        padding: heightValues.padding,
+        paddingRight: heightValues.paddingRight,
+        minHeight: heightValues.minHeight,
+        maxHeight: heightValues.maxHeight,
+        height: heightValues.height,
         width: "100%",
         boxSizing: "border-box",
         transition: "all 0.15s ease-in-out",
         outline: "none",
+        overflow: "hidden",
+        textOverflow: "ellipsis",
+        whiteSpace: "nowrap",
         selectors: {
           ':hover': {
-            borderColor: (showColorBackground !== "No" && selectedColor) ? "#605e5c" : 
-                        (showColorBorder && selectedColor ? selectedColor :
-                        (props.disabled ? "#d2d0ce" : "#106ebe")),
-            backgroundColor: showColorBackground === "Full" && selectedColor ? selectedColor :
+            borderColor: iconColorOverride && (showColorBorder || showColorBackground !== "No") ? iconColorOverride :
+                        (showColorBorder && selectedColor) ? selectedColor :
+                        (props.disabled ? "#d2d0ce" : "#106ebe"),
+            backgroundColor: iconColorOverride && showColorBackground === "Full" ? iconColorOverride :
+                           iconColorOverride && showColorBackground === "Lighter" ? lightenColor(iconColorOverride, 0.8) :
+                           showColorBackground === "Full" && selectedColor ? selectedColor :
                            showColorBackground === "Lighter" && selectedColor ? lightenColor(selectedColor, 0.8) :
                            (props.disabled ? "#f3f2f1" : "#ffffff"),
             cursor: props.disabled ? "default" : "pointer"
@@ -163,4 +219,8 @@ export const dropdownStyles = (props: IDropdownStyleProps, selectedColor?: strin
         border: "1px solid #d2d0ce",
         borderRadius: "6px"
       }
-    });    
+    });
+  };
+
+// Export the darkenColor function for use in other components
+export { darkenColor };

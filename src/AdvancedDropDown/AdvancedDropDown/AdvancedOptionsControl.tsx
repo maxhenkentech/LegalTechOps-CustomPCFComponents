@@ -6,7 +6,7 @@ import {initializeIcons} from "@fluentui/react/lib/Icons"
 import { Icon} from "@fluentui/react/lib/Icon";
 import {ISelectableOption} from "@fluentui/react/lib/SelectableOption";
 import { TooltipHost } from "@fluentui/react/lib/Tooltip";
-import {dropdownStyles, myTheme} from "./DropdownStyles";
+import {dropdownStyles, myTheme, darkenColor} from "./DropdownStyles";
 
 export interface ISetupSchemaValue{
   icon ?: string;
@@ -23,6 +23,8 @@ export interface IConfig{
   showColorBorder: boolean;
   showColorBackground: "No" | "Lighter" | "Full";
   makeFontBold: boolean;
+  componentHeight: "Tall" | "Short";
+  iconColorOverride?: string;
 }
 
 /*
@@ -71,8 +73,10 @@ interface IAdvancedOptionsProperties {
 
 //export default class AdvancedOptionsControl extends React.Component<IAdvancedOptionsProperties, {}> {            
 //export const AdvancedOptionsControl = ({rawOptions, selectedKey, onChange, isDisabled, defaultValue, config}:IAdvancedOptionsProperties): JSX.Element =>{    
-export const AdvancedOptionsControl = React.memo(({rawOptions, selectedKey, onChange, isDisabled, defaultValue, config, selectedColor}:IAdvancedOptionsProperties): React.ReactElement =>{    
+export const AdvancedOptionsControl = ({rawOptions, selectedKey, onChange, isDisabled, defaultValue, config, selectedColor}:IAdvancedOptionsProperties): React.ReactElement =>{    
   console.log("%cEntered control", "color:red");
+  console.log("🎛️ Component Height Config:", config.componentHeight);
+  console.log("🔄 Config object:", config);
   
   // Detect if we're in test mode
   const isTestMode = React.useMemo(() => {
@@ -109,11 +113,30 @@ export const AdvancedOptionsControl = React.memo(({rawOptions, selectedKey, onCh
     const color = ((config.jsonConfig && option?.key) ? config.jsonConfig[option?.key]?.color : defaultColor)  ?? defaultColor;
     const description = option?.data?.description || "";
     
-    // If showColorBackground is not 'No', use text color for icon instead of option color
-    const iconColor = config.showColorBackground !== "No" ? "#323130" : color;
+    // Enhanced color logic based on requirements
+    let iconColor: string;
+    
+    if (config.iconColorOverride && config.showColorBackground === "Full") {
+      // When iconColorOverride is set and background is Full, darken the override color for contrast
+      iconColor = darkenColor(config.iconColorOverride, 0.4);
+    } else if (config.iconColorOverride) {
+      // If iconColorOverride is set, use it directly (for No background or Lighter background)
+      iconColor = config.iconColorOverride;
+    } else if (config.showColorBackground === "Full") {
+      // When background is Full, use a darker version of the color for better contrast
+      iconColor = darkenColor(color, 0.4);
+    } else {
+      // For all other cases (No background, Lighter background), use the option color
+      iconColor = color;
+    }
     
     const content = (
-      <div className={`${className} option-content`}>
+      <div className={`${className} option-content`} style={{
+        display: 'flex',
+        alignItems: 'center',
+        width: '100%',
+        overflow: 'hidden'
+      }}>
           {config.showColorIcon && (
             isTestMode ? 
               // Fallback: CSS-based color indicator for test mode
@@ -121,11 +144,28 @@ export const AdvancedOptionsControl = React.memo(({rawOptions, selectedKey, onCh
                 className="color-indicator"
                 data-color={iconColor}
                 ref={(el) => el && (el.style.backgroundColor = iconColor)}
+                style={{
+                  width: '12px',
+                  height: '12px',
+                  borderRadius: '50%',
+                  marginRight: '8px',
+                  flexShrink: 0
+                }}
               /> :
               // Normal: Fluent UI Icon
-              <Icon className="colorIcon" style={{color: iconColor, marginRight: "8px"}} iconName={icon} aria-hidden="true" />
+              <Icon 
+                className="colorIcon" 
+                style={{color: iconColor, marginRight: "8px", flexShrink: 0}} 
+                iconName={icon} 
+                aria-hidden="true" 
+              />
           )}
-        <span>{option?.text || ""}</span>
+        <span style={{
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          whiteSpace: 'nowrap',
+          flex: 1
+        }}>{option?.text || ""}</span>
       </div>
     );
 
@@ -162,12 +202,12 @@ const _onRenderTitle = (options: IDropdownOption[] | undefined): React.ReactElem
             onChange={_onSelectedChanged}                         
             disabled={isDisabled} 
             className="ComboBox"                        
-             styles = {(props) => dropdownStyles(props, config.showColorBorder ? selectedColor : undefined, config.showColorBackground, config.showColorBorder, config.makeFontBold)}
+             styles = {(props) => dropdownStyles(props, selectedColor, config.showColorBackground, config.showColorBorder, config.makeFontBold, config.componentHeight, config.iconColorOverride)}
             theme = {myTheme}           
         />
     );
 
-});
+};
 /*, (prev, next)=> {  
   return prev.rawOptions === next.rawOptions
         && prev.selectedKey === next.selectedKey 
