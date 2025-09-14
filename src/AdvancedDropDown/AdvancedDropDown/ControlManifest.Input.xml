@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <manifest>
-  <control namespace="lops" constructor="AdvancedDropDown" version="7.0.0" display-name-key="lops.AdvancedDropDown" description-key="AdvancedDropDown description" control-type="virtual">
+  <control namespace="lops" constructor="AdvancedDropDown" version="8.12.0" display-name-key="lops.AdvancedDropDown" description-key="AdvancedDropDown description" control-type="virtual">
     <property name="optionsInput" display-name-key="OptionSet" description-key="OptionSet" of-type="OptionSet" usage="bound" required="true" />  
     <property name="componentHeight" display-name-key="Component Height" description-key="Set the height of the dropdown component" of-type="Enum" usage="input" required="false" default-value="Tall">
       <value name="Tall" display-name-key="Tall" description-key="Standard height dropdown">Tall</value>
       <value name="Short" display-name-key="Short" description-key="Compact height dropdown (75% of standard)">Short</value>
     </property>
-    <property name="icon" display-name-key="Icon" description-key="The Fabric UI icon to display" of-type="SingleLine.Text" usage="input" required="false" />
+    <property name="icon" display-name-key="Icon" description-key="The Fluent UI icon to display (https://learn.microsoft.com/en-us/windows/apps/design/style/segoe-fluent-icons-font)" of-type="SingleLine.Text" usage="input" required="false" />
     <property name="sortBy" display-name-key="Sort by" description-key="Sort by" of-type="Enum" usage="input" required="false" default-value="Value">      
       <value name="Value" display-name-key="Value" description-key="Sort by the value of the options" default="true">Value</value>
       <value name="Text" display-name-key="Text" description-key="Sort by the text of the options, corresponding to the user language">Text</value>

@@ -13,6 +13,20 @@
     width:100%;
 }*/
 
+/* Root container styling to prevent scrollbars */
+.ms-ComboBox {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+}
+
+/* Ensure the dropdown container fills available space */
+.ms-ComboBox-container {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+}
+
 .LegalTechOps\.AdvancedOptions .ComboBox .option{          
     text-align: left;
     line-height: 30px;    
@@ -26,6 +40,8 @@
 .option-content {
     display: flex;
     align-items: center;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .colorIcon {

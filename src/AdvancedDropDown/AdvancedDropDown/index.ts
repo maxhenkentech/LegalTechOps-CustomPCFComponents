@@ -5,10 +5,34 @@ import * as ReactDOM from 'react-dom';
 import {AdvancedOptionsControl, IConfig, ISetupSchema} from "./AdvancedOptionsControl";
 import { initializeIcons } from '@fluentui/react/lib/Icons';
 
-// Initialize icons for test harness
-if (typeof window !== 'undefined') {
-    initializeIcons();
-}
+// Initialize icons for both test harness and production
+const initializeIconsForEnvironment = () => {
+    try {
+        // Initialize standard icons multiple times to ensure they load in Power Platform
+        initializeIcons();
+        
+        // Force icon initialization again after a short delay for Power Platform compatibility
+        if (typeof window !== 'undefined') {
+            setTimeout(() => {
+                try {
+                    initializeIcons();
+                    console.log("🎨 Icons re-initialized for Power Platform compatibility");
+                } catch (e) {
+                    console.warn("Secondary icon initialization failed:", e);
+                }
+            }, 100);
+        }
+        
+        console.log("🎨 Icons initialized successfully");
+        return true;
+    } catch (error) {
+        console.warn("Could not initialize icons:", error);
+        return false;
+    }
+};
+
+// Initialize icons immediately
+initializeIconsForEnvironment();
 
 
 
@@ -25,7 +49,7 @@ const DEFAULT_OPTIONS : ComponentFramework.PropertyHelper.OptionMetadata[] = [{
 {
 	Value : 3,
 	Label : "Management, and this is an even longer line",
-	Color : "#0000ff"
+	Color : "#e4ff18ff"
 }, 
 {
 	Value : 4,
@@ -35,7 +59,7 @@ const DEFAULT_OPTIONS : ComponentFramework.PropertyHelper.OptionMetadata[] = [{
 {
 	Value : 5,
 	Label : "Option 5",
-	Color : "#eeccaa"
+	Color : "#2a005bff"
 }
 ];
 
@@ -147,14 +171,11 @@ export class AdvancedDropDown implements ComponentFramework.ReactControl<IInputs
 	{		
 		console.log("using virtual control in AdvancedOptions");
 		
-		// Ensure icons are initialized, especially in test mode
-		if (this.isTestMode()) {
-			try {
-				initializeIcons();
-				console.log("🎨 Icons initialized for test mode");
-			} catch (error) {
-				console.warn("Could not initialize icons:", error);
-			}
+		// Ensure icons are initialized in Power Platform environment
+		try {
+			initializeIconsForEnvironment();
+		} catch (error) {
+			console.warn("Icon initialization failed in init:", error);
 		}
 		              
 		this.defaultValue = context.parameters.optionsInput.attributes?.DefaultValue;
@@ -219,7 +240,7 @@ export class AdvancedDropDown implements ComponentFramework.ReactControl<IInputs
 			isDisabled : this.isDisabled, 
 			defaultValue : this.defaultValue, 
 			config: this.parseIconConfig( // Always regenerate config for real-time updates
-				"CircleShapeSolid",  
+				"FullCircleMask",  
 				context.parameters.icon?.raw ?? undefined, 
 				context.parameters.sortBy.raw,
 				hideHiddenOptions,

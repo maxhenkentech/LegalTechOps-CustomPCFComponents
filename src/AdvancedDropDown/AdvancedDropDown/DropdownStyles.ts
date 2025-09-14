@@ -70,6 +70,20 @@ const darkenColor = (color: string, amount = 0.3): string => {
   return `#${toHex(newR)}${toHex(newG)}${toHex(newB)}`;
 };
 
+// Helper function to determine if a color is dark
+const isColorDark = (color: string): boolean => {
+  if (!color || !color.startsWith('#')) return false;
+  
+  const hex = color.replace('#', '');
+  const r = parseInt(hex.substr(0, 2), 16);
+  const g = parseInt(hex.substr(2, 2), 16);
+  const b = parseInt(hex.substr(4, 2), 16);
+  
+  // Calculate relative luminance
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  return luminance < 0.5; // Dark if luminance is less than 50%
+};
+
 export const dropdownStyles = (props: IDropdownStyleProps, selectedColor?: string, showColorBackground?: "No" | "Lighter" | "Full", showColorBorder?: boolean, makeFontBold?: boolean, componentHeight?: "Tall" | "Short", iconColorOverride?: string):Partial<IDropdownStyles> => {
   const isShort = componentHeight === "Short";
   console.log("🎨 DropdownStyles - componentHeight:", componentHeight, "isShort:", isShort);
@@ -95,21 +109,35 @@ export const dropdownStyles = (props: IDropdownStyleProps, selectedColor?: strin
 
   console.log("🎨 Applied height values:", heightValues);
 
+  // Determine the actual background color being used
+  const actualBackgroundColor = iconColorOverride && showColorBackground === "Full" ? iconColorOverride :
+                                iconColorOverride && showColorBackground === "Lighter" ? lightenColor(iconColorOverride, 0.8) :
+                                showColorBackground === "Full" && selectedColor ? selectedColor :
+                                showColorBackground === "Lighter" && selectedColor ? lightenColor(selectedColor, 0.8) :
+                                "#f3f2f1";
+
+  // Determine text color based on background darkness
+  const textColor = (showColorBackground === "Full" && actualBackgroundColor && isColorDark(actualBackgroundColor)) ? 
+                    "#ffffff" : "#323130"; // White text on dark backgrounds, dark text otherwise
+
   return ({    
       title: [{
-        color: "#323130",
+        color: textColor, // Dynamic text color based on background
         display: "flex",
         alignItems: "center",
         fontWeight: makeFontBold ? "600" : "400",
         fontSize: "14px", // Keep font size constant
         lineHeight: heightValues.lineHeight,
         fontFamily: "'Segoe UI', 'Segoe UI Web (West European)', 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Roboto', 'Helvetica Neue', sans-serif",
-        borderWidth: "1px",
-        borderStyle: "solid",
-        borderColor: iconColorOverride && (showColorBorder || showColorBackground !== "No") ? iconColorOverride :
-                    (showColorBorder && selectedColor) ? selectedColor : 
-                    (props.isOpen ? "#0078d4" : "#d2d0ce"),
-        borderRadius: "6px",
+        borderWidth: "0px", // No actual border - using box-shadow instead
+        borderStyle: "none",
+        borderColor: "transparent",
+        borderRadius: "6px", // Match Power Platform's field border radius more closely
+        boxShadow: showColorBorder ? 
+          `inset 0 0 0 2px ${(showColorBorder && selectedColor) ? selectedColor : 
+                             (showColorBorder && iconColorOverride) ? iconColorOverride : 
+                             'transparent'}` : 
+          "none", // Use inset box-shadow to create border effect
         backgroundColor: iconColorOverride && showColorBackground === "Full" ? iconColorOverride :
                         iconColorOverride && showColorBackground === "Lighter" ? lightenColor(iconColorOverride, 0.8) :
                         showColorBackground === "Full" && selectedColor ? selectedColor :
@@ -129,9 +157,11 @@ export const dropdownStyles = (props: IDropdownStyleProps, selectedColor?: strin
         whiteSpace: "nowrap",
         selectors: {
           ':hover': {
-            borderColor: iconColorOverride && (showColorBorder || showColorBackground !== "No") ? iconColorOverride :
-                        (showColorBorder && selectedColor) ? selectedColor :
-                        (props.disabled ? "#d2d0ce" : "#106ebe"),
+            boxShadow: showColorBorder ? 
+              `inset 0 0 0 2px ${(showColorBorder && selectedColor) ? selectedColor : 
+                                 (showColorBorder && iconColorOverride) ? iconColorOverride : 
+                                 'transparent'}` : 
+              "none", // Maintain box-shadow border on hover
             backgroundColor: iconColorOverride && showColorBackground === "Full" ? iconColorOverride :
                            iconColorOverride && showColorBackground === "Lighter" ? lightenColor(iconColorOverride, 0.8) :
                            showColorBackground === "Full" && selectedColor ? selectedColor :
@@ -140,10 +170,13 @@ export const dropdownStyles = (props: IDropdownStyleProps, selectedColor?: strin
             cursor: props.disabled ? "default" : "pointer"
           },
           ':focus': {
-            borderColor: showColorBorder && selectedColor ? selectedColor : "#0078d4",
-            borderWidth: "2px",
-            outline: "1px solid " + (showColorBorder && selectedColor ? selectedColor : "#0078d4"),
-            outlineOffset: "2px"
+            boxShadow: showColorBorder ? 
+              `inset 0 0 0 2px ${(showColorBorder && selectedColor) ? selectedColor : 
+                                 (showColorBorder && iconColorOverride) ? iconColorOverride : 
+                                 'transparent'}` : 
+              "none", // Maintain box-shadow border on focus
+            outline: "none", // Let Power Platform handle focus
+            outlineOffset: "0px"
           },
           ':disabled': {
             backgroundColor: "#f3f2f1",
@@ -155,6 +188,9 @@ export const dropdownStyles = (props: IDropdownStyleProps, selectedColor?: strin
       }],        
       root: {
         width: "100%",
+        maxWidth: "100%",
+        boxSizing: "border-box",
+        overflow: "hidden", // Prevent scrollbars on root
         fontFamily: "'Segoe UI', 'Segoe UI Web (West European)', 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Roboto', 'Helvetica Neue', sans-serif"
       },
       dropdown: [{

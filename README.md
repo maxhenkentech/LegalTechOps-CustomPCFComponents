@@ -4,6 +4,22 @@ A collection of custom Power Platform Component Framework (PCF) components creat
 
 *The "LegalTechOps" name reflects the creator's role as Head of Legal Technologies and Operations at Amadeus IT Group SA.*
 
+## Table of Contents
+
+- [About](#about)
+- [Components](#components)
+  - [🔽 Advanced Dropdown Component](#-advanced-dropdown-component)
+  - [🎯 Risk Matrix Component](#-risk-matrix-component)
+- [Author](#author)
+- [Installation](#installation)
+- [Usage](#usage)
+- [Development](#development)
+- [Troubleshooting](#troubleshooting)
+- [Contributing](#contributing)
+- [Support](#support)
+- [Release Notes](#release-notes)
+- [License](#license)
+
 ## About
 
 These components are designed to solve common business challenges through innovative Power Platform solutions. While originally developed for legal operations contexts, they can be adapted for various business applications requiring similar functionality.
@@ -11,6 +27,96 @@ These components are designed to solve common business challenges through innova
 ## Components
 
 This solution currently contains the following custom components:
+
+### 🔽 Advanced Dropdown Component
+
+An enhanced dropdown control that extends the standard Power Platform choice field with advanced visual customization options, including color coding, custom icons, and flexible sizing.
+
+<!-- Screenshots placeholder for Advanced Dropdown -->
+*Screenshots of the Advanced Dropdown component with various customization options will be added here*
+
+#### Features
+- **Custom Icon Support**: Choose from the complete [Fluent UI Icon Library](https://learn.microsoft.com/en-us/windows/apps/design/style/segoe-fluent-icons-font) for option indicators
+  - **📖 [Browse All 1,800+ Available Icons](FLUENT_ICONS.md)** - Complete reference with previews
+- **Color Customization**: 
+  - **Color Icons**: Display colored circular indicators for each option
+  - **Color Borders**: Apply option colors as borders around the dropdown
+  - **Color Backgrounds**: Use option colors as backgrounds (No/Lighter/Full intensity)
+- **Flexible Sizing**: Choose between Tall (standard) and Short (compact) component heights
+- **Smart Sorting**: Sort options by Value (numeric) or Text (alphabetical)
+- **Hidden Options Control**: Show or hide options marked as hidden in the choice field
+- **Typography Options**: Make font bold for better visibility
+- **Color Override**: Apply a single custom color to all options using hex values
+- **Responsive Design**: Optimized for both desktop and mobile Power Apps
+- **Fallback System**: Graceful degradation when icons fail to load in different environments
+
+#### Properties
+
+| Property | Type | Options | Description | Default |
+|----------|------|---------|-------------|---------|
+| `optionsInput` | OptionSet | - | **Required.** The choice field to display as an advanced dropdown | - |
+| `componentHeight` | Choice | Tall/Short | Component height: Tall (standard) or Short (compact 75% height) | Tall |
+| `icon` | Text | [Fluent UI Icon Name](https://learn.microsoft.com/en-us/windows/apps/design/style/segoe-fluent-icons-font) | Icon to display for each option (e.g., "FullCircleMask", "Circle", "StatusCircleOuter") | FullCircleMask |
+| `sortBy` | Choice | Value/Text | Sort options by numeric Value or alphabetical Text | Value |
+| `hideHiddenOptions` | Yes/No | - | Hide options marked as hidden in the choice field definition | Yes |
+| `showColorIcon` | Yes/No | - | Display colored circular icon on the left of each option | No |
+| `iconColorOverride` | Text | Hex Color | Override all option colors with custom hex color (e.g., #FF0000 or FF0000) | - |
+| `showColorBorder` | Yes/No | - | Display colored border around the dropdown using the selected option's color | No |
+| `showColorBackground` | Choice | No/Lighter/Full | Background color intensity: No color, Lighter (80% opacity), or Full color | No |
+| `makeFontBold` | Yes/No | - | Display dropdown text in bold font weight for better readability | No |
+
+#### Icon Reference
+The component uses the [Microsoft Fluent UI Icon Library](https://learn.microsoft.com/en-us/windows/apps/design/style/segoe-fluent-icons-font). 
+
+**📖 [Complete Icon Reference with Previews](FLUENT_ICONS.md)** - Browse all 1,800+ available icons
+
+Popular icon options for dropdowns include:
+
+**Recommended Icons:**
+- `FullCircleMask` - Solid filled circle (default)
+- `Circle` - Outlined circle
+- `StatusCircleOuter` - Status indicator circle
+- `RadioBtnOn` - Radio button style
+- `CircleShapeSolid` - Alternative solid circle
+- `Checkbox` - Square checkbox style
+- `CheckboxComposite` - Composite checkbox
+- `StatusCircleCheckmark` - Circle with checkmark
+
+**Usage Tips:**
+- Use simple, recognizable shapes for best results
+- Circular icons work particularly well with color customization
+- Test icons in both development and production environments
+- Fallback to color indicators if icons don't load
+
+#### Color Customization Guide
+
+**Color Sources:**
+1. **Choice Field Colors**: Colors defined in the Power Platform choice field
+2. **Color Override**: Single hex color applied to all options (overrides choice field colors)
+
+**Color Applications:**
+- **Icons**: Color the icon itself
+- **Borders**: Apply color to the dropdown border
+- **Backgrounds**: Use color as background with three intensity levels:
+  - **No**: No background color (default)
+  - **Lighter**: 80% opacity background for subtle effect
+  - **Full**: Full color background for maximum impact
+
+**Best Practices:**
+- Use **Lighter** backgrounds for better text readability
+- Combine **Color Icons** with **Color Borders** for professional appearance
+- **Color Override** useful for maintaining brand consistency
+- Test color combinations for accessibility compliance
+
+#### Use Cases
+- Enhanced choice fields with visual indicators
+- Status dropdowns with color-coded options
+- Priority selectors with clear visual hierarchy
+- Category selection with branded colors
+- Multi-language forms with consistent iconography
+- Accessible forms with improved visual cues
+
+---
 
 ### 🎯 Risk Matrix Component
 
@@ -119,8 +225,15 @@ Choose the appropriate solution package for your needs:
 
 2. Install dependencies:
    ```bash
+   # For Advanced Dropdown component
+   cd src/AdvancedDropDown
+   npm install
+   cd ../..
+   
+   # For Risk Matrix component
    cd src/RiskMatrix
    npm install
+   cd ../..
    ```
 
 3. Build the component:
@@ -133,6 +246,17 @@ Choose the appropriate solution package for your needs:
 
 ## Usage
 
+### Advanced Dropdown Component
+1. After importing the solution, the Advanced Dropdown control will be available in your Power Apps
+2. Add the control to a form or canvas app
+3. Bind the `optionsInput` property to your choice field
+4. Configure visual options:
+   - Set `showColorIcon` to Yes to display colored icons
+   - Choose an icon from the [Fluent UI Icon Library](https://learn.microsoft.com/en-us/windows/apps/design/style/segoe-fluent-icons-font)
+   - Enable color borders or backgrounds as needed
+   - Adjust component height (Tall/Short) based on your form layout
+
+### Risk Matrix Component
 1. After importing the solution, the Risk Matrix control will be available in your Power Apps
 2. Add the control to a form or canvas app
 3. Bind the Impact and Probability properties to your data fields
@@ -143,21 +267,30 @@ Choose the appropriate solution package for your needs:
 ### Project Structure
 ```
 ├── src/
-│   ├── RiskMatrix/           # PCF component source
+│   ├── AdvancedDropDown/      # Advanced Dropdown PCF component
+│   │   ├── AdvancedDropDown/
+│   │   │   ├── index.ts       # Main component logic
+│   │   │   ├── AdvancedOptionsControl.tsx # React component
+│   │   │   ├── DropdownStyles.ts # Styling configuration
+│   │   │   ├── ControlManifest.Input.xml
+│   │   │   └── CSS/           # Component stylesheets
+│   │   ├── package.json
+│   │   └── pcfconfig.json
+│   ├── RiskMatrix/            # Risk Matrix PCF component
 │   │   ├── RiskMatrix/
-│   │   │   ├── index.ts      # Main component logic
+│   │   │   ├── index.ts       # Main component logic
 │   │   │   └── ControlManifest.Input.xml
 │   │   ├── package.json
 │   │   └── pcfconfig.json
-│   └── Other/                # Solution metadata
-├── bin/Release/              # Packaged solution output
+│   └── Other/                 # Solution metadata
+├── bin/Release/               # Packaged solution output
 └── README.md
 ```
 
 ### Making Changes
 
 1. Make your changes to the source files in component directories under `src/`
-2. Test locally using `npm start` in the specific component folder
+2. Test locally using `npm start` in the specific component folder (e.g., `src/AdvancedDropDown` or `src/RiskMatrix`)
 3. Build the solution using the standard Power Platform CLI commands
 4. Test the packaged component in your Power Platform environment
 
@@ -208,7 +341,27 @@ If you encounter any issues or have suggestions for improvements, please open an
 
 ## Release Notes
 
-### Version 1.8.0.0 (Current)
+### Version 8.1.0 (Current)
+#### 🔽 Advanced Dropdown Component (NEW)
+- **NEW:** Enhanced dropdown control with advanced visual customization options
+- **NEW:** Complete [Fluent UI Icon Library](https://learn.microsoft.com/en-us/windows/apps/design/style/segoe-fluent-icons-font) support for custom icons
+- **NEW:** Color customization system with three modes:
+  - Color Icons: Circular colored indicators for each option
+  - Color Borders: Colored borders around the dropdown
+  - Color Backgrounds: Three intensity levels (No/Lighter/Full)
+- **NEW:** Flexible component sizing (Tall/Short) for different form layouts
+- **NEW:** Smart sorting options (Value/Text) with multilingual support
+- **NEW:** Hidden options control for dynamic choice field management
+- **NEW:** Color override system for brand consistency
+- **NEW:** Typography enhancement with bold font option
+- **NEW:** Cross-environment compatibility with graceful icon fallbacks
+- **NEW:** Responsive design optimized for desktop and mobile Power Apps
+
+#### 🎯 Risk Matrix Component
+- **EXISTING:** Maintained all previous functionality from version 1.8.0.0
+
+### Version 1.8.0.0
+#### 🎯 Risk Matrix Component
 - **NEW:** Flexible grid size configurations (2x2, 3x3, 4x4) for different risk assessment needs
 - **NEW:** Dynamic risk level display at the top of the matrix showing current risk (LOW, MEDIUM, HIGH, CRITICAL)
 - **NEW:** Custom axis labels - configure your own X and Y axis titles (default: "Impact" and "Probability")
@@ -219,6 +372,7 @@ If you encounter any issues or have suggestions for improvements, please open an
 - **ENHANCED:** Professional layout optimization for all display modes (Small, Large, Huge)
 
 ### Version 1.5.0.0
+#### 🎯 Risk Matrix Component
 - **NEW:** Size configuration options (Small/Large) for different display contexts
 - **NEW:** ShowLabels toggle to show/hide scale labels for cleaner presentation
 - Enhanced marker positioning with pixel-perfect centering
@@ -226,6 +380,7 @@ If you encounter any issues or have suggestions for improvements, please open an
 - Optimized label positioning for all size variants
 
 ### Previous Versions
+#### 🎯 Risk Matrix Component
 - Initial release with basic 4x4 risk matrix functionality
 - Custom color configuration support
 - Responsive design implementation
