@@ -110,29 +110,30 @@ Popular icon options for dropdowns include:
 - Test color combinations for accessibility compliance
 
 #### Use Cases
-- Enhanced choice fields with visual indicators
-- Status dropdowns with color-coded options
-- Priority selectors with clear visual hierarchy
-
----
+- **Enhanced choice fields** with visual indicators
+- **Status dropdowns** with color-coded options
+- **Priority selectors** with clear visual hierarchy
+- **Category selection** with branded colors
+- **Multi-language forms** with consistent iconography
+- **Accessible forms** with improved visual cues
 
 ### 💡 Advanced Icon Features
 
 #### Using External Value for Icons
-When **Use external value for icon** is enabled, the component will attempt to load a Fluent UI icon based on the string value stored in the `External Value` field of each individual Choice (OptionSet) metadata.
+When **Use external value for icon** is enabled, the component will attempt to load a Fluent UI icon based on the string value stored in the `External Value` field of each individual Choice (OptionSet) metadata. This allows you to have different icons for every single option in your dropdown.
 
 ![How to set External Value](Screenshots/Advanced%20Dropdown/externalValue.png)
 
-> [!WARNING]
-> **Implications of Repurposing External Value:**
-> - **Metadata Intent**: The `External Value` field is typically intended for integration with external systems (e.g., ERP codes). Using it for icon names repurposes this field exclusively for UI presentation.
-> - **Maintenance**: If you later need to use this field for its original purpose, you will lose the per-choice icon functionality.
-> - **Consistency**: If a choice has an empty `External Value`, it will fall back to the default icon specified in the properties.
+> [!CAUTION]
+> **Architectural Implications of Using the External Value Field:**
+> Repurposing the `External Value` field for UI presentation (icon names) is a convenient shortcut, but it carries significant architectural trade-offs:
+> - **Metadata Pollution**: The `External Value` field is semantically intended for integration codes (e.g., ERP IDs, API keys). Using it for icons mixes UI logic with data integration logic.
+> - **Potential Breaking Changes**: If another system or integration (e.g., Power Automate, Logic Apps, or an external API) relies on this field for its original purpose, setting it to a Fluent UI icon name will break those integrations.
+> - **Single Purpose**: You can only use the External Value field for *one* thing. If you need it for an ERP code, you cannot use it for icons.
+> - **Maintenance**: Choice metadata is managed globally in Dataverse. Changing an icon requires a metadata update, not just a configuration change in the App.
 
----
-- Category selection with branded colors
-- Multi-language forms with consistent iconography
-- Accessible forms with improved visual cues
+#### Direct Web API Fetch
+*Technical Note: Unlike standard PCF controls that use the filtered client-side metadata, this component performs a direct OData fetch to the Dataverse Web API to retrieve the "External Value" property, which is normally hidden by the Power Apps runtime to optimize performance.*
 
 ---
 
@@ -165,8 +166,8 @@ An interactive risk assessment matrix that allows users to plot and visualize ri
 #### Properties
 | Property | Type | Range | Description | Default |
 |----------|------|-------|-------------|---------|
-| `Impact` | Number | 1-2, 1-3, or 1-4 | Impact level of the risk item (range depends on grid size) | - |
-| `Probability` | Number | 1-2, 1-3, or 1-4 | Probability level of the risk item (range depends on grid size) | - |
+| `Impact` | Number | 1-2, 1-3, 1-4, 1-5 or 1-6 | Impact level of the risk item (range depends on grid size) | - |
+| `Probability` | Number | 1-2, 1-3, 1-4, 1-5 or 1-6 | Probability level of the risk item (range depends on grid size) | - |
 | `Size` | Choice | Small/Large/Huge | Matrix size: Small (compact), Large (detailed), or Huge (extra-large) | Small |
 | `GridSize` | Choice | 2x2/3x3/4x4/5x5/6x6 | Grid configuration: 2x2, 3x3, 4x4, 5x5, or 6x6 matrix | 4x4 |
 | `ShowCategoryLabels` | Yes/No | - | Show or hide scale labels (Low, Medium, High, Critical) | Yes |
@@ -273,6 +274,9 @@ Choose the appropriate solution package for your needs:
    - Choose an icon from the [Microsoft Segoe UI Symbol Font](https://learn.microsoft.com/en-us/windows/apps/design/style/segoe-ui-symbol-font)
    - Enable color borders or backgrounds as needed
    - Adjust component height (Tall/Short) based on your form layout
+5. **(Optional) Per-Option Icons**:
+   - Enable `Use external value for icon`.
+   - In Dataverse, edit your Choice metadata and enter a Fluent UI icon name (e.g., `FavoriteStar`) into the **External Value** field for each option.
 
 ### Risk Matrix Component
 1. After importing the solution, the Risk Matrix control will be available in your Power Apps
@@ -359,11 +363,18 @@ If you encounter any issues or have suggestions for improvements, please open an
 
 ## Release Notes
 
-### Version 3.2.1 (Current)
+### Version 3.5.0 (Current)
+#### 🔽 Advanced Dropdown Component
+- **NEW**: **Direct Web API Fetch Implementation**. The component now bypasses the client-side metadata limitations by querying the Dataverse Web API directly. This ensures that the **External Value** property is always available for icons, even when the standard PCF SDK hides it.
+- **NEW**: **Robust Entity Resolution**. Improved logic to correctly identify the current entity and attribute name across various form contexts (Quick Create, Main Forms, Subgrids).
+- **ENHANCED**: Completely removed debug logging from production builds.
+- **FIX**: Resolved issues where the "External Value" was returned as `undefined` in modern Power Apps environments.
+
+### Version 3.2.1 (Previous)
 #### 🔽 Advanced Dropdown Component
 - **FIX**: Resolved solution import failure caused by invalid characters (single quotes) in manifest `description-key` (XSD `noAposStringType` violation).
 
-### Version 3.2.0 (Previous)
+### Version 3.2.0
 - **NEW**: Support for **External Value Icons**. Use the choice's "External Value" field to specify a Fluent UI icon name.
 - **NEW**: Added `UseExternalValueForIcon` configuration property to toggle the feature.
 - **NEW**: Enhanced icon validation and fallback logic.
