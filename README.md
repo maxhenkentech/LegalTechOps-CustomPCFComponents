@@ -32,8 +32,8 @@ This solution currently contains the following custom components:
 
 An enhanced dropdown control that extends the standard Power Platform choice field with advanced visual customization options, including color coding, custom icons, and flexible sizing.
 
-<img src="Screenshots/Advanced%20Dropdown/AdvancedDropDown.png" alt="All Options" height="220px">
-*Screenshots of the Advanced Dropdown component with various customization options will be added here*
+![Advanced Dropdown Overview](Screenshots/Advanced%20Dropdown/AdvancedDropDown.png)
+*Modern, customizable dropdown with color coding and Fluent UI icons.*
 
 #### Features
 - **Custom Icon Support**: Choose from the vast majority of icons in the [Microsoft Segoe UI Symbol Font](https://learn.microsoft.com/en-us/windows/apps/design/style/segoe-ui-symbol-font) for option indicators
