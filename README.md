@@ -121,6 +121,8 @@ Popular icon options for dropdowns include:
 #### Using External Value for Icons
 When **Use external value for icon** is enabled, the component will attempt to load a Fluent UI icon based on the string value stored in the `External Value` field of each individual Choice (OptionSet) metadata.
 
+![How to set External Value](Screenshots/Advanced%20Dropdown/externalValue.png)
+
 > [!WARNING]
 > **Implications of Repurposing External Value:**
 > - **Metadata Intent**: The `External Value` field is typically intended for integration with external systems (e.g., ERP codes). Using it for icon names repurposes this field exclusively for UI presentation.
