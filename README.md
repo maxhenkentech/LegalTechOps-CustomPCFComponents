@@ -126,12 +126,12 @@ An interactive risk assessment matrix that allows users to plot and visualize ri
 
 *Risk Matrix component showing standard configuration with labels (left) and clean presentation without category labels (right)*
 
-<img src="Screenshots/Risk%20Matrix/3x3%20custom.png" alt="Custom 3x3 Matrix" height="180px"> <img src="Screenshots/Risk%20Matrix/4x4%20custom.png" alt="Custom 4x4 Matrix" height="180px">
+<img src="Screenshots/Risk%20Matrix/3x3%20custom.png" alt="Custom 3x3 Matrix" height="180px"> <img src="Screenshots/Risk%20Matrix/6x6%20ootb.png" alt="Custom 6x6 Matrix" height="180px">
 
-*Modern pill-style risk indicator with dynamic color-coding (left) and compact small-size configuration (right)*
+*Modern pill-style risk indicator with dynamic color-coding (left) and expanded 6x6 grid configuration (right)*
 
 #### Features
-- **Flexible Grid Sizes**: Choose from 2x2, 3x3, or 4x4 grid configurations to match your risk assessment needs
+- **Flexible Grid Sizes**: Choose from 2x2, 3x3, 4x4, 5x5, or 6x6 grid configurations to match your risk assessment needs
 - **Dynamic Risk Labels**: Real-time risk level display at the top of the matrix (LOW, MEDIUM, HIGH, CRITICAL)
 - **Custom Axis Labels**: Configurable X and Y axis labels (default: "Impact" and "Probability")
 - **Multiple Size Options**: Choose between Small (compact), Large (detailed), and Huge (extra-large) display modes
@@ -150,7 +150,7 @@ An interactive risk assessment matrix that allows users to plot and visualize ri
 | `Impact` | Number | 1-2, 1-3, or 1-4 | Impact level of the risk item (range depends on grid size) | - |
 | `Probability` | Number | 1-2, 1-3, or 1-4 | Probability level of the risk item (range depends on grid size) | - |
 | `Size` | Choice | Small/Large/Huge | Matrix size: Small (compact), Large (detailed), or Huge (extra-large) | Small |
-| `GridSize` | Choice | 2x2/3x3/4x4 | Grid configuration: 2x2, 3x3, or 4x4 matrix | 4x4 |
+| `GridSize` | Choice | 2x2/3x3/4x4/5x5/6x6 | Grid configuration: 2x2, 3x3, 4x4, 5x5, or 6x6 matrix | 4x4 |
 | `ShowCategoryLabels` | Yes/No | - | Show or hide scale labels (Low, Medium, High, Critical) | Yes |
 | `ShowAxisLabels` | Yes/No | - | Show or hide axis title labels (Impact/Probability) | Yes |
 | `ShowRiskLabel` | Yes/No | - | Show or hide current risk level label at top of matrix | Yes |
@@ -341,8 +341,14 @@ If you encounter any issues or have suggestions for improvements, please open an
 
 ## Release Notes
 
-### Version 7.1.0 (Current)
-#### 🔽 Advanced Dropdown Component
+### Version 3.1.0 (Current)
+#### 🎯 Risk Matrix Component
+- **NEW**: Support for **5x5** and **6x6** grid sizes for more granular risk assessments
+- **NEW**: Dynamic labels including "Very Low" and "Very High" for expanded grids
+- **ENHANCED**: Optimized color distribution across all grid sizes (2x2 up to 6x6)
+- **ENHANCED**: Improved layout stability when switching between grid sizes
+
+### Version 7.1.0 (Previous - Advanced Dropdown Release)
 - **ENHANCED:** Optimized bundle size from 51.4KB to 43.8KB by removing unnecessary dependencies
 - **ENHANCED:** Simplified icon validation system for better performance and reliability
 - **ENHANCED:** Full MDL2 icon support with comprehensive 1,800+ icon reference documentation

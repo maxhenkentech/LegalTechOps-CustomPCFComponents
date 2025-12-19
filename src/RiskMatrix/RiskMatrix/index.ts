@@ -90,6 +90,8 @@ export class RiskMatrix implements ComponentFramework.StandardControl<IInputs, I
         switch (this._gridSize) {
             case 2: return ["High", "Low"];
             case 3: return ["High", "Medium", "Low"];
+            case 5: return ["Critical", "High", "Medium", "Low", "Very Low"];
+            case 6: return ["Critical", "Very High", "High", "Medium", "Low", "Very Low"];
             default: return ["Critical", "High", "Medium", "Low"];
         }
     }
@@ -305,6 +307,23 @@ export class RiskMatrix implements ComponentFramework.StandardControl<IInputs, I
             riskMatrix = [[med, high],[low, med]];
         } else if (this._gridSize === 3) {
             riskMatrix = [[med, high, crit],[low, med, high],[low, low, med]];
+        } else if (this._gridSize === 5) {
+            riskMatrix = [
+                [med, high, crit, crit, crit],
+                [med, high, high, crit, crit],
+                [low, med, high, high, crit],
+                [low, low, med, med, high],
+                [low, low, low, med, med]
+            ];
+        } else if (this._gridSize === 6) {
+            riskMatrix = [
+                [med, high, crit, crit, crit, crit],
+                [med, high, high, crit, crit, crit],
+                [low, med, high, high, crit, crit],
+                [low, low, med, med, high, crit],
+                [low, low, low, med, med, high],
+                [low, low, low, low, med, med]
+            ];
         } else {
             riskMatrix = [[med, high, crit, crit],[med, high, high, crit],[low, med, high, high],[low, low, med, med]];
         }
@@ -330,6 +349,23 @@ export class RiskMatrix implements ComponentFramework.StandardControl<IInputs, I
             riskMatrix = [[med, high],[low, med]];
         } else if (size === 3) {
             riskMatrix = [[med, high, crit],[low, med, high],[low, low, med]];
+        } else if (size === 5) {
+            riskMatrix = [
+                [med, high, crit, crit, crit],
+                [med, high, high, crit, crit],
+                [low, med, high, high, crit],
+                [low, low, med, med, high],
+                [low, low, low, med, med]
+            ];
+        } else if (size === 6) {
+            riskMatrix = [
+                [med, high, crit, crit, crit, crit],
+                [med, high, high, crit, crit, crit],
+                [low, med, high, high, crit, crit],
+                [low, low, med, med, high, crit],
+                [low, low, low, med, med, high],
+                [low, low, low, low, med, med]
+            ];
         } else {
             riskMatrix = [[med, high, crit, crit],[med, high, high, crit],[low, med, high, high],[low, low, med, med]];
         }

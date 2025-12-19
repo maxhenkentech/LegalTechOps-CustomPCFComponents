@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <manifest>
-  <control namespace="lops" constructor="RiskMatrix" version="3.0.8" display-name-key="Risk Matrix" description-key="Risk Matrix Component" control-type="standard">
-    <property name="Impact" display-name-key="Y-Axis Score" description-key="Y-Axis value (1-4 scale)" of-type="Whole.None" usage="bound" required="false" />
-    <property name="Probability" display-name-key="X-Axis Score" description-key="X-Axis value (1-4 scale)" of-type="Whole.None" usage="bound" required="false" />
+  <control namespace="lops" constructor="RiskMatrix" version="3.1.0" display-name-key="Risk Matrix" description-key="Risk Matrix Component" control-type="standard">
+    <property name="Impact" display-name-key="Y-Axis Score" description-key="Y-Axis value (up to 1-6 scale)" of-type="Whole.None" usage="bound" required="false" />
+    <property name="Probability" display-name-key="X-Axis Score" description-key="X-Axis value (up to 1-6 scale)" of-type="Whole.None" usage="bound" required="false" />
     <property name="Size" display-name-key="Matrix Size" description-key="Select the size of the risk matrix display" of-type="Enum" usage="input" required="false" default-value="1">
       <value name="Small" display-name-key="Small (245x180)" description-key="Compact size suitable for narrow forms">0</value>
       <value name="Large" display-name-key="Large (320x240)" description-key="Large size, suitable for wide forms and detailed views">1</value>
@@ -20,6 +20,8 @@
       <value name="2x2" display-name-key="2x2 Grid (Low, High)">2</value>
       <value name="3x3" display-name-key="3x3 Grid (Low, Medium, High)">3</value>
       <value name="4x4" display-name-key="4x4 Grid (Low, Medium, High, Critical)">4</value>
+      <value name="5x5" display-name-key="5x5 Grid (Low, Medium, High, Critical)">5</value>
+      <value name="6x6" display-name-key="6x6 Grid (Low, Medium, High, Critical)">6</value>
     </property>
     <property name="ImpactLabel" display-name-key="Impact Axis Label" description-key="Custom label for the impact axis" of-type="SingleLine.Text" usage="input" required="false" default-value="Impact" />
     <property name="ProbabilityLabel" display-name-key="Probability Axis Label" description-key="Custom label for the probability axis" of-type="SingleLine.Text" usage="input" required="false" default-value="Probability" />

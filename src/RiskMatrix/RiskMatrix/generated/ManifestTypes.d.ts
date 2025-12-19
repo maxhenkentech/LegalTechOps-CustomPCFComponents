@@ -9,7 +9,7 @@ export interface IInputs {
     Size: ComponentFramework.PropertyTypes.EnumProperty<"0" | "1" | "2">;
     ShowCategoryLabels: ComponentFramework.PropertyTypes.TwoOptionsProperty;
     ShowAxisLabels: ComponentFramework.PropertyTypes.TwoOptionsProperty;
-    GridSize: ComponentFramework.PropertyTypes.EnumProperty<"2" | "3" | "4">;
+    GridSize: ComponentFramework.PropertyTypes.EnumProperty<"2" | "3" | "4" | "5" | "6">;
     ImpactLabel: ComponentFramework.PropertyTypes.StringProperty;
     ProbabilityLabel: ComponentFramework.PropertyTypes.StringProperty;
     ShowRiskLabel: ComponentFramework.PropertyTypes.TwoOptionsProperty;
