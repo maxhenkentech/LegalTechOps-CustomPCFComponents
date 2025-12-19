@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <manifest>
-  <control namespace="lops" constructor="AdvancedDropDown" version="3.1.0" display-name-key="lops.AdvancedDropDown" description-key="AdvancedDropDown description" control-type="virtual">
+  <control namespace="lops" constructor="AdvancedDropDown" version="3.1.1" display-name-key="lops.AdvancedDropDown" description-key="AdvancedDropDown description" control-type="virtual">
     <property name="optionsInput" display-name-key="OptionSet" description-key="OptionSet" of-type="OptionSet" usage="bound" required="true" />  
     <property name="componentHeight" display-name-key="Component Height" description-key="Set the height of the dropdown component" of-type="Enum" usage="input" required="false" default-value="Short">
       <value name="Tall" display-name-key="Tall" description-key="Standard height dropdown">Tall</value>
@@ -21,7 +21,7 @@
       <value name="Full" display-name-key="Full color" description-key="Full option color">Full</value>
     </property>
     <property name="makeFontBold" display-name-key="Make font bold" description-key="Display dropdown text in bold font weight" of-type="TwoOptions" usage="input" required="false" default-value="false" />
-    <property name="useExternalValueForIcon" display-name-key="Use external value for icon" description-key="When enabled, the 'External Value' of the choice will be used as the icon name for that choice option" of-type="TwoOptions" usage="input" required="false" default-value="false" />
+    <property name="useExternalValueForIcon" display-name-key="Use external value for icon" description-key="When enabled, the External Value of the choice will be used as the icon name for that choice option" of-type="TwoOptions" usage="input" required="false" default-value="false" />
     <resources>      
       <code path="index.ts" order="1"/>      
       <css path="CSS/AdvancedDropDown.css" order="1" />

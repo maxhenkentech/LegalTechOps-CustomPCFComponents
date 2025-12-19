@@ -359,8 +359,11 @@ If you encounter any issues or have suggestions for improvements, please open an
 
 ## Release Notes
 
-### Version 3.2.0 (Current)
+### Version 3.2.1 (Current)
 #### 🔽 Advanced Dropdown Component
+- **FIX**: Resolved solution import failure caused by invalid characters (single quotes) in manifest `description-key` (XSD `noAposStringType` violation).
+
+### Version 3.2.0 (Previous)
 - **NEW**: Support for **External Value Icons**. Use the choice's "External Value" field to specify a Fluent UI icon name.
 - **NEW**: Added `UseExternalValueForIcon` configuration property to toggle the feature.
 - **NEW**: Enhanced icon validation and fallback logic.
