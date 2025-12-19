@@ -64,6 +64,7 @@ An enhanced dropdown control that extends the standard Power Platform choice fie
 | `showColorBorder` | Yes/No | - | Display colored border around the dropdown using the selected option's color | No |
 | `showColorBackground` | Choice | No/Lighter/Full | Background color intensity: No color, Lighter (80% opacity), or Full color | No |
 | `makeFontBold` | Yes/No | - | Display dropdown text in bold font weight for better readability | No |
+| `useExternalValueForIcon` | Yes/No | - | Toggle to use the "External Value" field of a choice as the icon name | No |
 
 #### Icon Reference
 The component supports the vast majority of icons from the [Microsoft Segoe UI Symbol Font](https://learn.microsoft.com/en-us/windows/apps/design/style/segoe-ui-symbol-font). 
@@ -112,6 +113,21 @@ Popular icon options for dropdowns include:
 - Enhanced choice fields with visual indicators
 - Status dropdowns with color-coded options
 - Priority selectors with clear visual hierarchy
+
+---
+
+### 💡 Advanced Icon Features
+
+#### Using External Value for Icons
+When **Use external value for icon** is enabled, the component will attempt to load a Fluent UI icon based on the string value stored in the `External Value` field of each individual Choice (OptionSet) metadata.
+
+> [!WARNING]
+> **Implications of Repurposing External Value:**
+> - **Metadata Intent**: The `External Value` field is typically intended for integration with external systems (e.g., ERP codes). Using it for icon names repurposes this field exclusively for UI presentation.
+> - **Maintenance**: If you later need to use this field for its original purpose, you will lose the per-choice icon functionality.
+> - **Consistency**: If a choice has an empty `External Value`, it will fall back to the default icon specified in the properties.
+
+---
 - Category selection with branded colors
 - Multi-language forms with consistent iconography
 - Accessible forms with improved visual cues
@@ -341,7 +357,13 @@ If you encounter any issues or have suggestions for improvements, please open an
 
 ## Release Notes
 
-### Version 3.1.0 (Current)
+### Version 3.2.0 (Current)
+#### 🔽 Advanced Dropdown Component
+- **NEW**: Support for **External Value Icons**. Use the choice's "External Value" field to specify a Fluent UI icon name.
+- **NEW**: Added `UseExternalValueForIcon` configuration property to toggle the feature.
+- **NEW**: Enhanced icon validation and fallback logic.
+
+### Version 3.1.0 (Previous - Risk Matrix Expansion)
 #### 🎯 Risk Matrix Component
 - **NEW**: Support for **5x5** and **6x6** grid sizes for more granular risk assessments
 - **NEW**: Dynamic labels including "Very Low" and "Very High" for expanded grids
