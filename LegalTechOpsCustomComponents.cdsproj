@@ -41,10 +41,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="$(MSBuildThisFileDirectory)\**" Exclude="@(ExcludeDirectories);$(MSBuildThisFileDirectory)\**\node_modules\**;$(MSBuildThisFileDirectory)\**\bin\**;$(MSBuildThisFileDirectory)\**\obj\**;$(MSBuildThisFileDirectory)\.git\**" />
-    <Content Include="$(SolutionPackageZipFilePath)">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
+    <None Include="$(MSBuildThisFileDirectory)\src\Other\**" />
   </ItemGroup>
   
   <ItemGroup>

@@ -16,17 +16,16 @@ const initializeIconsForEnvironment = () => {
 			setTimeout(() => {
 				try {
 					initializeIcons();
-					console.log("🎨 Icons re-initialized for Power Platform compatibility");
 				} catch (e) {
 					console.warn("Secondary icon initialization failed:", e);
 				}
 			}, 100);
 		}
 
-		console.log("🎨 Icons initialized successfully");
 		return true;
-	} catch (error) {
-		console.warn("Could not initialize icons:", error);
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	} catch (err: any) {
+		console.error("❌ CRITICAL error during metadata fetch setup:", err);
 		return false;
 	}
 };
@@ -170,7 +169,7 @@ export class AdvancedDropDown implements ComponentFramework.ReactControl<IInputs
 	 * @param container If a control is marked control-type='standard', it will receive an empty div element within which it can render its content.
 	 */
 	public init(context: ComponentFramework.Context<IInputs>, notifyOutputChanged: () => void, state: ComponentFramework.Dictionary, container: HTMLDivElement) {
-		console.log("using virtual control in AdvancedOptions");
+		console.log("🚀 AdvancedDropDown: Version 3.5.0.0 Loaded");
 
 		// Ensure icons are initialized in Power Platform environment
 		try {
@@ -192,9 +191,6 @@ export class AdvancedDropDown implements ComponentFramework.ReactControl<IInputs
 	};
 
 	private renderControl(context: ComponentFramework.Context<IInputs>): React.ReactElement {
-		console.log("entered renderControl in index.ts", context.updatedProperties);
-		console.log("🔧 Raw componentHeight parameter:", context.parameters.componentHeight?.raw);
-
 		this.isDisabled = context.mode.isControlDisabled;
 		this.currentValue = context.parameters.optionsInput.raw;
 
@@ -208,15 +204,11 @@ export class AdvancedDropDown implements ComponentFramework.ReactControl<IInputs
 		const makeFontBold = context.parameters.makeFontBold?.raw ?? false;
 		const useExternalValueForIcon = context.parameters.useExternalValueForIcon?.raw ?? false;
 
-		console.log("🎯 Final componentHeight value:", componentHeight);
-		console.log("🎨 Icon Color Override:", iconColorOverride);
-
 		// Determine which options to use - test mode or actual data
 		let sourceOptions: ComponentFramework.PropertyHelper.OptionMetadata[];
 		const testMode = this.isTestMode();
 
 		if (testMode) {
-			console.log("🧪 Test mode detected - using enhanced test options with colors and descriptions");
 			sourceOptions = TEST_MODE_OPTIONS as ComponentFramework.PropertyHelper.OptionMetadata[];
 		} else {
 			sourceOptions = context.parameters.optionsInput.attributes?.Options || [];
@@ -254,7 +246,10 @@ export class AdvancedDropDown implements ComponentFramework.ReactControl<IInputs
 				iconColorOverride,
 				useExternalValueForIcon
 			),
-			selectedColor: selectedColor
+			selectedColor: selectedColor,
+			contextUtils: context.utils,
+			contextParameters: context.parameters,
+			contextMode: context.mode
 		};
 		return React.createElement(AdvancedOptionsControl, params);
 

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <manifest>
-  <control namespace="lops" constructor="AdvancedDropDown" version="3.1.1" display-name-key="lops.AdvancedDropDown" description-key="AdvancedDropDown description" control-type="virtual">
+  <control namespace="lops" constructor="AdvancedDropDown" version="3.5.0" display-name-key="lops.AdvancedDropDown" description-key="AdvancedDropDown description" control-type="virtual">
     <property name="optionsInput" display-name-key="OptionSet" description-key="OptionSet" of-type="OptionSet" usage="bound" required="true" />  
     <property name="componentHeight" display-name-key="Component Height" description-key="Set the height of the dropdown component" of-type="Enum" usage="input" required="false" default-value="Short">
       <value name="Tall" display-name-key="Tall" description-key="Standard height dropdown">Tall</value>
@@ -27,6 +27,9 @@
       <css path="CSS/AdvancedDropDown.css" order="1" />
       <platform-library name="React" version="16.8.6" />
       <platform-library name="Fluent" version="8.29.0" />
-    </resources>   
+    </resources>
+    <feature-usage>
+      <uses-feature name="Utility" required="true" />
+    </feature-usage>
   </control>
 </manifest>

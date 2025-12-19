@@ -93,6 +93,8 @@ const convertToUnicodeChar = (iconStr: string): string | null => {
   }
 };
 
+import { IInputs } from "./generated/ManifestTypes";
+
 export interface ISetupSchemaValue {
   icon?: string;
   color?: string;
@@ -133,7 +135,6 @@ const ensureIconsLoaded = () => {
       document.body.appendChild(iconTest);
       setTimeout(() => document.body.removeChild(iconTest), 100);
     }
-    console.log("🎨 Enhanced icon initialization completed");
   } catch (error) {
     console.warn("Enhanced icon initialization failed:", error);
   }
@@ -175,6 +176,11 @@ interface IAdvancedOptionsProperties {
   defaultValue: number | undefined;
   config: IConfig;
   selectedColor?: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  contextUtils: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  contextParameters: any;
+  contextMode: ComponentFramework.Mode;
 }
 
 
@@ -185,10 +191,122 @@ interface IAdvancedOptionsProperties {
 
 //export default class AdvancedOptionsControl extends React.Component<IAdvancedOptionsProperties, {}> {            
 //export const AdvancedOptionsControl = ({rawOptions, selectedKey, onChange, isDisabled, defaultValue, config}:IAdvancedOptionsProperties): JSX.Element =>{    
-export const AdvancedOptionsControl = ({ rawOptions, selectedKey, onChange, isDisabled, defaultValue, config, selectedColor }: IAdvancedOptionsProperties): React.ReactElement => {
-  console.log("%cEntered control", "color:red");
-  console.log("🎛️ Component Height Config:", config.componentHeight);
-  console.log("🔄 Config object:", config);
+export const AdvancedOptionsControl = ({ rawOptions, selectedKey, onChange, isDisabled, defaultValue, config, selectedColor, contextUtils, contextParameters, contextMode }: IAdvancedOptionsProperties): React.ReactElement => {
+
+  // State for enriched icons from metadata
+  const [externalIconsMap, setExternalIconsMap] = React.useState<Record<number, string>>({});
+  const [hasFetchedMetadata, setHasFetchedMetadata] = React.useState(false);
+
+  // Fetch full metadata if External Value Icons are enabled
+  React.useEffect(() => {
+    // Detect if we're in test mode inside the effect
+    const hostname = typeof window !== 'undefined' ? window.location?.hostname || '' : '';
+    const isLocal = hostname === 'localhost' || hostname === '127.0.0.1' || hostname.includes('localhost');
+    const isHarness = typeof window !== 'undefined' && (window.location?.port === '8181' || window.location?.href?.includes('_pkg/') || document.title?.includes('Test harness'));
+    const isTest = isLocal || isHarness;
+
+    if (config.useExternalValueForIcon && !hasFetchedMetadata && (contextUtils || contextParameters)) {
+
+      try {
+        // Robust entity name resolution
+        let entityName = contextParameters?.optionsInput?.etn; // Default PCF property
+
+        if (!entityName) {
+          // Fallback 1: Context Info
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          entityName = (contextMode as any)?.contextInfo?.entityTypeName;
+        }
+
+        if (!entityName) {
+          // Fallback 2: Page Context (if available globally or via utils)
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const page = (contextUtils as any)?.page;
+          if (page && page.entityTypeName) {
+            entityName = page.entityTypeName;
+          }
+        }
+
+        if (!entityName) {
+          // Fallback 3: Parameters root
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          entityName = (contextParameters as any)?.entityTypeName;
+        }
+
+        // Try multiple ways to get the attribute name
+        let attributeName: string | undefined = undefined;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const optionsInputAny = contextParameters?.optionsInput as any;
+
+        if (optionsInputAny) {
+          attributeName = optionsInputAny.logicalName || optionsInputAny._logicalName;
+
+          if (!attributeName && optionsInputAny.attributes && optionsInputAny.attributes.LogicalName) {
+            attributeName = optionsInputAny.attributes.LogicalName;
+          }
+        }
+
+        if (entityName && attributeName) {
+          setHasFetchedMetadata(true);
+
+          let settled = false;
+          const timeoutId = setTimeout(() => {
+            if (!settled) {
+              console.warn(`🕒 ASYNC TIMEOUT: Web API fetch for ${entityName}.${attributeName} has not settled after 10 seconds.`);
+            }
+          }, 10000);
+
+          const queryUrl = `/api/data/v9.2/EntityDefinitions(LogicalName='${entityName}')/Attributes(LogicalName='${attributeName}')/Microsoft.Dynamics.CRM.PicklistAttributeMetadata?$expand=OptionSet`;
+
+          fetch(queryUrl, {
+            method: "GET",
+            headers: {
+              "OData-MaxVersion": "4.0",
+              "OData-Version": "4.0",
+              "Accept": "application/json",
+              "Content-Type": "application/json; charset=utf-8",
+              "Prefer": "odata.include-annotations=\"*\""
+            }
+          }).then(response => {
+            if (!response.ok) {
+              throw new Error(`HTTP Error: ${response.status} ${response.statusText}`);
+            }
+            return response.json();
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          }).then((metadata: any) => {
+            settled = true;
+            clearTimeout(timeoutId);
+
+            const optionSet = metadata.OptionSet;
+
+            if (optionSet && optionSet.Options) {
+              const map: Record<number, string> = {};
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              optionSet.Options.forEach((opt: any) => {
+                const extVal = opt.ExternalValue;
+                const val = opt.Value;
+
+                if (extVal && val !== undefined) {
+                  map[val] = extVal;
+                }
+              });
+              setExternalIconsMap(map);
+            } else {
+              console.warn("⚠️ WARNING: OptionSet or Options not found in Web API response.");
+            }
+            return settled;
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          }).catch((err: any) => {
+            settled = true;
+            clearTimeout(timeoutId);
+            console.warn("❌ FAILED to fetch entity metadata via Web API:", err);
+          });
+        }
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } catch (err: any) {
+        console.error("❌ CRITICAL error during metadata fetch setup:", err);
+      }
+    }
+  }, [config.useExternalValueForIcon, hasFetchedMetadata, contextUtils, contextParameters, contextMode]);
 
   // Detect if we're in test mode
   const isTestMode = React.useMemo(() => {
@@ -207,8 +325,8 @@ export const AdvancedOptionsControl = ({ rawOptions, selectedKey, onChange, isDi
     text: option.Label,
     data: {
       color: option.Color,
-      description: (option as ComponentFramework.PropertyHelper.OptionMetadata & { Description?: string }).Description || "",
-      externalValue: (option as ComponentFramework.PropertyHelper.OptionMetadata & { ExternalValue?: string }).ExternalValue || ""
+      description: (option as unknown as Record<string, unknown>).Description as string || (option as unknown as Record<string, unknown>).description as string || "",
+      externalValue: (option as unknown as Record<string, unknown>).ExternalValue as string || (option as unknown as Record<string, unknown>).externalValue as string || (option as unknown as Record<string, unknown>).externalvalue as string || ""
     }
   }))
   if (config.sortBy === "Text") {
@@ -224,7 +342,10 @@ export const AdvancedOptionsControl = ({ rawOptions, selectedKey, onChange, isDi
     let icon = ((config.jsonConfig && option?.key) ? config.jsonConfig[option?.key]?.icon : config.defaultIconName) ?? config.defaultIconName;
 
     // logic for External Value Icons
-    if (config.useExternalValueForIcon && option?.data?.externalValue) {
+    const enrichedIcon = option?.key ? externalIconsMap[option.key as number] : null;
+    if (config.useExternalValueForIcon && enrichedIcon) {
+      icon = enrichedIcon;
+    } else if (config.useExternalValueForIcon && option?.data?.externalValue) {
       icon = option.data.externalValue;
     }
 
@@ -360,7 +481,6 @@ export const AdvancedOptionsControl = ({ rawOptions, selectedKey, onChange, isDi
             }
 
             // Final fallback: Color circle indicator
-            console.log(`🎨 Using color circle fallback for icon "${icon}"`);
             return (
               <span
                 className="color-indicator"
