@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<manifest>
+  <control namespace="lops" constructor="PDFGallery" version="1.0.0" display-name-key="lops.PDFGallery" description-key="Previews PDF files from related records as tabs with a native browser viewer and download" control-type="virtual">
+    <data-set name="documents" display-name-key="Documents" description-key="The related records containing the PDF files (configure via the relationship/view when adding this as a subgrid)" />
+    <property name="fileColumnName" display-name-key="File Column" description-key="Logical (schema) name of the File column on the related table that holds the PDF, e.g. lops_pdffile" of-type="SingleLine.Text" usage="input" required="true" />
+    <property name="tabLabelColumnName" display-name-key="Tab Label Column" description-key="Optional: logical name of the column to use as the tab label. Defaults to the file's own name when left blank." of-type="SingleLine.Text" usage="input" required="false" />
+    <property name="allowDownload" display-name-key="Allow Download" description-key="Show or hide the download button" of-type="TwoOptions" usage="input" required="false" default-value="true" />
+    <resources>
+      <code path="index.ts" order="1"/>
+      <css path="CSS/PDFGallery.css" order="1" />
+      <platform-library name="React" version="16.8.6" />
+      <platform-library name="Fluent" version="8.29.0" />
+    </resources>
+    <feature-usage>
+      <uses-feature name="Utility" required="true" />
+      <uses-feature name="WebAPI" required="true" />
+    </feature-usage>
+  </control>
+</manifest>

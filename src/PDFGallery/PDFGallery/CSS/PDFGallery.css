@@ -1,0 +1,92 @@
+.pdfgallery-root {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  min-height: 320px;
+  font-family: "Segoe UI", "Segoe UI Web (West European)", -apple-system, BlinkMacSystemFont, "Roboto", "Helvetica Neue", sans-serif;
+  box-sizing: border-box;
+}
+
+.pdfgallery-centered {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  min-height: 200px;
+}
+
+.pdfgallery-empty {
+  color: #605e5c;
+  font-size: 14px;
+}
+
+/* Fixed-height row; the pivot and the button group are stretched to fill it, then each
+   centers its own content within that shared height - this way they can't drift apart
+   regardless of the two components' differing intrinsic heights. */
+.pdfgallery-toolbar {
+  display: flex;
+  align-items: stretch;
+  justify-content: flex-start;
+  height: 44px;
+  flex: 0 0 auto;
+  border-bottom: 1px solid #edebe9;
+}
+
+.pdfgallery-pivot {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.pdfgallery-pivot .ms-Pivot {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  width: 100%;
+}
+
+.pdfgallery-toolbar-actions {
+  display: flex;
+  align-items: center;
+  flex: 0 0 auto;
+  gap: 8px;
+  margin: 0 8px 0 auto;
+}
+
+.pdfgallery-preview-area {
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
+  padding: 12px;
+  box-sizing: border-box;
+  background-color: #f3f2f1;
+}
+
+/* A4 portrait ratio (210mm x 297mm), scaled to whatever space is available and letterboxed
+   so it always reads as "a page" regardless of the section size the maker allocates. */
+.pdfgallery-page {
+  position: relative;
+  aspect-ratio: 210 / 297;
+  width: 100%;
+  height: 100%;
+  max-width: 100%;
+  max-height: 100%;
+  background-color: #ffffff;
+  box-shadow: 0 0 4px rgba(0, 0, 0, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.pdfgallery-iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+}
