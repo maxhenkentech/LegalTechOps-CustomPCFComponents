@@ -1,0 +1,168 @@
+.pdfgallery-root {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  min-height: 320px;
+  font-family: "Segoe UI", "Segoe UI Web (West European)", -apple-system, BlinkMacSystemFont, "Roboto", "Helvetica Neue", sans-serif;
+  box-sizing: border-box;
+}
+
+.pdfgallery-centered {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  min-height: 200px;
+}
+
+.pdfgallery-empty {
+  color: #605e5c;
+  font-size: 14px;
+}
+
+.pdfgallery-unsupported {
+  flex-direction: column;
+  gap: 8px;
+  padding: 24px;
+  box-sizing: border-box;
+  text-align: center;
+  color: #605e5c;
+  font-size: 14px;
+}
+
+.pdfgallery-unsupported span {
+  display: block;
+  width: 100%;
+  max-width: 280px;
+  white-space: normal;
+  word-wrap: break-word;
+}
+
+.pdfgallery-unsupported-icon {
+  font-size: 24px;
+  color: #a19f9d;
+}
+
+/* Fixed-height row; the pivot and the button group are stretched to fill it, then each
+   centers its own content within that shared height - this way they can't drift apart
+   regardless of the two components' differing intrinsic heights. */
+.pdfgallery-toolbar {
+  display: flex;
+  align-items: stretch;
+  justify-content: flex-start;
+  height: 44px;
+  flex: 0 0 auto;
+  border-bottom: 1px solid #edebe9;
+}
+
+/* Deliberately NOT display:flex here (and no overflow:hidden) - the className passed to <Pivot>
+   lands directly on Fluent's own tablist root (it's not a wrapper), and Fluent's overflowBehavior
+   ="menu" depends on that root's natural block/inline layout to measure what does and doesn't fit.
+   Forcing flexbox there makes every tab shrink to always "fit", which defeats the overflow-menu
+   calculation entirely - tabs cram in and truncate instead of relocating into the "..." menu.
+   Its own link height (44px) already matches the toolbar's fixed height, so no extra vertical-
+   centering rules are needed here for it to line up with the button group. */
+.pdfgallery-pivot {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* Safety net alongside the JS-side tabLabelMaxChars truncation - a tab's text should never be
+   able to render past its own link boundary and bleed into the toolbar buttons. */
+.pdfgallery-pivot .ms-Pivot-link {
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pdfgallery-toolbar-actions {
+  display: flex;
+  align-items: center;
+  flex: 0 0 auto;
+  gap: 8px;
+  margin: 0 8px 0 auto;
+}
+
+.pdfgallery-body {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: row;
+  min-height: 0;
+}
+
+.pdfgallery-preview-area {
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
+  min-width: 0;
+  padding: 12px;
+  box-sizing: border-box;
+  background-color: #f3f2f1;
+}
+
+/* Vertical style: document list sits to the right of the preview as a scrollable sidebar. */
+.pdfgallery-sidebar {
+  flex: 0 0 220px;
+  width: 220px;
+  overflow-y: auto;
+  border-left: 1px solid #edebe9;
+  background-color: #ffffff;
+  display: flex;
+  flex-direction: column;
+}
+
+.pdfgallery-sidebar-item {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  text-align: left;
+  padding: 10px 14px;
+  border: none;
+  border-left: 3px solid transparent;
+  background: none;
+  font-family: inherit;
+  font-size: 14px;
+  color: #323130;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pdfgallery-sidebar-item:hover {
+  background-color: #f3f2f1;
+}
+
+.pdfgallery-sidebar-item.is-selected {
+  background-color: #edebe9;
+  border-left-color: #0078d4;
+  color: #0078d4;
+  font-weight: 600;
+}
+
+/* A4 portrait ratio (210mm x 297mm), scaled to whatever space is available and letterboxed
+   so it always reads as "a page" regardless of the section size the maker allocates. */
+.pdfgallery-page {
+  position: relative;
+  aspect-ratio: 210 / 297;
+  width: 100%;
+  height: 100%;
+  max-width: 100%;
+  max-height: 100%;
+  background-color: #ffffff;
+  box-shadow: 0 0 4px rgba(0, 0, 0, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.pdfgallery-iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+}
