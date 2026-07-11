@@ -59,3 +59,7 @@ deployment-logs
 deploymentEnvironments.json
 deployScript.sh
 PCF Gallery Descriptions
+
+# Internal planning/agent-context docs (not published)
+CLAUDE.md
+PDFGallery-PLAN.md

@@ -1,10 +1,17 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <manifest>
-  <control namespace="lops" constructor="PDFGallery" version="1.0.0" display-name-key="lops.PDFGallery" description-key="Previews PDF files from related records as tabs with a native browser viewer and download" control-type="virtual">
+  <control namespace="lops" constructor="PDFGallery" version="1.5.2" display-name-key="lops.PDFGallery" description-key="Previews PDF files from related records as tabs with a native browser viewer and download" control-type="virtual">
     <data-set name="documents" display-name-key="Documents" description-key="The related records containing the PDF files (configure via the relationship/view when adding this as a subgrid)" />
     <property name="fileColumnName" display-name-key="File Column" description-key="Logical (schema) name of the File column on the related table that holds the PDF, e.g. lops_pdffile" of-type="SingleLine.Text" usage="input" required="true" />
-    <property name="tabLabelColumnName" display-name-key="Tab Label Column" description-key="Optional: logical name of the column to use as the tab label. Defaults to the file's own name when left blank." of-type="SingleLine.Text" usage="input" required="false" />
+    <property name="tabLabelColumnName" display-name-key="Tab Label Column" description-key="Optional: logical name of the column to use as the tab label. Defaults to the file name when left blank." of-type="SingleLine.Text" usage="input" required="false" />
     <property name="allowDownload" display-name-key="Allow Download" description-key="Show or hide the download button" of-type="TwoOptions" usage="input" required="false" default-value="true" />
+    <property name="showButtonLabels" display-name-key="Show Button Labels" description-key="Show text labels on the Open in new tab and Download buttons. When off, only the icons are shown, with the label available as a hover tooltip." of-type="TwoOptions" usage="input" required="false" default-value="false" />
+    <property name="tabLabelMaxChars" display-name-key="Tab Label Max Characters" description-key="Maximum number of characters to show in each tab label before truncating with an ellipsis. The full name is always available as a hover tooltip." of-type="Whole.None" usage="input" required="false" default-value="15" />
+    <property name="allowOpenRecord" display-name-key="Allow Open Record" description-key="Show an Open Record button that navigates to the Dataverse form for the record currently displayed in the viewer." of-type="TwoOptions" usage="input" required="false" default-value="false" />
+    <property name="style" display-name-key="Style" description-key="Layout of the document selector. Horizontal shows tabs above the preview. Vertical shows a document list to the right of the preview." of-type="Enum" usage="input" required="false" default-value="Horizontal">
+      <value name="Horizontal" display-name-key="Horizontal" description-key="Document tabs shown in a row above the preview" default="true">Horizontal</value>
+      <value name="Vertical" display-name-key="Vertical" description-key="Document names shown in a vertical list to the right of the preview">Vertical</value>
+    </property>
     <resources>
       <code path="index.ts" order="1"/>
       <css path="CSS/PDFGallery.css" order="1" />

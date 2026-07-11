@@ -45,13 +45,22 @@ export class PDFGallery implements ComponentFramework.ReactControl<IInputs, IOut
     const fileColumnName = context.parameters.fileColumnName.raw ?? "";
     const tabLabelColumnName = context.parameters.tabLabelColumnName?.raw || undefined;
     const allowDownload = context.parameters.allowDownload?.raw ?? true;
+    const showButtonLabels = context.parameters.showButtonLabels?.raw ?? false;
+    const tabLabelMaxChars = context.parameters.tabLabelMaxChars?.raw ?? 15;
+    const allowOpenRecord = context.parameters.allowOpenRecord?.raw ?? false;
+    const layoutStyle = context.parameters.style?.raw ?? "Horizontal";
 
     return React.createElement(PDFGalleryControl, {
       dataset,
       fileColumnName,
       tabLabelColumnName,
       allowDownload,
+      showButtonLabels,
+      tabLabelMaxChars,
+      allowOpenRecord,
+      layoutStyle,
       webAPI: context.webAPI,
+      navigation: context.navigation,
       isTestMode: this.isTestMode(),
     });
   }
