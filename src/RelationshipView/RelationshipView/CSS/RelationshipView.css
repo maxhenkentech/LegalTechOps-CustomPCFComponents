@@ -1,0 +1,478 @@
+.rv-container {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  padding: 8px;
+  font-family: "Segoe UI", "Segoe UI Web (West European)", -apple-system, BlinkMacSystemFont, "Roboto", "Helvetica Neue", sans-serif;
+  font-size: 14px;
+  color: #201f1e;
+  text-align: left;
+  box-sizing: border-box;
+}
+
+.rv-container * {
+  text-align: left;
+}
+
+.rv-status {
+  padding: 12px 16px;
+  color: #605e5c;
+}
+
+.rv-status-error {
+  color: #a4262c;
+}
+
+.rv-node {
+  display: flex;
+  flex-direction: column;
+}
+
+.rv-row {
+  display: flex;
+  align-items: stretch;
+  box-sizing: border-box;
+}
+
+/* Each record renders as a rounded card. The vertical gap between cards comes from this margin
+   (not a gap on the container) so the rail SVG — a sibling that stretches the row's full height —
+   keeps the connector lines running unbroken through the gaps, with each elbow's horizontal stub
+   landing on the card's left border. */
+.rv-row-content {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 44px;
+  display: flex;
+  align-items: stretch;
+  margin: 4px 0;
+  background-color: #ffffff;
+  border: 1px solid #e1dfdd;
+  border-radius: 8px;
+  box-sizing: border-box;
+}
+
+/* Current-record highlight is applied inline on .rv-row-content (currentRecordHighlightColor is
+   user-configurable), so the highlight fills the card but never paints behind the rail. */
+
+/* --- indent rail / tree connectors (SVG so the elbow is a real rounded curve) --- */
+
+.rv-rail-svg {
+  flex: 0 0 auto;
+  display: block;
+  /* Stretch to the row's full rendered height (card + its margins). height="100%" can't do
+     this: the row's height is content-driven/indefinite, so a percentage collapses to the
+     SVG's intrinsic 44px and leaves a gap in the verticals at every row boundary. */
+  align-self: stretch;
+  height: auto;
+}
+
+.rv-rail-svg path {
+  fill: none;
+  stroke: #d2d0ce;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* --- chevron / expand toggle --- */
+
+.rv-chevron {
+  flex: 0 0 auto;
+  width: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  color: #605e5c;
+  cursor: pointer;
+  padding: 0;
+}
+
+.rv-chevron:hover {
+  color: #201f1e;
+}
+
+.rv-chevron-spacer {
+  flex: 0 0 auto;
+  width: 24px;
+}
+
+/* --- thumbnail --- */
+
+.rv-thumb {
+  position: relative;
+  flex: 0 0 auto;
+  width: 32px;
+  height: 32px;
+  margin: 6px 8px;
+  background-color: #f3f2f1;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.rv-thumb-placeholder {
+  font-size: 16px;
+  color: #a19f9d;
+}
+
+.rv-thumb-icon {
+  font-size: 16px;
+  color: #323130;
+}
+
+/* --- thumbnail rendering options --- */
+
+.rv-thumb-fit-cover {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.rv-thumb-fit-stretch {
+  width: 100%;
+  height: 100%;
+  object-fit: fill;
+}
+
+.rv-thumb-fit-contain {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.rv-thumb-fit-center {
+  width: auto;
+  height: auto;
+  max-width: none;
+  max-height: none;
+}
+
+.rv-thumb-fit-fitwidth {
+  width: 100%;
+  height: auto;
+}
+
+.rv-thumb-fit-fitheight {
+  width: auto;
+  height: 100%;
+}
+
+.rv-thumb-tile {
+  position: absolute;
+  inset: 0;
+  background-repeat: repeat;
+}
+
+.rv-thumb-circle {
+  border-radius: 50%;
+}
+
+.rv-thumb-square {
+  border-radius: 0;
+}
+
+.rv-thumb-rounded {
+  border-radius: 6px;
+}
+
+/* --- title / subtitle --- */
+
+.rv-row-main {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 4px 8px;
+}
+
+.rv-title-line {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rv-title {
+  color: #323130;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.rv-title:hover {
+  text-decoration: underline;
+}
+
+.rv-title-current {
+  font-weight: 600;
+  text-decoration: underline;
+  cursor: default;
+}
+
+.rv-subtitle {
+  color: #605e5c;
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rv-attr-link {
+  color: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.rv-attr-image {
+  height: 18px;
+  width: 18px;
+  object-fit: cover;
+  border-radius: 3px;
+  vertical-align: middle;
+}
+
+.rv-attr-image-clickable {
+  cursor: pointer;
+}
+
+/* --- image preview callout (Quick View panel only) --- */
+
+.rv-image-callout {
+  position: relative;
+  padding: 8px;
+}
+
+.rv-image-callout-img {
+  display: block;
+  border-radius: 4px;
+}
+
+.rv-image-callout-dismiss {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: 50%;
+  background-color: #ffffff;
+  color: #201f1e;
+  cursor: pointer;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+  padding: 0;
+}
+
+.rv-image-callout-dismiss:hover {
+  background-color: #f3f2f1;
+}
+
+/* --- PDF preview callout (Quick View panel only) --- */
+
+.rv-pdf-callout {
+  display: flex;
+  flex-direction: column;
+  width: 80vw;
+  height: 80vh;
+}
+
+.rv-pdf-callout-toolbar {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 10px;
+  border-bottom: 1px solid #edebe9;
+}
+
+.rv-pdf-callout-download {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #201f1e;
+  text-decoration: none;
+  font-size: 13px;
+}
+
+.rv-pdf-callout-download:hover {
+  text-decoration: underline;
+}
+
+.rv-pdf-callout-dismiss {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: #201f1e;
+  cursor: pointer;
+  padding: 0;
+}
+
+.rv-pdf-callout-dismiss:hover {
+  background-color: #f3f2f1;
+}
+
+.rv-pdf-callout-frame {
+  flex: 1 1 auto;
+  width: 100%;
+  border: none;
+}
+
+.rv-pdf-callout-status {
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #605e5c;
+  font-size: 13px;
+}
+
+.rv-pdf-callout-error {
+  color: #a4262c;
+}
+
+/* --- state pill --- */
+
+.rv-row-end {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+}
+
+.rv-pill {
+  border-radius: 10px;
+  padding: 2px 10px;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.rv-pill-active {
+  background-color: #dff6dd;
+  color: #107c10;
+}
+
+.rv-pill-inactive {
+  background-color: #f3f2f1;
+  color: #605e5c;
+}
+
+/* --- quick view emulation panel --- */
+
+/* Flex wrapper so the ContinuationRail can keep ancestor connector lines running
+   through the expanded panel instead of leaving a gap. */
+.rv-quickview-row {
+  display: flex;
+  align-items: stretch;
+}
+
+.rv-quickview-panel {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 16px 12px 56px;
+  margin: 0 0 4px 0;
+  background-color: #faf9f8;
+  border: 1px solid #e1dfdd;
+  border-radius: 8px;
+  font-size: 12px;
+  box-sizing: border-box;
+}
+
+.rv-quickview-status {
+  color: #605e5c;
+}
+
+.rv-quickview-error {
+  color: #a4262c;
+}
+
+/* A row of one or more side-by-side columns, mirroring the source form's own <tab>/<column>
+   layout (parseFormLayout groups fields this way; groupColumnsIntoRows turns that flat,
+   ordered list back into rows-of-columns for rendering). */
+.rv-quickview-tabrow {
+  display: flex;
+  gap: 16px;
+}
+
+.rv-quickview-column {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+
+.rv-quickview-section {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.rv-quickview-section-header {
+  font-weight: 600;
+  font-size: 12px;
+  color: #323130;
+  border-bottom: 1px solid #edebe9;
+  padding-bottom: 2px;
+}
+
+.rv-quickview-field {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+/* Label wraps rather than truncating - it's an expanded detail panel, so nothing should be
+   hidden - and break-word guards against a single unbroken long word/label blowing out the
+   fixed width. */
+.rv-quickview-label {
+  color: #605e5c;
+  width: 120px;
+  flex: 0 0 120px;
+  overflow-wrap: break-word;
+}
+
+.rv-quickview-value {
+  color: #201f1e;
+  min-width: 0;
+  flex: 1 1 auto;
+  overflow-wrap: break-word;
+}
+
+.rv-quickview-value .rv-attr-image {
+  height: 64px;
+  width: 64px;
+  border-radius: 6px;
+  vertical-align: top;
+}
+
+/* --- choice color display (Quick View panel only) --- */
+
+.rv-choice-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 6px;
+  vertical-align: middle;
+}
+
+.rv-choice-pill {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 10px;
+  color: #ffffff;
+  font-size: 12px;
+  line-height: 1.6;
+}

@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<manifest>
+  <control namespace="lops" constructor="RelationshipView" version="1.0.25" display-name-key="lops.RelationshipView" description-key="Renders the full ancestor/descendant tree of a self-referential record hierarchy" control-type="virtual">
+    <property name="parentLookup" display-name-key="Parent Lookup" description-key="The self-referential lookup field (e.g. Parent Contract) that defines where this record sits in the hierarchy. Place this control on that field." of-type="Lookup.Simple" usage="bound" required="true" />
+    <property name="showState" display-name-key="Show State" description-key="If true, displays an Active/Inactive pill for each record state." of-type="TwoOptions" usage="input" required="false" default-value="true" />
+    <property name="showInactiveRecords" display-name-key="Show Inactive Records" description-key="If true (default), inactive records are included in the tree and, when Show State is also true, show an Inactive pill. If false, inactive records - and everything below them in the tree - are left out entirely, and the state pill is hidden as well since every remaining record would just show Active." of-type="TwoOptions" usage="input" required="false" default-value="true" />
+    <property name="maxParentLevels" display-name-key="Max Parent Levels" description-key="Maximum number of ancestor levels to walk upward. 0 disables ancestor lookups entirely (no parent data is fetched). -1 walks all the way to the root (default). Any positive number caps how many levels are fetched." of-type="Whole.None" usage="input" required="false" default-value="-1" />
+    <property name="maxChildLevels" display-name-key="Max Child Levels" description-key="Maximum number of descendant levels to walk downward. 0 disables descendant lookups entirely (no child data is fetched). -1 walks all the way to the leaves (default). Any positive number caps how many levels are fetched." of-type="Whole.None" usage="input" required="false" default-value="-1" />
+    <property name="siblingDisplay" display-name-key="Sister Record Display" description-key="How to handle other records that share the same immediate parent as the current record. None hides them (default). Direct Only shows just those sister records. Sister Plus Children also shows the descendant tree under each sister record." of-type="Enum" usage="input" required="false" default-value="None">
+      <value name="None" display-name-key="None" description-key="Do not show sister records." default="true">None</value>
+      <value name="DirectOnly" display-name-key="Direct Only" description-key="Show sister records, without their own children.">DirectOnly</value>
+      <value name="SistersAndChildren" display-name-key="Sister Plus Children" description-key="Show sister records along with the descendant tree under each one.">SistersAndChildren</value>
+    </property>
+    <property name="sortByColumnName" display-name-key="Sort By Column" description-key="Optional: logical name of a column used to order records that share the same level in the tree - each set of children under a shared parent, and sister records. When not set, records keep their default fetch order." of-type="SingleLine.Text" usage="input" required="false" />
+    <property name="sortDirection" display-name-key="Sort Direction" description-key="Direction to sort in when Sort By Column is set." of-type="Enum" usage="input" required="false" default-value="Ascending">
+      <value name="Ascending" display-name-key="Ascending" description-key="Lowest value first." default="true">Ascending</value>
+      <value name="Descending" display-name-key="Descending" description-key="Highest value first.">Descending</value>
+    </property>
+    <property name="currentRecordHighlightColor" display-name-key="Current Record Highlight Color" description-key="Hex color (e.g. #F3F2F1) used to highlight the current record row." of-type="SingleLine.Text" usage="input" required="false" default-value="#F3F2F1" />
+    <property name="customAttribute1" display-name-key="Custom Attribute 1" description-key="Logical name of a column to display in each record row." of-type="SingleLine.Text" usage="input" required="false" />
+    <property name="customAttribute2" display-name-key="Custom Attribute 2" description-key="Logical name of a column to display in each record row." of-type="SingleLine.Text" usage="input" required="false" />
+    <property name="customAttribute3" display-name-key="Custom Attribute 3" description-key="Logical name of a column to display in each record row." of-type="SingleLine.Text" usage="input" required="false" />
+    <property name="thumbnailColumnName" display-name-key="Thumbnail Column" description-key="Optional: logical name of a column to render on the left of each record row. Point this at an Image column to show that picture, or at a text column containing an MDL2 icon name to show that icon instead - detected automatically from the column type." of-type="SingleLine.Text" usage="input" required="false" />
+    <property name="thumbnailStyle" display-name-key="Thumbnail Style" description-key="How the thumbnail image is rendered." of-type="Enum" usage="input" required="false" default-value="Circle">
+      <value name="Circle" display-name-key="Circle" description-key="Renders the thumbnail as a circle." default="true">Circle</value>
+      <value name="Square" display-name-key="Square" description-key="Renders the thumbnail as a square.">Square</value>
+      <value name="RoundedSquare" display-name-key="Rounded Square" description-key="Renders the thumbnail as a square with rounded corners.">RoundedSquare</value>
+    </property>
+    <property name="thumbnailRenderingOption" display-name-key="Thumbnail Rendering Option" description-key="How the thumbnail image fills its frame." of-type="Enum" usage="input" required="false" default-value="Cover">
+      <value name="Cover" display-name-key="Cover" description-key="Fills the frame, cropping the image as needed while keeping its aspect ratio (current/default behavior)." default="true">Cover</value>
+      <value name="Stretch" display-name-key="Stretch" description-key="Stretches the image to exactly fill the frame, ignoring its aspect ratio.">Stretch</value>
+      <value name="Contain" display-name-key="Contain" description-key="Fits the whole image inside the frame, keeping its aspect ratio, with empty space if needed.">Contain</value>
+      <value name="Center" display-name-key="Center" description-key="Shows the image at its natural size, centered, cropping any overflow.">Center</value>
+      <value name="Tile" display-name-key="Tile" description-key="Repeats the image to fill the frame.">Tile</value>
+      <value name="FitWidth" display-name-key="Fit Width" description-key="Scales the image so its width fills the frame, keeping its aspect ratio.">FitWidth</value>
+      <value name="FitHeight" display-name-key="Fit Height" description-key="Scales the image so its height fills the frame, keeping its aspect ratio.">FitHeight</value>
+    </property>
+    <property name="quickViewFormName" display-name-key="Quick View Form Name" description-key="Optional: the unique name of a Quick View Form on this table. When set, each row gets an expand chevron that displays the fields defined by that Quick View Form. A Main Form name also works and will show the fields from that form instead, as long as no Quick View Form shares the same name." of-type="SingleLine.Text" usage="input" required="false" />
+    <property name="choiceColorDisplay" display-name-key="Choice Color Display" description-key="How Choice/optionset field colors are shown in the expandable Quick View panel. None keeps plain text (default). Circle shows a small color dot before the value. Pill shows the value inside a pill filled with the choice color. Font colors the value text itself." of-type="Enum" usage="input" required="false" default-value="None">
+      <value name="None" display-name-key="None" description-key="Plain text, no color shown." default="true">None</value>
+      <value name="Circle" display-name-key="Circle" description-key="A small circle in the choice color before the value.">Circle</value>
+      <value name="Pill" display-name-key="Pill" description-key="The value shown inside a pill filled with the choice color.">Pill</value>
+      <value name="Font" display-name-key="Font" description-key="The value text itself colored with the choice color.">Font</value>
+    </property>
+    <property name="indentation" display-name-key="Indentation" description-key="How far each ancestor/descendant level is indented relative to its parent." of-type="Enum" usage="input" required="false" default-value="Medium">
+      <value name="Low" display-name-key="Low" description-key="Less indentation per level than the default.">Low</value>
+      <value name="Medium" display-name-key="Medium" description-key="The default indentation per level." default="true">Medium</value>
+      <value name="High" display-name-key="High" description-key="More indentation per level than the default.">High</value>
+    </property>
+    <resources>
+      <code path="index.ts" order="1"/>
+      <css path="CSS/RelationshipView.css" order="1" />
+      <platform-library name="React" version="16.8.6" />
+      <platform-library name="Fluent" version="8.29.0" />
+    </resources>
+    <feature-usage>
+      <uses-feature name="Utility" required="true" />
+      <uses-feature name="WebAPI" required="true" />
+    </feature-usage>
+  </control>
+</manifest>

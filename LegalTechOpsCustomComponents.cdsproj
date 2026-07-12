@@ -48,6 +48,7 @@
     <ProjectReference Include="src/RiskMatrix/RiskMatrix.pcfproj" />
     <ProjectReference Include="src/AdvancedDropDown/AdvancedDropDown.pcfproj" />
     <ProjectReference Include="src/PDFGallery/PDFGallery.pcfproj" />
+    <ProjectReference Include="src/RelationshipView/RelationshipView.pcfproj" />
   </ItemGroup>
 
   <Import Project="$(MSBuildToolsPath)\Microsoft.Common.targets" />
