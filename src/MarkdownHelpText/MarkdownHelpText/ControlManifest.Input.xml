@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<manifest>
+  <control namespace="lops" constructor="MarkdownHelpText" version="1.2.1" display-name-key="lops.MarkdownHelpText" description-key="Renders Markdown-formatted help text, scaled to the text size of the form" control-type="virtual">
+    <type-group name="strings">
+      <type>SingleLine.Text</type>
+      <type>Multiple</type>
+    </type-group>
+    <property name="boundText" display-name-key="Text Column" description-key="Optional: a Single Line of Text or Multiple Lines of Text column containing Markdown. Takes priority over Markdown Text when both are set. Leave unbound to use this as a static help-text component with no backing column." of-type-group="strings" usage="bound" required="false" />
+    <property name="markdownText" display-name-key="Markdown Text" description-key="Static Markdown text, set at design time, used when Text Column is not bound or has no value. Supports full CommonMark + GitHub Flavored Markdown (tables, task lists, strikethrough), fenced code blocks with syntax highlighting, and GitHub-style alert callouts (e.g. a blockquote starting with [!NOTE], [!TIP], [!IMPORTANT], [!WARNING], or [!CAUTION])." of-type="Multiple" usage="input" required="false" />
+    <property name="calloutTextLayout" display-name-key="Callout Text Layout" description-key="Where an alert callouts body text starts relative to its icon + label. Same Line keeps the body text starting right after the label on the same line (default). New Line starts the body text on the line below the label." of-type="Enum" usage="input" required="false" default-value="SameLine">
+      <value name="SameLine" display-name-key="Same Line" description-key="Body text starts on the same line as the icon + label." default="true">SameLine</value>
+      <value name="NewLine" display-name-key="New Line" description-key="Body text starts on the line below the icon + label.">NewLine</value>
+    </property>
+    <property name="lineSpacing" display-name-key="Line Spacing" description-key="Line height multiplier applied to the rendered text. Defaults to 1.55, the controls original fixed value." of-type="Decimal" usage="input" required="false" default-value="1.55" />
+    <resources>
+      <code path="index.ts" order="1"/>
+      <css path="CSS/MarkdownHelpText.css" order="1" />
+      <platform-library name="React" version="16.8.6" />
+      <platform-library name="Fluent" version="8.29.0" />
+    </resources>
+    <feature-usage>
+      <uses-feature name="Utility" required="true" />
+      <uses-feature name="WebAPI" required="true" />
+    </feature-usage>
+  </control>
+</manifest>

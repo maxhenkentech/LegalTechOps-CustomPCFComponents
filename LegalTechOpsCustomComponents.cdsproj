@@ -49,6 +49,8 @@
     <ProjectReference Include="src/AdvancedDropDown/AdvancedDropDown.pcfproj" />
     <ProjectReference Include="src/PDFGallery/PDFGallery.pcfproj" />
     <ProjectReference Include="src/RelationshipView/RelationshipView.pcfproj" />
+    <ProjectReference Include="src/MarkdownHelpText/MarkdownHelpText.pcfproj" />
+    <ProjectReference Include="src/ModernChoiceButtons/ModernChoiceButtons.pcfproj" />
   </ItemGroup>
 
   <Import Project="$(MSBuildToolsPath)\Microsoft.Common.targets" />

@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<manifest>
+  <control namespace="lops" constructor="ModernChoiceButtons" version="1.4.0" display-name-key="lops.ModernChoiceButtons" description-key="ModernChoiceButtons description" control-type="virtual">
+    <property name="optionsInput" display-name-key="OptionSet" description-key="OptionSet" of-type="OptionSet" usage="bound" required="true" />
+    <property name="icon" display-name-key="Icon" description-key="Default MDL2 icon name shown on every tile (https://learn.microsoft.com/en-us/windows/apps/design/style/segoe-fluent-icons-font), or a JSON map of choice value to icon, e.g. {&quot;1&quot;:{&quot;icon&quot;:&quot;Accept&quot;}}" of-type="SingleLine.Text" usage="input" required="false" />
+    <property name="useExternalValueForIcon" display-name-key="Use external value for icon" description-key="When enabled, the External Value of each choice option is used as its icon name instead" of-type="TwoOptions" usage="input" required="false" default-value="false" />
+    <property name="hideHiddenOptions" display-name-key="Hide hidden choice options" description-key="Hide options marked as hidden in the option set" of-type="TwoOptions" usage="input" required="false" default-value="true" />
+    <property name="sortBy" display-name-key="Sort by" description-key="Sort by" of-type="Enum" usage="input" required="false" default-value="Value">
+      <value name="Value" display-name-key="Value" description-key="Sort by the value of the options" default="true">Value</value>
+      <value name="Text" display-name-key="Text" description-key="Sort by the text of the options, corresponding to the user language">Text</value>
+    </property>
+    <property name="tileShape" display-name-key="Tile shape" description-key="The corner shape of each tile" of-type="Enum" usage="input" required="false" default-value="Rounded">
+      <value name="Square" display-name-key="Square" description-key="Sharp corners" default="false">Square</value>
+      <value name="Rounded" display-name-key="Rounded" description-key="Square with rounded corners" default="true">Rounded</value>
+    </property>
+    <property name="tileSize" display-name-key="Tile size" description-key="Overall size of each tile (padding, min/max width, and label text size). The icon itself stays a fixed size regardless of this setting" of-type="Enum" usage="input" required="false" default-value="Normal">
+      <value name="Small" display-name-key="Small" description-key="Smaller, more compact tiles">Small</value>
+      <value name="Normal" display-name-key="Normal" description-key="Standard tile size (default)" default="true">Normal</value>
+      <value name="Large" display-name-key="Large" description-key="Larger tiles">Large</value>
+    </property>
+    <property name="showChoiceValue" display-name-key="Show choice value" description-key="Show the choice options text label under the icon. When off, the label is hidden and the icon is shown larger, centered in the tile" of-type="TwoOptions" usage="input" required="false" default-value="true" />
+    <property name="makeFontBold" display-name-key="Make font bold" description-key="Display the tile label in bold font weight" of-type="TwoOptions" usage="input" required="false" default-value="false" />
+    <property name="notSelectedColor" display-name-key="Not selected color" description-key="Background color of a tile that is not selected (hex, e.g. #FFFFFF)" of-type="SingleLine.Text" usage="input" required="false" default-value="#FFFFFF" />
+    <property name="hoverColor" display-name-key="Hover color" description-key="Background color of a tile while hovered (hex, e.g. #DEECF9)" of-type="SingleLine.Text" usage="input" required="false" default-value="#DEECF9" />
+    <property name="selectedBackgroundMode" display-name-key="Selected background mode" description-key="Whether the selected tiles background uses a custom color or the choice options own color" of-type="Enum" usage="input" required="false" default-value="CustomColor">
+      <value name="CustomColor" display-name-key="Custom color" description-key="Use the Selected color property" default="true">CustomColor</value>
+      <value name="ChoiceColor" display-name-key="Choice value color" description-key="Use the options own configured color">ChoiceColor</value>
+      <value name="CustomColorFaded" display-name-key="Choice value color (faded)" description-key="Use a lighter, faded version of the choice options own configured color">CustomColorFaded</value>
+    </property>
+    <property name="selectedColor" display-name-key="Selected color" description-key="Background color of the selected tile when Selected background mode is Custom color (hex, e.g. #F3F2F1)" of-type="SingleLine.Text" usage="input" required="false" default-value="#F3F2F1" />
+    <property name="selectedBorderMode" display-name-key="Selected border mode" description-key="Whether the selected tile shows a border, and whether it uses a custom color or the choice options own color" of-type="Enum" usage="input" required="false" default-value="CustomColor">
+      <value name="Off" display-name-key="Off" description-key="No border on the selected tile">Off</value>
+      <value name="CustomColor" display-name-key="Custom color" description-key="Use the Selected border color property" default="true">CustomColor</value>
+      <value name="ChoiceColor" display-name-key="Choice value color" description-key="Use the options own configured color">ChoiceColor</value>
+      <value name="CustomColorFaded" display-name-key="Choice value color (faded)" description-key="Use a lighter, faded version of the choice options own configured color">CustomColorFaded</value>
+    </property>
+    <property name="selectedBorderColor" display-name-key="Selected border color" description-key="Border color of the selected tile when Selected border mode is Custom color (hex, e.g. #0078D4)" of-type="SingleLine.Text" usage="input" required="false" default-value="#0078D4" />
+    <property name="iconColorMode" display-name-key="Icon color mode" description-key="How the tiles icon color is determined: automatic contrast against the tiles background (default), a fixed color, the choice options own color, or a faded version of the choice options own color" of-type="Enum" usage="input" required="false" default-value="Auto">
+      <value name="Auto" display-name-key="Automatic" description-key="Icon color automatically matches the tiles background for contrast" default="true">Auto</value>
+      <value name="CustomColor" display-name-key="Fixed color" description-key="Use the Icon color property">CustomColor</value>
+      <value name="ChoiceColor" display-name-key="Choice value color" description-key="Use the options own configured color">ChoiceColor</value>
+      <value name="CustomColorFaded" display-name-key="Choice value color (faded)" description-key="Use a lighter, faded version of the choice options own configured color">CustomColorFaded</value>
+    </property>
+    <property name="iconColor" display-name-key="Icon color" description-key="Icon color used when Icon color mode is Fixed color (hex, e.g. #201F1E)" of-type="SingleLine.Text" usage="input" required="false" default-value="#201F1E" />
+    <property name="iconColorScope" display-name-key="Icon color scope" description-key="Whether Icon color mode is applied to every tiles icon, or only the selected tiles icon (other tiles then use automatic contrast)" of-type="Enum" usage="input" required="false" default-value="AllTiles">
+      <value name="AllTiles" display-name-key="All tiles" description-key="Apply Icon color mode to every tiles icon" default="true">AllTiles</value>
+      <value name="SelectedOnly" display-name-key="Selected tile only" description-key="Apply Icon color mode only to the selected tiles icon; other tiles use automatic contrast">SelectedOnly</value>
+    </property>
+    <resources>
+      <code path="index.ts" order="1"/>
+      <css path="CSS/ModernChoiceButtons.css" order="1" />
+      <platform-library name="React" version="16.8.6" />
+      <platform-library name="Fluent" version="8.29.0" />
+    </resources>
+    <feature-usage>
+      <uses-feature name="Utility" required="true" />
+    </feature-usage>
+  </control>
+</manifest>

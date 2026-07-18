@@ -1,0 +1,430 @@
+/* All sizing below is expressed in em so the rendered text scales with whatever font size
+   Dataverse's form/label-size setting cascades onto this control's container - no JS
+   measurement, just normal CSS inheritance. line-height is the one exception: it's set inline
+   by MarkdownHelpTextControl.tsx from the maker-configurable Line Spacing property (default 1.55,
+   matching the value below) rather than fixed here, so the value below only matters as a fallback
+   for contexts that render this CSS without the inline style (e.g. viewing the file directly). */
+
+.mhtext-root {
+  /* Explicit width/box-sizing/min-width - Dataverse's own form field wrapper can place this
+     control's container in a flex/grid layout (confirmed live: text wrapped fine in the local PCF
+     test harness's plain block layout, but overflowed and got clipped by the field's own
+     overflow:hidden wrapper on a real model-driven form). Without these, a flex/grid ancestor lets
+     this root shrink-to-fit its content's natural (unwrapped) width instead of being constrained to
+     the field's actual width, so overflow-wrap never gets a chance to kick in - min-width: 0
+     overrides a flex item's default min-width: auto (which is what allows content to overflow
+     rather than shrink/wrap in the first place). */
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  font-size: 1em;
+  line-height: 1.55;
+  color: #242424;
+  text-align: left;
+  /* white-space is inherited, and this control is optionally bound to a Single Line of Text
+     column (see the "strings" type-group in the manifest) - Dataverse's own field chrome for a
+     plain single-line text field commonly sets white-space: nowrap (so the unstyled value clips
+     to one line with an ellipsis instead of wrapping), and that nowrap inherits straight down into
+     this control's rendered content unless explicitly reset here. This alone was the actual cause
+     of text overflowing/getting clipped on a real form - the earlier width/box-sizing/min-width
+     fix was necessary but not sufficient, since none of those properties touch white-space. Set
+     only on the root (not a blanket `* { white-space: normal }`) so it doesn't fight the `pre`
+     element's own `white-space: pre` (needed for code block formatting), which - having no
+     competing author rule of its own - keeps getting its value from the UA stylesheet regardless
+     of what's set here. */
+  white-space: normal;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+.mhtext-root * {
+  box-sizing: border-box;
+  min-width: 0;
+  text-align: left;
+}
+
+.mhtext-root.mhtext-empty {
+  color: #8a8886;
+  font-style: italic;
+}
+
+.mhtext-root > *:first-child {
+  margin-top: 0;
+}
+
+.mhtext-root > *:last-child {
+  margin-bottom: 0;
+}
+
+/* Headings */
+
+.mhtext-root h1,
+.mhtext-root h2,
+.mhtext-root h3,
+.mhtext-root h4,
+.mhtext-root h5,
+.mhtext-root h6 {
+  font-weight: 600;
+  color: #201f1e;
+  margin: 1.2em 0 0.5em 0;
+  line-height: 1.3;
+}
+
+.mhtext-root h1 {
+  font-size: 1.7em;
+  padding-bottom: 0.3em;
+  border-bottom: 1px solid #edebe9;
+}
+
+.mhtext-root h2 {
+  font-size: 1.4em;
+  padding-bottom: 0.25em;
+  border-bottom: 1px solid #edebe9;
+}
+
+.mhtext-root h3 {
+  font-size: 1.2em;
+}
+
+.mhtext-root h4 {
+  font-size: 1.05em;
+}
+
+.mhtext-root h5,
+.mhtext-root h6 {
+  font-size: 1em;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  color: #605e5c;
+}
+
+/* Body text */
+
+.mhtext-root p {
+  margin: 0 0 0.75em 0;
+}
+
+.mhtext-root strong {
+  font-weight: 600;
+}
+
+.mhtext-root a {
+  color: #0078d4;
+  text-decoration: none;
+}
+
+.mhtext-root a:hover {
+  text-decoration: underline;
+}
+
+.mhtext-root hr {
+  border: none;
+  border-top: 1px solid #edebe9;
+  margin: 1.2em 0;
+}
+
+/* Lists */
+
+.mhtext-root ul,
+.mhtext-root ol {
+  margin: 0 0 0.75em 0;
+  padding-left: 1.5em;
+}
+
+.mhtext-root li {
+  /* No margin of its own - vertical rhythm between list items comes solely from the inherited
+     line-height (the maker-configurable Line Spacing property), same as between wrapped lines of
+     plain paragraph text. A fixed em-based margin here would stay constant regardless of that
+     property, making lists visibly looser/tighter than the surrounding body text. */
+  margin: 0;
+}
+
+.mhtext-root li > ul,
+.mhtext-root li > ol {
+  margin: 0.25em 0;
+}
+
+/* Explicit flex row rather than relying on default inline layout - this control has no Shadow DOM
+   boundary, so a host page's own generic input[type=checkbox] reset (float/absolute-position rules
+   are common in Bootstrap-style form resets) can otherwise hijack the checkbox's position out from
+   under the label text, splitting the two apart. The explicit resets on the checkbox itself
+   (position/float/width/height) neutralize that regardless of what the host page sets. Flex also
+   gives the wrapped label text a natural hanging indent (wrapped lines stay under the first line of
+   text, not back at the container's left edge) without a separate margin/padding hack for it. */
+.mhtext-root li.task-list-item {
+  list-style: none;
+  margin-left: -1.5em;
+  display: flex;
+  align-items: baseline;
+  gap: 0.5em;
+}
+
+.mhtext-root li.task-list-item input[type="checkbox"] {
+  flex: 0 0 auto;
+  position: static;
+  float: none;
+  width: auto;
+  height: auto;
+  margin: 0;
+  vertical-align: middle;
+}
+
+/* Blockquote (plain, non-alert) */
+
+.mhtext-root blockquote {
+  margin: 0 0 0.75em 0;
+  padding: 0.1em 1em;
+  border-left: 0.25em solid #c8c6c4;
+  color: #605e5c;
+}
+
+.mhtext-root blockquote > *:last-child {
+  margin-bottom: 0;
+}
+
+/* Inline code + fenced code blocks */
+
+.mhtext-root code {
+  font-family: "Cascadia Code", Consolas, "SFMono-Regular", Menlo, monospace;
+  font-size: 0.875em;
+  background-color: #f3f2f1;
+  border-radius: 3px;
+  padding: 0.15em 0.4em;
+}
+
+.mhtext-root pre {
+  margin: 0 0 0.75em 0;
+  padding: 1em;
+  background-color: #f6f8fa;
+  border: 1px solid #edebe9;
+  border-radius: 6px;
+  overflow-x: auto;
+}
+
+.mhtext-root pre code {
+  background: none;
+  padding: 0;
+  font-size: 0.85em;
+  line-height: 1.5;
+}
+
+/* Tables (GFM) */
+
+.mhtext-table-wrap {
+  overflow-x: auto;
+  margin: 0 0 0.75em 0;
+}
+
+.mhtext-root table {
+  border-collapse: collapse;
+  font-size: 0.95em;
+  min-width: 100%;
+}
+
+.mhtext-root th,
+.mhtext-root td {
+  border: 1px solid #edebe9;
+  padding: 0.4em 0.75em;
+  text-align: left;
+}
+
+.mhtext-root thead th {
+  background-color: #faf9f8;
+  font-weight: 600;
+}
+
+.mhtext-root tbody tr:nth-child(even) {
+  background-color: #faf9f8;
+}
+
+/* Images */
+
+.mhtext-root img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 4px;
+}
+
+/* GitHub-style alert callouts: > [!NOTE] / [!TIP] / [!IMPORTANT] / [!WARNING] / [!CAUTION] */
+
+.mhtext-alert {
+  width: 100%;
+  margin: 0 0 0.5em 0;
+  padding: 0.4em 0.65em;
+  border-left: 0.2em solid;
+  border-radius: 4px;
+  background-color: #faf9f8;
+}
+
+/* Icon + label badge, spliced inline into the body's first paragraph (see remarkAlertCallouts.ts)
+   so it sits on the same line as the start of the body text. Deliberately plain inline layout, NOT
+   inline-flex - an inline-flex container's own *outer* baseline (the point the surrounding text
+   aligns to) is synthesized by the browser from its flex items in a way that isn't a real text
+   baseline, and that synthesis was confirmed to differ between the local PCF test harness and a
+   real Dataverse form: same CSS, same browser engine, but the icon+label sat visibly higher than
+   the following body text only on the real form. Plain inline content sidesteps this entirely -
+   the label span's own baseline is just the "Note" text's real baseline, which is what naturally,
+   reliably lines up with the plain paragraph text immediately following the badge, and icon-to-label
+   centering is instead handled directly on the icon via vertical-align (below), not by a flex
+   container that also has to double as the badge's own inline anchor. */
+.mhtext-alert-label {
+  font-weight: 600;
+  margin-right: 1.4em;
+  white-space: nowrap;
+}
+
+.mhtext-alert-icon {
+  /* inline-block (not the default inline) so vertical-align and the flip transform below both apply
+     predictably. line-height: 1 collapses the MDL2 icon font's own internal leading around the
+     glyph - without it, the glyph's line box is taller than the glyph itself, which throws off where
+     vertical-align: middle actually centers it. vertical-align: middle then centers the icon against
+     the label text's real x-height/baseline directly, in the same line box as that text - a plain,
+     well-supported CSS mechanism with no flex-baseline-synthesis quirk to differ across hosts. */
+  display: inline-block;
+  vertical-align: middle;
+  /* vertical-align: middle gets the icon close, but not exact, against this particular label
+     text/font pairing - position: relative (not touching vertical-align's own value further) nudges
+     it the remaining few pixels without affecting layout/spacing, since relative positioning is
+     applied after normal layout and doesn't shift surrounding content. */
+  position: relative;
+  top: -1px;
+  line-height: 1;
+  font-size: 1em;
+  margin-right: 0.25em;
+}
+
+/* Callout Text Layout = "New Line": the label is a genuine inline sibling of the body text in
+   the same paragraph (see remarkAlertCallouts.ts) either way - forcing it to `display: flex`
+   (a block-level box) instead of plain inline is enough to make it take the full line width and
+   push the body text that follows it onto the next line, with no change needed to the AST-level
+   splice itself. Only used here, not in the default same-line layout above, because in stacked mode
+   the label has no following inline text on the same line to stay baseline-compatible with, so
+   flex's outer-baseline quirk is irrelevant and its internal `align-items: center` can safely be
+   used to center the icon against the label text instead. */
+.mhtext-root.mhtext-callout-stacked .mhtext-alert-label {
+  display: flex;
+  align-items: center;
+  margin-right: 0;
+  margin-bottom: 0.4em;
+}
+
+/* Important reuses the Note glyph (circle + "i"), flipped vertically so the dot sits at the
+   bottom - reads as an exclamation point in a circle without a differently-styled icon family.
+   Only the transform is set here - display stays inline-flex from .mhtext-alert-icon above (this
+   class is always applied alongside it, never alone); overriding it back to inline-block here would
+   silently undo that rule's vertical-centering fix for this icon specifically, since both classes
+   have equal selector specificity and this one is declared later in the file. */
+.mhtext-alert-icon-flip {
+  transform: scaleY(-1);
+}
+
+.mhtext-alert-body > *:first-child {
+  margin-top: 0;
+}
+
+.mhtext-alert-body > *:last-child {
+  margin-bottom: 0;
+}
+
+.mhtext-alert-note {
+  border-left-color: #0078d4;
+  background-color: #f3f9fd;
+}
+.mhtext-alert-note .mhtext-alert-label {
+  color: #0078d4;
+}
+
+.mhtext-alert-tip {
+  border-left-color: #107c10;
+  background-color: #f1faf1;
+}
+.mhtext-alert-tip .mhtext-alert-label {
+  color: #107c10;
+}
+
+.mhtext-alert-important {
+  border-left-color: #8764b8;
+  background-color: #f8f6fc;
+}
+.mhtext-alert-important .mhtext-alert-label {
+  color: #8764b8;
+}
+
+.mhtext-alert-warning {
+  border-left-color: #f7630c;
+  background-color: #fff4e5;
+}
+.mhtext-alert-warning .mhtext-alert-label {
+  color: #b45400;
+}
+
+.mhtext-alert-caution {
+  border-left-color: #d13438;
+  background-color: #fdf3f4;
+}
+.mhtext-alert-caution .mhtext-alert-label {
+  color: #d13438;
+}
+
+/* Syntax highlighting (rehype-highlight / highlight.js token classes) - light theme to match
+   Dataverse's own light form chrome. */
+
+.mhtext-root .hljs-comment,
+.mhtext-root .hljs-quote {
+  color: #6a737d;
+  font-style: italic;
+}
+
+.mhtext-root .hljs-keyword,
+.mhtext-root .hljs-selector-tag,
+.mhtext-root .hljs-literal,
+.mhtext-root .hljs-type {
+  color: #d73a49;
+}
+
+.mhtext-root .hljs-string,
+.mhtext-root .hljs-attr,
+.mhtext-root .hljs-template-tag,
+.mhtext-root .hljs-template-variable {
+  color: #032f62;
+}
+
+.mhtext-root .hljs-number,
+.mhtext-root .hljs-symbol,
+.mhtext-root .hljs-bullet {
+  color: #005cc5;
+}
+
+.mhtext-root .hljs-title,
+.mhtext-root .hljs-title.function_,
+.mhtext-root .hljs-title.class_ {
+  color: #6f42c1;
+}
+
+.mhtext-root .hljs-built_in,
+.mhtext-root .hljs-name,
+.mhtext-root .hljs-tag {
+  color: #22863a;
+}
+
+.mhtext-root .hljs-variable,
+.mhtext-root .hljs-attribute {
+  color: #e36209;
+}
+
+.mhtext-root .hljs-deletion {
+  background-color: #ffeef0;
+}
+
+.mhtext-root .hljs-addition {
+  background-color: #f0fff4;
+}
+
+.mhtext-root .hljs-emphasis {
+  font-style: italic;
+}
+
+.mhtext-root .hljs-strong {
+  font-weight: 600;
+}

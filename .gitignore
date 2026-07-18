@@ -61,5 +61,7 @@ deployScript.sh
 PCF Gallery Descriptions
 
 # Internal planning/agent-context docs (not published)
+# No leading slash: matches CLAUDE.md at any depth, so every src/<Component>/CLAUDE.md
+# (including new components added later) is ignored automatically too.
 CLAUDE.md
 PDFGallery-PLAN.md
