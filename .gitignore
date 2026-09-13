@@ -43,6 +43,9 @@ Thumbs.db
 # Power Platform CLI cache
 ~/.pac/
 
+# Playwright MCP session logs/traces
+.playwright-mcp/
+
 # NuGet packages (restore will handle these)
 packages/
 *.nupkg
