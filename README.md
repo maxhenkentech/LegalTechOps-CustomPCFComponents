@@ -14,6 +14,8 @@ A collection of custom Power Platform Component Framework (PCF) components creat
   - [🌳 Relationship View Component](#-relationship-view-component)
   - [📝 Markdown Help Text Component](#-markdown-help-text-component)
   - [🔘 Modern Choice Buttons Component](#-modern-choice-buttons-component)
+  - [🔍 Advanced LookUp Component](#-advanced-lookup-component)
+  - [⚡ Quick Action Buttons Component](#-quick-action-buttons-component)
 - [Author](#author)
 - [Installation](#installation)
 - [Development](#development)
@@ -39,7 +41,7 @@ An enhanced dropdown control that extends the standard Power Platform choice fie
 
 *Modern, customizable dropdown with color coding and Fluent UI icons.*
 
-📖 **[Full documentation](docs/AdvancedDropDown.md)** - features, properties, the External Value icon system, and the [complete 1,800+ icon reference](FLUENT_ICONS.md).
+📖 **[Full documentation](docs/AdvancedDropDown.md)** - features, properties, the External Value icon system, using your own image web resources as icons, and the [complete 1,800+ icon reference](FLUENT_ICONS.md).
 
 ---
 
@@ -63,7 +65,7 @@ A dataset control that replaces a standard subgrid with a tabbed (or sidebar) PD
 
 *Horizontal style with tabs above the preview (left) and Vertical style with a scrollable document list beside the preview (right).*
 
-📖 **[Full documentation](docs/PDFGallery.md)** - layout styles, action buttons, and how to configure the underlying subgrid relationship.
+📖 **[Full documentation](docs/PDFGallery.md)** - layout styles, action buttons, the File Column fallback chain, previewing web-location links, and how to configure the underlying subgrid relationship.
 
 ---
 
@@ -98,7 +100,31 @@ A field control that replaces a standard choice field with a horizontal row of c
 
 *Icon + label tiles across circled-number, symbol, and full-color selected styles - the official PCF Gallery listing screenshot.*
 
-📖 **[Full documentation](docs/ModernChoiceButtons.md)** - tile size/shape, color modes, icon format reference, and properties.
+📖 **[Full documentation](docs/ModernChoiceButtons.md)** - tile size/shape, color modes, icon format reference, using your own image web resources as icons, and properties.
+
+---
+
+### 🔍 Advanced LookUp Component
+
+A field control that replaces a standard lookup field with a searchable, type-to-filter dropdown - type to search live Dataverse records, with a per-record icon (from a picture column, an MDL2 icon-name column, or a fixed icon) and a hover tooltip on the selected value.
+
+<img src="Screenshots/AdvancedLookUp/DropDown.png" alt="Advanced LookUp Overview" width="75%">
+
+*Live, server-side search with per-record icons and a smaller context line (`Additional Display Columns`) under each name.*
+
+📖 **[Full documentation](docs/AdvancedLookUp.md)** - icon column modes, search/sort/display columns, and properties.
+
+---
+
+### ⚡ Quick Action Buttons Component
+
+A field control that is not bound to any single field's value - it renders up to 5 configurable icon+label buttons, and clicking one writes a maker-configured set of field values onto the current form (field values only by default; an opt-in setting can save the record afterward), with support for Power Automate-style expressions (string/math/date functions, `coalesce`, `me()`) alongside plain literal values, including lookup and multi-select choice targets.
+
+<img src="Screenshots/QuickActionButtons/Overview.png" alt="Quick Action Buttons Overview" width="75%">
+
+*Text, relative-date, lookup, and multi-select choice buttons, each writing a different kind of target field.*
+
+📖 **[Full documentation](docs/QuickActionButtons.md)** - Actions JSON format, the expression function reference, color modes, and properties.
 
 ---
 
@@ -185,6 +211,16 @@ Choose the appropriate solution package for your needs:
    cd src/ModernChoiceButtons
    npm install
    cd ../..
+
+   # For Advanced LookUp component
+   cd src/AdvancedLookUp
+   npm install
+   cd ../..
+
+   # For Quick Action Buttons component
+   cd src/QuickActionButtons
+   npm install
+   cd ../..
    ```
 
 3. Build the component:
@@ -254,6 +290,25 @@ Step-by-step configuration for each component (binding, properties, and any comp
 │   │   │   └── CSS/           # Component stylesheets
 │   │   ├── package.json
 │   │   └── pcfconfig.json
+│   ├── AdvancedLookUp/         # Advanced LookUp PCF component
+│   │   ├── AdvancedLookUp/
+│   │   │   ├── index.ts       # Main component logic
+│   │   │   ├── AdvancedLookUpControl.tsx # React component
+│   │   │   ├── ControlManifest.Input.xml
+│   │   │   └── CSS/           # Component stylesheets
+│   │   ├── package.json
+│   │   └── pcfconfig.json
+│   ├── QuickActionButtons/     # Quick Action Buttons PCF component
+│   │   ├── QuickActionButtons/
+│   │   │   ├── index.ts       # Main component logic
+│   │   │   ├── QuickActionButtonsControl.tsx # React component
+│   │   │   ├── ExpressionEngine.ts # Power Automate-style expression parser/evaluator
+│   │   │   ├── XrmFieldAccess.ts # Xrm.Page read/write + type coercion
+│   │   │   ├── TestModeData.ts # Test-harness fake current-record fixture
+│   │   │   ├── ControlManifest.Input.xml
+│   │   │   └── CSS/           # Component stylesheets
+│   │   ├── package.json
+│   │   └── pcfconfig.json
 │   └── Other/                 # Solution metadata
 ├── bin/Release/               # Packaged solution output
 └── README.md
@@ -315,23 +370,20 @@ If you encounter any issues or have suggestions for improvements, please open an
 
 Full version history lives in [CHANGELOG.md](CHANGELOG.md).
 
-### Version 6.0.0 (Current)
-#### 📝 Markdown Help Text Component (NEW)
-- **NEW**: Field control that renders Markdown as formatted, visually polished help text on a form, via `react-markdown` + `remark-gfm` + `rehype-highlight` - headings, emphasis, lists, links, images, blockquotes, tables, task lists, strikethrough, and syntax-highlighted fenced code blocks
-- **NEW**: GitHub-style alert callouts (`[!NOTE]`/`[!TIP]`/`[!IMPORTANT]`/`[!WARNING]`/`[!CAUTION]`)
-- **NEW**: Dynamic Field Tags (`{!fieldLogicalName}` and `{!lookupField:targetField}`) that pull live, type-aware formatted values from the current record or a related record directly into the rendered text
-- **NEW**: Font Coloring via sanitized `<span style="color/background-color">` spans - every other HTML tag, attribute, and script vector is stripped before rendering
-- **NEW**: Two content sources - bind `Text Column` for dynamic, per-record content, or set static `Markdown Text` at design time when no backing column is wanted
-- **NEW**: Configurable `Callout Text Layout` (same line/new line) and `Line Spacing`; text scales automatically with the form's own text size using relative (em) units
+### Version 7.0.0.0 (Current)
+#### 🔍 Advanced LookUp Component (NEW)
+- **NEW**: Field control bound to a lookup field that replaces the standard lookup dialog with a searchable, type-to-filter dropdown backed by live, debounced Dataverse search, per-record icons, tooltips, additional search/display columns, and more.
 
-#### 🔘 Modern Choice Buttons Component (NEW)
-- **NEW**: Field control that replaces a standard choice field with a horizontal row of icon+label tiles instead of a dropdown list, one tile per option, wrapping automatically as needed
-- **NEW**: Full MDL2 icon support - a default icon for every tile, or a per-option JSON icon map, using the same icon-name/Unicode/CSS-class resolution as Advanced Dropdown
-- **NEW**: `Use external value for icon` - per-option icons sourced from each option's own Dataverse `External Value` field, fetched directly from the Web API
-- **NEW**: Independent Background & Border color modes (custom hex color or the choice option's own configured color), plus configurable Not-Selected/Hover/Selected colors
-- **NEW**: `Tile Shape` (Square/Rounded) and `Tile Size` (Small/Normal/Large)
-- **NEW**: `Icon Color Scope` (AllTiles/SelectedOnly), with automatic light/dark contrast for tiles not using Icon color mode
-- **NEW**: Hidden Options Control and Value/Text sorting, same as Advanced Dropdown
+#### ⚡ Quick Action Buttons Component (NEW)
+- **NEW**: Field control that renders up to 5 configurable icon+label buttons, each writing a maker-configured set of field values (literal or Power Automate-style expressions, including lookups and multi-select choices) onto the current form on click.
+
+#### 🎨 Advanced Dropdown & 🎛️ Modern Choice Buttons Components
+- **NEW**: Icons can now be an image web resource instead of only an MDL2 icon name; Modern Choice Buttons also gains `Icon position`, `Show selection option only`, and `Reflow behaviour` properties.
+
+#### 📄 PDF Gallery & 🌳 Relationship View Components
+- **NEW**: PDF Gallery's `File Column(s)` now supports a fallback chain including web-location links; Relationship View's `Thumbnail Column` now supports Choice columns, literal icon names, related-record dot notation, and a `Thumbnail Icon Color Mode` property.
+
+See [CHANGELOG.md](CHANGELOG.md) for full details.
 
 ## License
 

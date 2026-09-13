@@ -1,10 +1,14 @@
 # Fluent UI MDL2 Icons Reference
 
-*Complete reference for all 1801 icons available in the Advanced Dropdown Component*
+*Complete reference for all 1801 icons available to every icon-capable component in this solution*
 
-This page lists all the MDL2 icons that are actually available in the Fluent UI font package used by the Advanced Dropdown component. Each icon includes its exact name (for the `icon` property) and Unicode character for reference.
+This page lists all the MDL2 icons that are actually available in the Fluent UI font package (`@fluentui/font-icons-mdl2`) used by Advanced Dropdown, Modern Choice Buttons, and Advanced Look Up. Each icon includes its exact name (for the `icon` property) and Unicode character for reference. **This list is authoritative** — a name that is not on this page will not render.
 
-For a visual preview of each glyph, see Microsoft's own [Segoe Fluent Icons font reference](https://learn.microsoft.com/en-us/windows/apps/design/style/segoe-fluent-icons-font) - this page intentionally only lists names/codepoints rather than reproducing Microsoft's icon artwork, since the icon glyphs (as opposed to the MIT-licensed `@fluentui/font-icons-mdl2` npm package code) are covered by the separate [Microsoft Fabric Assets License Agreement](https://aka.ms/fluentui-assets-license), which doesn't clearly permit redistributing them as extracted/standalone image assets.
+**For a visual preview of each glyph, use [flicon.io](https://www.flicon.io/)** — a searchable browser that bundles this exact `@fluentui/font-icons-mdl2` set and lets you copy the icon name directly. Microsoft's own gallery for the same set is the [Fluent UI (v8) icon page](https://developer.microsoft.com/en-us/fluentui#/styles/web/icons).
+
+> ⚠️ **Do not use Microsoft's [Segoe Fluent Icons](https://learn.microsoft.com/en-us/windows/apps/design/style/segoe-fluent-icons-font) page to pick icon names.** That page documents the *Windows 11 desktop system font*, which is a different font from the Fluent UI MDL2 *web* font these components load. The two overlap only partially: of the ~1,530 names on that page, only ~490 exist here — the other ~1,040 (`Apps`, `Audio`, `Volume`, `Mute`, `Battery0`–`Battery10`, `AddBold`, `BarcodeScanner`, the whole `Band*`/`ActionCenter*` families, …) render as nothing.
+
+This page intentionally only lists names/codepoints rather than reproducing Microsoft's icon artwork, since the icon glyphs (as opposed to the MIT-licensed `@fluentui/font-icons-mdl2` npm package code) are covered by the separate [Microsoft Fabric Assets License Agreement](https://aka.ms/fluentui-assets-license), which doesn't clearly permit redistributing them as extracted/standalone image assets.
 
 ## Quick Navigation
 - [Browser & UI](#browser-ui) (10 icons)
@@ -24,12 +28,14 @@ For a visual preview of each glyph, see Microsoft's own [Segoe Fluent Icons font
 
 ## Usage
 
-To use any of these icons in the Advanced Dropdown component, simply copy the icon name and paste it into the `icon` property field. For example:
+To use any of these icons, simply copy the icon name and paste it into the component's `icon` property field. For example:
 
 - **Icon Property Value:** `Add`
 - **Result:** Displays the ➕ add icon
 
-> **Note**: Icon names are case-sensitive. Use the exact name as shown below.
+> **Note**: Icon names are matched case-insensitively by Fluent UI, but copying the exact name as shown below is the safest habit. What *is* strict is the spelling — an unrecognised name renders no icon at all (Advanced Dropdown falls back to its color indicator; Modern Choice Buttons falls back to its default icon), and logs a console warning naming the icon.
+
+> **Need artwork this set doesn't cover?** Advanced Dropdown and Modern Choice Buttons also accept the name of an **image web resource** from your environment (e.g. `hek_MyLogo.png`) anywhere an icon name is accepted, rendering your own image instead of a font glyph — see [Advanced Dropdown](docs/AdvancedDropDown.md#using-an-image-web-resource-as-an-icon) or [Modern Choice Buttons](docs/ModernChoiceButtons.md#using-an-image-web-resource-as-an-icon). A publisher prefix is what tells the two apart, which is unambiguous because no icon name on this page contains an underscore.
 
 ---
 
@@ -1990,7 +1996,9 @@ To use any of these icons in the Advanced Dropdown component, simply copy the ic
 ## Related Documentation
 
 - [Advanced Dropdown Component Documentation](README.md#-advanced-dropdown-component)
-- [Microsoft Fluent UI Icons](https://docs.microsoft.com/en-us/windows/apps/design/style/segoe-fluent-icons-font)
+- [flicon.io - searchable browser for this icon set](https://www.flicon.io/)
+- [Microsoft Fluent UI (v8) icon gallery](https://developer.microsoft.com/en-us/fluentui#/styles/web/icons)
+- [`@fluentui/font-icons-mdl2` on npm](https://www.npmjs.com/package/@fluentui/font-icons-mdl2) - the package that defines this exact set
 - [Power Platform Component Framework](https://docs.microsoft.com/en-us/powerapps/developer/component-framework/)
 
 ---

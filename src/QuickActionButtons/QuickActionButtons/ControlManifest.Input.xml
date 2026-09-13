@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<manifest>
+  <control namespace="lops" constructor="QuickActionButtons" version="1.3.3" display-name-key="lops.QuickActionButtons" description-key="QuickActionButtons description" control-type="virtual">
+    <type-group name="anyValue">
+      <type>SingleLine.Text</type>
+      <type>Multiple</type>
+      <type>Whole.None</type>
+      <type>Decimal</type>
+      <type>Currency</type>
+      <type>OptionSet</type>
+      <type>TwoOptions</type>
+      <type>DateAndTime.DateAndTime</type>
+      <type>DateAndTime.DateOnly</type>
+    </type-group>
+    <property name="boundField" display-name-key="Bound field (unused)" description-key="Bind to any existing field on the form so the control can be added. Its value is never read or displayed -- every button acts on its own configured target fields instead." of-type-group="anyValue" usage="bound" required="true" />
+
+    <property name="saveOnClick" display-name-key="Save record on click" description-key="If enabled, saves the current record immediately after this button click sets its field values. When off (default), a click only sets field values in memory, the same as a user editing the form directly, and leaves saving to the user or to whatever automation runs on the form." of-type="TwoOptions" usage="input" required="false" default-value="false" />
+
+    <property name="tileShape" display-name-key="Button shape" description-key="The corner shape of each button" of-type="Enum" usage="input" required="false" default-value="Rounded">
+      <value name="Square" display-name-key="Square" description-key="Sharp corners" default="false">Square</value>
+      <value name="Rounded" display-name-key="Rounded" description-key="Square with rounded corners" default="true">Rounded</value>
+    </property>
+    <property name="tileSize" display-name-key="Button size" description-key="Overall size of each button (padding, min/max width, and label text size). The icon itself stays a fixed size regardless of this setting" of-type="Enum" usage="input" required="false" default-value="Normal">
+      <value name="Small" display-name-key="Small" description-key="Smaller, more compact buttons">Small</value>
+      <value name="Normal" display-name-key="Normal" description-key="Standard button size (default)" default="true">Normal</value>
+      <value name="Large" display-name-key="Large" description-key="Larger buttons">Large</value>
+    </property>
+    <property name="showLabel" display-name-key="Show label" description-key="Show the label text under the icon on each button. When off, the label is hidden and the icon is shown larger, centered in the button" of-type="TwoOptions" usage="input" required="false" default-value="true" />
+    <property name="iconPosition" display-name-key="Icon position" description-key="Position of the icon relative to the label on each button. Has no effect when Show label is off, since the icon is always centered in that case" of-type="Enum" usage="input" required="false" default-value="Above">
+      <value name="Above" display-name-key="Above" description-key="Icon above the label (default)" default="true">Above</value>
+      <value name="Below" display-name-key="Below" description-key="Icon below the label">Below</value>
+      <value name="Left" display-name-key="Left" description-key="Icon to the left of the label">Left</value>
+      <value name="Right" display-name-key="Right" description-key="Icon to the right of the label">Right</value>
+    </property>
+    <property name="reflowBehaviour" display-name-key="Reflow behaviour" description-key="Whether each button keeps a fixed width (Wrap, default -- buttons wrap onto a new row once they no longer fit) or sizes itself to exactly fit its icon and label (Flexible)" of-type="Enum" usage="input" required="false" default-value="Wrap">
+      <value name="Wrap" display-name-key="Wrap" description-key="Buttons keep a fixed width and wrap onto a new row when they run out of horizontal space (default)" default="true">Wrap</value>
+      <value name="Flexible" display-name-key="Flexible" description-key="Each buttons width shrinks or grows to exactly fit its icon and label">Flexible</value>
+    </property>
+    <property name="makeFontBold" display-name-key="Make font bold" description-key="Display each button label in bold font weight" of-type="TwoOptions" usage="input" required="false" default-value="false" />
+    <property name="backgroundMode" display-name-key="Background color mode" description-key="Whether the resting background uses a single custom color for every button, or the accent color configured on each individual button" of-type="Enum" usage="input" required="false" default-value="Fixed">
+      <value name="Fixed" display-name-key="Fixed color" description-key="Use the Button color property for every button" default="true">Fixed</value>
+      <value name="PerButtonColor" display-name-key="Per-button color" description-key="Use the accent color configured on each individual button">PerButtonColor</value>
+    </property>
+    <property name="buttonColor" display-name-key="Button color" description-key="Resting background color of a button when Background color mode is Fixed color (hex, e.g. #FFFFFF)" of-type="SingleLine.Text" usage="input" required="false" default-value="#FFFFFF" />
+    <property name="hoverColor" display-name-key="Hover color" description-key="Background color of a button while hovered (hex, e.g. #DEECF9)" of-type="SingleLine.Text" usage="input" required="false" default-value="#DEECF9" />
+    <property name="activeColor" display-name-key="Active (clicked) color" description-key="Background color briefly shown right after a button is clicked, as confirmation, before fading back to the resting color (hex, e.g. #C7E0F4)" of-type="SingleLine.Text" usage="input" required="false" default-value="#C7E0F4" />
+    <property name="borderMode" display-name-key="Border mode" description-key="Whether buttons show a border, and whether it uses a fixed color or the accent color configured on each individual button" of-type="Enum" usage="input" required="false" default-value="Fixed">
+      <value name="Off" display-name-key="Off" description-key="No border">Off</value>
+      <value name="Fixed" display-name-key="Fixed color" description-key="Use the Border color property" default="true">Fixed</value>
+      <value name="PerButtonColor" display-name-key="Per-button color" description-key="Use the accent color configured on each individual button">PerButtonColor</value>
+    </property>
+    <property name="borderColor" display-name-key="Border color" description-key="Border color of a button when Border mode is Fixed color (hex, e.g. #D2D0CE)" of-type="SingleLine.Text" usage="input" required="false" default-value="#D2D0CE" />
+    <property name="iconColorMode" display-name-key="Icon color mode" description-key="How icon color is determined for each button: automatic contrast against the button background (default), a fixed color, or the accent color configured on that button" of-type="Enum" usage="input" required="false" default-value="Auto">
+      <value name="Auto" display-name-key="Automatic" description-key="Icon color automatically matches the button background for contrast" default="true">Auto</value>
+      <value name="Fixed" display-name-key="Fixed color" description-key="Use the Icon color property">Fixed</value>
+      <value name="PerButtonColor" display-name-key="Per-button color" description-key="Use the accent color configured on each individual button">PerButtonColor</value>
+    </property>
+    <property name="iconColor" display-name-key="Icon color" description-key="Icon color used when Icon color mode is Fixed color (hex, e.g. #201F1E)" of-type="SingleLine.Text" usage="input" required="false" default-value="#201F1E" />
+
+    <property name="button1Label" display-name-key="Button 1: Label" description-key="Text shown on button 1. Leave blank to hide this button entirely." of-type="SingleLine.Text" usage="input" required="false" />
+    <property name="button1Icon" display-name-key="Button 1: Icon" description-key="MDL2 icon name (browse and copy names at https://www.flicon.io) or the name of a square image web resource, e.g. hek_MyLogo.png" of-type="SingleLine.Text" usage="input" required="false" />
+    <property name="button1Color" display-name-key="Button 1: Accent color" description-key="Optional accent hex color for this button, used when a color mode below is set to Per-button color" of-type="SingleLine.Text" usage="input" required="false" />
+    <property name="button1Tooltip" display-name-key="Button 1: Tooltip" description-key="Optional tooltip text shown when hovering button 1" of-type="SingleLine.Text" usage="input" required="false" />
+    <property name="button1Actions" display-name-key="Button 1: Actions (JSON)" description-key="JSON map of target field logical name to the value to set on click, e.g. {&quot;hek_status&quot;:&quot;Approved&quot;,&quot;hek_approvedOn&quot;:&quot;@{utcNow()}&quot;,&quot;ownerid&quot;:&quot;@{me()}&quot;}. A value wrapped in @{...} is evaluated as an expression; see documentation for supported functions, including me() for the current user. A JSON object with an id property, e.g. {&quot;id&quot;:&quot;guid&quot;,&quot;entityType&quot;:&quot;systemuser&quot;}, sets a lookup field. A multi-select choice field takes a comma-separated list of option values, e.g. 100000001,100000002. Any other JSON string/number/boolean/null is used literally." of-type="Multiple" usage="input" required="false" />
+
+    <property name="button2Label" display-name-key="Button 2: Label" description-key="Text shown on button 2. Leave blank to hide this button entirely." of-type="SingleLine.Text" usage="input" required="false" />
+    <property name="button2Icon" display-name-key="Button 2: Icon" description-key="MDL2 icon name (browse and copy names at https://www.flicon.io) or the name of a square image web resource, e.g. hek_MyLogo.png" of-type="SingleLine.Text" usage="input" required="false" />
+    <property name="button2Color" display-name-key="Button 2: Accent color" description-key="Optional accent hex color for this button, used when a color mode below is set to Per-button color" of-type="SingleLine.Text" usage="input" required="false" />
+    <property name="button2Tooltip" display-name-key="Button 2: Tooltip" description-key="Optional tooltip text shown when hovering button 2" of-type="SingleLine.Text" usage="input" required="false" />
+    <property name="button2Actions" display-name-key="Button 2: Actions (JSON)" description-key="JSON map of target field logical name to the value to set on click, e.g. {&quot;hek_status&quot;:&quot;Rejected&quot;}. A value wrapped in @{...} is evaluated as an expression; see documentation for supported functions. Any other JSON string/number/boolean/null is used literally." of-type="Multiple" usage="input" required="false" />
+
+    <property name="button3Label" display-name-key="Button 3: Label" description-key="Text shown on button 3. Leave blank to hide this button entirely." of-type="SingleLine.Text" usage="input" required="false" />
+    <property name="button3Icon" display-name-key="Button 3: Icon" description-key="MDL2 icon name (browse and copy names at https://www.flicon.io) or the name of a square image web resource, e.g. hek_MyLogo.png" of-type="SingleLine.Text" usage="input" required="false" />
+    <property name="button3Color" display-name-key="Button 3: Accent color" description-key="Optional accent hex color for this button, used when a color mode below is set to Per-button color" of-type="SingleLine.Text" usage="input" required="false" />
+    <property name="button3Tooltip" display-name-key="Button 3: Tooltip" description-key="Optional tooltip text shown when hovering button 3" of-type="SingleLine.Text" usage="input" required="false" />
+    <property name="button3Actions" display-name-key="Button 3: Actions (JSON)" description-key="JSON map of target field logical name to the value to set on click. A value wrapped in @{...} is evaluated as an expression; see documentation for supported functions. Any other JSON string/number/boolean/null is used literally." of-type="Multiple" usage="input" required="false" />
+
+    <property name="button4Label" display-name-key="Button 4: Label" description-key="Text shown on button 4. Leave blank to hide this button entirely." of-type="SingleLine.Text" usage="input" required="false" />
+    <property name="button4Icon" display-name-key="Button 4: Icon" description-key="MDL2 icon name (browse and copy names at https://www.flicon.io) or the name of a square image web resource, e.g. hek_MyLogo.png" of-type="SingleLine.Text" usage="input" required="false" />
+    <property name="button4Color" display-name-key="Button 4: Accent color" description-key="Optional accent hex color for this button, used when a color mode below is set to Per-button color" of-type="SingleLine.Text" usage="input" required="false" />
+    <property name="button4Tooltip" display-name-key="Button 4: Tooltip" description-key="Optional tooltip text shown when hovering button 4" of-type="SingleLine.Text" usage="input" required="false" />
+    <property name="button4Actions" display-name-key="Button 4: Actions (JSON)" description-key="JSON map of target field logical name to the value to set on click. A value wrapped in @{...} is evaluated as an expression; see documentation for supported functions. Any other JSON string/number/boolean/null is used literally." of-type="Multiple" usage="input" required="false" />
+
+    <property name="button5Label" display-name-key="Button 5: Label" description-key="Text shown on button 5. Leave blank to hide this button entirely." of-type="SingleLine.Text" usage="input" required="false" />
+    <property name="button5Icon" display-name-key="Button 5: Icon" description-key="MDL2 icon name (browse and copy names at https://www.flicon.io) or the name of a square image web resource, e.g. hek_MyLogo.png" of-type="SingleLine.Text" usage="input" required="false" />
+    <property name="button5Color" display-name-key="Button 5: Accent color" description-key="Optional accent hex color for this button, used when a color mode below is set to Per-button color" of-type="SingleLine.Text" usage="input" required="false" />
+    <property name="button5Tooltip" display-name-key="Button 5: Tooltip" description-key="Optional tooltip text shown when hovering button 5" of-type="SingleLine.Text" usage="input" required="false" />
+    <property name="button5Actions" display-name-key="Button 5: Actions (JSON)" description-key="JSON map of target field logical name to the value to set on click. A value wrapped in @{...} is evaluated as an expression; see documentation for supported functions. Any other JSON string/number/boolean/null is used literally." of-type="Multiple" usage="input" required="false" />
+
+    <resources>
+      <code path="index.ts" order="1"/>
+      <css path="CSS/QuickActionButtons.css" order="1" />
+      <platform-library name="React" version="16.8.6" />
+      <platform-library name="Fluent" version="8.29.0" />
+    </resources>
+  </control>
+</manifest>

@@ -1,18 +1,18 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <manifest>
-  <control namespace="lops" constructor="AdvancedDropDown" version="3.5.0" display-name-key="lops.AdvancedDropDown" description-key="AdvancedDropDown description" control-type="virtual">
+  <control namespace="lops" constructor="AdvancedDropDown" version="3.7.7" display-name-key="lops.AdvancedDropDown" description-key="AdvancedDropDown description" control-type="virtual">
     <property name="optionsInput" display-name-key="OptionSet" description-key="OptionSet" of-type="OptionSet" usage="bound" required="true" />  
     <property name="componentHeight" display-name-key="Component Height" description-key="Set the height of the dropdown component" of-type="Enum" usage="input" required="false" default-value="Short">
       <value name="Tall" display-name-key="Tall" description-key="Standard height dropdown">Tall</value>
       <value name="Short" display-name-key="Short" description-key="Compact height dropdown (75% of standard)">Short</value>
     </property>
-    <property name="icon" display-name-key="Icon" description-key="The Fluent UI icon to display (https://learn.microsoft.com/en-us/windows/apps/design/style/segoe-fluent-icons-font)" of-type="SingleLine.Text" usage="input" required="false" />
+    <property name="icon" display-name-key="Icon" description-key="The Fluent UI MDL2 icon to display (browse and copy names at https://www.flicon.io), or the name of a square image web resource in this environment, e.g. hek_MyLogo.png" of-type="SingleLine.Text" usage="input" required="false" />
     <property name="sortBy" display-name-key="Sort by" description-key="Sort by" of-type="Enum" usage="input" required="false" default-value="Value">      
       <value name="Value" display-name-key="Value" description-key="Sort by the value of the options" default="true">Value</value>
       <value name="Text" display-name-key="Text" description-key="Sort by the text of the options, corresponding to the user language">Text</value>
     </property>
     <property name="hideHiddenOptions" display-name-key="Hide hidden choice options" description-key="Hide options marked as hidden in the option set" of-type="TwoOptions" usage="input" required="false" default-value="true" />
-    <property name="showColorIcon" display-name-key="Show option color icon" description-key="Display color icon on the left of each option" of-type="TwoOptions" usage="input" required="false" default-value="true" />
+    <property name="showColorIcon" display-name-key="Show option color icon" description-key="Display color icon on the left of each option. When off, MDL2 icons render black and image web resources render in greyscale" of-type="TwoOptions" usage="input" required="false" default-value="true" />
     <property name="iconColorOverride" display-name-key="Color Override" description-key="Override colors with custom hex color (e.g. #FF0000 or FF0000)" of-type="SingleLine.Text" usage="input" required="false" />
     <property name="showColorBorder" display-name-key="Show option color border" description-key="Display colored border around the dropdown control" of-type="TwoOptions" usage="input" required="false" default-value="false" />
     <property name="showColorBackground" display-name-key="Show option color background" description-key="Display selected option color as background" of-type="Enum" usage="input" required="false" default-value="No">
@@ -21,7 +21,8 @@
       <value name="Full" display-name-key="Full color" description-key="Full option color">Full</value>
     </property>
     <property name="makeFontBold" display-name-key="Make font bold" description-key="Display dropdown text in bold font weight" of-type="TwoOptions" usage="input" required="false" default-value="false" />
-    <property name="useExternalValueForIcon" display-name-key="Use external value for icon" description-key="When enabled, the External Value of the choice will be used as the icon name for that choice option" of-type="TwoOptions" usage="input" required="false" default-value="false" />
+    <property name="useExternalValueForIcon" display-name-key="Use external value for icon" description-key="When enabled, the External Value of the choice will be used as the icon name for that choice option. Accepts an MDL2 icon name or the name of a square image web resource, e.g. hek_MyLogo.png" of-type="TwoOptions" usage="input" required="false" default-value="false" />
+    <property name="placeholderText" display-name-key="Placeholder Text" description-key="Placeholder text shown when no option is selected." of-type="SingleLine.Text" usage="input" required="false" default-value="---" />
     <resources>      
       <code path="index.ts" order="1"/>      
       <css path="CSS/AdvancedDropDown.css" order="1" />

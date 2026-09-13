@@ -4,6 +4,7 @@ import { Dropdown, IDropdownOption } from "@fluentui/react/lib/Dropdown";
 import { initializeIcons } from "@fluentui/react/lib/Icons";
 import { Icon } from "@fluentui/react/lib/Icon";
 import { ISelectableOption } from "@fluentui/react/lib/SelectableOption";
+import { getIcon } from "@fluentui/react/lib/Styling";
 import { TooltipHost } from "@fluentui/react/lib/Tooltip";
 import { dropdownStyles, myTheme, darkenColor } from "./DropdownStyles";
 
@@ -19,16 +20,35 @@ const isColorDark = (color: string): boolean => {
   return luminance < 0.5;
 };
 
+// A publisher-prefixed Dataverse web resource name, e.g. "hek_HenkenTechBlack" or the folder
+// form "hek_/images/logo.svg". None of the 1,801 registered MDL2 names contain an underscore,
+// and neither do the Unicode-escape or CSS-class forms below, so a leading "<prefix>_" is an
+// unambiguous marker for "this is an image in the org, not a font glyph". The prefix is matched
+// specifically (2-8 alphanumerics, as Dataverse publisher prefixes are) rather than testing for
+// a bare underscore anywhere, so a typo carrying a stray "_" doesn't get sent off to request a
+// web resource that was never going to exist.
+const WEB_RESOURCE_NAME_PATTERN = /^[a-z][a-z0-9]{1,7}_/i;
+
+// Image web resources are served same-origin at /WebResources/<name>, so rendering one needs no
+// Web API round trip and no base64 decode -- the browser caches it like any other image.
+const getWebResourceUrl = (iconName: string): string => `/WebResources/${encodeURI(iconName.trim())}`;
+
 // Simple icon validation without predefined lists - trust Fluent UI's built-in MDL2 support
 const validateAndGetIcon = (iconName: string): {
   isValid: boolean;
-  iconType: 'mdl2' | 'unicode' | 'css' | 'unknown';
+  iconType: 'webresource' | 'mdl2' | 'unicode' | 'css' | 'unknown';
 } => {
   if (!iconName || iconName.trim() === '' || iconName === 'undefined') {
     return { isValid: false, iconType: 'unknown' };
   }
 
   const cleanIconName = iconName.trim();
+
+  // Checked before the CSS-class branch below on purpose: a web resource name is free to
+  // contain "icon-" (e.g. "hek_icon-approved.png"), and the prefix is the stronger signal.
+  if (WEB_RESOURCE_NAME_PATTERN.test(cleanIconName)) {
+    return { isValid: true, iconType: 'webresource' };
+  }
 
   // Check for Unicode patterns (e.g., "\uE700", "&#xE700;", "0xE700")
   const unicodePatterns = [
@@ -51,6 +71,90 @@ const validateAndGetIcon = (iconName: string): {
   // For all other cases, assume it's an MDL2 icon name and let Fluent UI handle it
   // Fluent UI's Icon component has comprehensive built-in MDL2 support
   return { isValid: true, iconType: 'mdl2' };
+};
+
+// `validateAndGetIcon` only picks a *rendering strategy* -- it cannot tell a real MDL2 name from
+// a typo or from a Segoe Fluent Icons name with no MDL2 equivalent (only ~490 of the ~1,530 names
+// on Microsoft's Segoe Fluent Icons page exist in @fluentui/font-icons-mdl2). Fluent's <Icon>
+// renders an empty span for an unregistered name, so without this check a wrong name silently
+// renders nothing instead of dropping through to the color-circle fallback below. `getIcon` reads
+// the registry `initializeIcons()` populates; it lower-cases names, so lookups are case-insensitive.
+const isRegisteredMdl2Icon = (iconName: string): boolean => {
+  try {
+    return getIcon(iconName) !== undefined;
+  } catch {
+    return false;
+  }
+};
+
+// Module-level so an unknown name only warns once, not on every re-render.
+const warnedIconNames = new Set<string>();
+
+const warnUnknownIconOnce = (iconName: string): void => {
+  if (warnedIconNames.has(iconName)) return;
+  warnedIconNames.add(iconName);
+  console.warn(
+    `[lops.AdvancedDropDown] Icon "${iconName}" is not an MDL2 icon name and cannot be rendered ` +
+    `-- falling back to the color indicator. See FLUENT_ICONS.md for the full list of supported ` +
+    `names; Microsoft's Segoe Fluent Icons page documents a different (Windows desktop) font and ` +
+    `most of its names do not exist here.`
+  );
+};
+
+// The de-emphasized state for an image icon. A bitmap or SVG web resource can't be recolored
+// the way a font glyph can, so when "Show color icon" is off -- the setting that forces every
+// glyph to flat black, i.e. "don't use color here" -- images are desaturated instead. No
+// opacity fade in this control: that setting means monochrome, not de-emphasis (unlike
+// ModernChoiceButtons' Icon color scope, where fading unselected tiles back *is* the point).
+const DESATURATED_IMAGE_FILTER = 'grayscale(1)';
+
+interface IWebResourceIconProps {
+  iconName: string;
+  desaturate: boolean;
+  renderFallback: () => React.ReactElement | null;
+}
+
+// Renders an image web resource as an option icon. A name that doesn't resolve (unpublished,
+// misspelled, or wrong prefix) produces an image load error rather than an HTTP failure we
+// could catch up front, so the fallback is driven off the <img>'s own onError.
+const WebResourceIcon = ({ iconName, desaturate, renderFallback }: IWebResourceIconProps): React.ReactElement | null => {
+  const [failed, setFailed] = React.useState(false);
+
+  // A re-render with a different name deserves a fresh attempt -- otherwise one bad name would
+  // poison the slot for every option that later reuses this component instance.
+  React.useEffect(() => setFailed(false), [iconName]);
+
+  if (failed) return renderFallback();
+
+  return (
+    <img
+      src={getWebResourceUrl(iconName)}
+      alt=""
+      aria-hidden="true"
+      onError={() => {
+        if (!warnedIconNames.has(iconName)) {
+          warnedIconNames.add(iconName);
+          console.warn(
+            `[lops.AdvancedDropDown] Web resource "${iconName}" could not be loaded from ` +
+            `${getWebResourceUrl(iconName)} -- falling back to the color indicator. Check that the ` +
+            `web resource exists, is an image type, and has been published.`
+          );
+        }
+        setFailed(true);
+      }}
+      style={{
+        // Square box matching the MDL2 glyph metrics, with the same 8px gutter. objectFit
+        // "contain" means a square source fills it exactly and a non-square one is letterboxed
+        // down to fit, rather than stretched or cropped.
+        width: '16px',
+        height: '16px',
+        objectFit: 'contain',
+        marginRight: '8px',
+        flexShrink: 0,
+        filter: desaturate ? DESATURATED_IMAGE_FILTER : 'none'
+      }}
+    />
+  );
 };
 
 // Convert various Unicode formats to actual Unicode character
@@ -113,6 +217,7 @@ export interface IConfig {
   componentHeight: "Tall" | "Short";
   iconColorOverride?: string;
   useExternalValueForIcon: boolean;
+  placeholderText: string;
 }
 
 /*
@@ -417,15 +522,54 @@ export const AdvancedOptionsControl = ({ rawOptions, selectedKey, onChange, isDi
         {shouldShowIcon && (
           // Simplified icon rendering - let Fluent UI handle MDL2 icons
           (() => {
-            // Strategy 1: Try MDL2 Icon (most common case)
-            if (iconValidation.iconType === 'mdl2') {
+            // The final color-circle fallback, hoisted so the web resource strategy below can
+            // fall back to the same indicator every other failed strategy lands on.
+            const renderColorIndicator = (): React.ReactElement => (
+              <span
+                className="color-indicator"
+                data-icon={icon}
+                data-color={iconColor}
+                style={{
+                  width: '12px',
+                  height: '12px',
+                  borderRadius: '50%',
+                  marginRight: '8px',
+                  flexShrink: 0,
+                  backgroundColor: iconColor,
+                  border: '1px solid rgba(0,0,0,0.1)',
+                  display: 'inline-block'
+                }}
+                title={`Icon: ${icon} (fallback)`}
+              />
+            );
+
+            // Strategy 0: an image web resource from the org. It ignores every icon *color*
+            // setting -- it renders as authored -- except "Show color icon", which means
+            // "don't use color here" and desaturates the image accordingly.
+            if (iconValidation.iconType === 'webresource') {
               return (
-                <Icon
-                  styles={{ root: { color: iconColor, marginRight: "8px", flexShrink: 0 } }}
-                  iconName={icon}
-                  aria-hidden="true"
+                <WebResourceIcon
+                  iconName={icon.trim()}
+                  desaturate={!config.showColorIcon}
+                  renderFallback={renderColorIndicator}
                 />
               );
+            }
+
+            // Strategy 1: Try MDL2 Icon (most common case). An unregistered name falls
+            // through to the color-circle fallback rather than rendering an empty span.
+            if (iconValidation.iconType === 'mdl2') {
+              const cleanIconName = icon.trim();
+              if (isRegisteredMdl2Icon(cleanIconName)) {
+                return (
+                  <Icon
+                    styles={{ root: { color: iconColor, marginRight: "8px", flexShrink: 0 } }}
+                    iconName={cleanIconName}
+                    aria-hidden="true"
+                  />
+                );
+              }
+              warnUnknownIconOnce(cleanIconName);
             }
 
             // Strategy 2: Try Unicode character rendering
@@ -481,24 +625,7 @@ export const AdvancedOptionsControl = ({ rawOptions, selectedKey, onChange, isDi
             }
 
             // Final fallback: Color circle indicator
-            return (
-              <span
-                className="color-indicator"
-                data-icon={icon}
-                data-color={iconColor}
-                style={{
-                  width: '12px',
-                  height: '12px',
-                  borderRadius: '50%',
-                  marginRight: '8px',
-                  flexShrink: 0,
-                  backgroundColor: iconColor,
-                  border: '1px solid rgba(0,0,0,0.1)',
-                  display: 'inline-block'
-                }}
-                title={`Icon: ${icon} (fallback)`}
-              />
-            );
+            return renderColorIndicator();
           })()
         )}
         <span style={{
@@ -579,7 +706,7 @@ export const AdvancedOptionsControl = ({ rawOptions, selectedKey, onChange, isDi
       justifyContent: 'flex-start'  // Ensure left alignment for main container
     }}>
       <Dropdown
-        placeHolder="---"
+        placeHolder={config.placeholderText}
         options={options}
         defaultSelectedKey={defaultValue || -1}
         selectedKey={selectedKey}

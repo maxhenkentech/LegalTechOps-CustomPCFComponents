@@ -28,8 +28,24 @@ export const myTheme = createTheme({
       white: '#ffffff',
     }});
 
-const colorFocus = "#a9a9a9";
-   
+// Field box colors, pixel/geometry-matched against a maker-supplied screenshot of the native
+// Dataverse choice field, the same reference AdvancedLookUp's own OOTB-matching pass used (see
+// LookUpStyles.ts in that control - #f5f5f5 is the OOTB fill there too, not a coincidence, both
+// pixel-sampled from the same kind of native field). Used only for the DEFAULT/no-color-override
+// look - config-driven backgrounds (showColorBackground + selectedColor/iconColorOverride) are a
+// deliberate, separate feature and are untouched by these.
+const FIELD_BG = "#f5f5f5";
+const FIELD_BG_HOVER = "#ececec";
+const FIELD_BG_FOCUS = "#ffffff";
+const FIELD_BORDER_FOCUS = "#a9a9a9";
+// Same placeholder grey AdvancedLookUp's comboBoxStyles already uses for its own placeholder text
+// - pixel-sampled against the reference screenshot's OOTB "---" (darkest sampled pixel ~rgb(112,
+// 112,112), a light/muted grey) versus this control's own placeholder, which was rendering at
+// full body-text strength (`textColor`, #323130 - near-black) with no separate lighter treatment
+// for the empty/unselected state at all. See the title style's own `&.ms-Dropdown-titleIsPlaceHolder`
+// selector below for where this is actually applied.
+const FIELD_PLACEHOLDER_COLOR = "#a19f9d";
+
 // Helper function to lighten a hex color
 const lightenColor = (color: string, amount = 0.7): string => {
   if (!color || !color.startsWith('#')) return color;
@@ -89,18 +105,21 @@ export const dropdownStyles = (props: IDropdownStyleProps, selectedColor?: strin
   console.log("🎨 DropdownStyles - componentHeight:", componentHeight, "isShort:", isShort);
   
   // Use completely different values for tall vs short to force re-render
-  const heightValues = isShort 
-    ? { 
-        padding: "4px 8px", // Increased padding to prevent text cutoff
-        paddingRight: "32px", // More space for caret
+  const heightValues = isShort
+    ? {
+        // Left inset pixel-matched against the native Dataverse choice field (28px, measured
+        // consistently across two separate reference screenshots at ~400px field width) - see
+        // caretDownWrapper's own comment for the equivalent right-side calibration.
+        padding: "4px 11px",
+        paddingRight: "30px", // More space for caret - see caretDownWrapper's own comment below
         minHeight: "24px", // Slightly taller
         maxHeight: "32px", // Slightly taller
         height: "32px", // Slightly taller
         lineHeight: "1.3" // Better line height for readability
       }
     : {
-        padding: "8px 8px", // Better padding for tall version
-        paddingRight: "32px", // More space for caret
+        padding: "8px 11px", // Left inset - see the Short branch's own comment above
+        paddingRight: "30px", // More space for caret - see caretDownWrapper's own comment below
         minHeight: "32px", // Increased from 28px
         maxHeight: "40px", // Increased from 36px
         height: "40px", // Set explicit height
@@ -114,7 +133,7 @@ export const dropdownStyles = (props: IDropdownStyleProps, selectedColor?: strin
                                 iconColorOverride && showColorBackground === "Lighter" ? lightenColor(iconColorOverride, 0.8) :
                                 showColorBackground === "Full" && selectedColor ? selectedColor :
                                 showColorBackground === "Lighter" && selectedColor ? lightenColor(selectedColor, 0.8) :
-                                "#f3f2f1";
+                                FIELD_BG;
 
   // Determine text color based on background darkness
   const textColor = (showColorBackground === "Full" && actualBackgroundColor && isColorDark(actualBackgroundColor)) ? 
@@ -142,7 +161,7 @@ export const dropdownStyles = (props: IDropdownStyleProps, selectedColor?: strin
                         iconColorOverride && showColorBackground === "Lighter" ? lightenColor(iconColorOverride, 0.8) :
                         showColorBackground === "Full" && selectedColor ? selectedColor :
                         showColorBackground === "Lighter" && selectedColor ? lightenColor(selectedColor, 0.8) :
-                        "#f3f2f1",
+                        FIELD_BG,
         padding: heightValues.padding,
         paddingRight: heightValues.paddingRight,
         minHeight: heightValues.minHeight,
@@ -156,36 +175,55 @@ export const dropdownStyles = (props: IDropdownStyleProps, selectedColor?: strin
         textOverflow: "ellipsis",
         whiteSpace: "nowrap",
         selectors: {
+          // Fluent renders its OWN default placeholder text node (confirmed live: innerHTML is
+          // the literal placeholder string, not our custom onRenderTitle/option-content markup -
+          // Dropdown only invokes onRenderTitle once something is actually selected) - but it's
+          // still a plain-text child of THIS span, so `color` above already cascades to it via
+          // normal CSS inheritance without needing a selector at all. What needs a selector is
+          // narrowing that inherited color specifically for the placeholder state: with nothing
+          // else, the placeholder inherits the exact same full-strength `textColor` as a real
+          // selected value, confirmed live (computed color was #323130 for "---") - the native
+          // Dataverse field's own placeholder is a visibly lighter, muted grey. `&` targets this
+          // same title span again, refined by Fluent's own placeholder modifier class.
+          '&.ms-Dropdown-titleIsPlaceHolder': {
+            color: FIELD_PLACEHOLDER_COLOR
+          },
           ':hover': {
-            boxShadow: showColorBorder ? 
-              `inset 0 0 0 2px ${(showColorBorder && selectedColor) ? selectedColor : 
-                                 (showColorBorder && iconColorOverride) ? iconColorOverride : 
-                                 'transparent'}` : 
+            boxShadow: showColorBorder ?
+              `inset 0 0 0 2px ${(showColorBorder && selectedColor) ? selectedColor :
+                                 (showColorBorder && iconColorOverride) ? iconColorOverride :
+                                 'transparent'}` :
               "none", // Maintain box-shadow border on hover
             backgroundColor: iconColorOverride && showColorBackground === "Full" ? iconColorOverride :
                            iconColorOverride && showColorBackground === "Lighter" ? lightenColor(iconColorOverride, 0.8) :
                            showColorBackground === "Full" && selectedColor ? selectedColor :
                            showColorBackground === "Lighter" && selectedColor ? lightenColor(selectedColor, 0.8) :
-                           (props.disabled ? "#f3f2f1" : "#ffffff"),
+                           (props.disabled ? FIELD_BG : FIELD_BG_HOVER),
             cursor: props.disabled ? "default" : "pointer"
           },
           ':focus': {
-            boxShadow: showColorBorder ? 
-              `inset 0 0 0 2px ${(showColorBorder && selectedColor) ? selectedColor : 
-                                 (showColorBorder && iconColorOverride) ? iconColorOverride : 
-                                 'transparent'}` : 
+            // backgroundColor deliberately NOT set here (unlike :hover above) - confirmed live
+            // that keyboard/programmatic focus actually lands on the OUTER `.ms-Dropdown` div
+            // (className "ms-Dropdown", the `dropdown` style key below), never on this `title`
+            // span itself, so a `:focus` rule here can never match and would be dead code. The
+            // focus-visible affordance (border color) is applied on `dropdown` below instead,
+            // where `:focus` genuinely fires - see FIELD_BORDER_FOCUS there.
+            boxShadow: showColorBorder ?
+              `inset 0 0 0 2px ${(showColorBorder && selectedColor) ? selectedColor :
+                                 (showColorBorder && iconColorOverride) ? iconColorOverride :
+                                 'transparent'}` :
               "none", // Maintain box-shadow border on focus
             outline: "none", // Let Power Platform handle focus
             outlineOffset: "0px"
           },
           ':disabled': {
-            backgroundColor: "#f3f2f1",
+            backgroundColor: FIELD_BG,
             borderColor: "#d2d0ce",
             color: "#a19f9d",
             cursor: "default"
           }
         }
-      }],        
+      }],
       root: {
         width: "100%",
         maxWidth: "100%",
@@ -197,15 +235,29 @@ export const dropdownStyles = (props: IDropdownStyleProps, selectedColor?: strin
         alignItems: "center",
         justifyContent: "flex-start"  // Ensure left alignment
       },
+      // Root closed-state box (className "ms-Dropdown", confirmed via live DOM inspection of the
+      // actual rendered control - NOT the open options list/panel, which is styled separately
+      // below via `callout`). This is where the field's real background/border live, one layer
+      // outside `title` above (a fill-only span nested inside it): `title`'s own backgroundColor
+      // was already correctly OOTB-matched, but this box had its OWN, separate, still-default
+      // Fluent white fill plus a hardcoded 1px grey border - both painted underneath/around
+      // `title`'s fill, which is exactly why a border was visible at all despite `title` itself
+      // having none. Pixel-measured against a maker-supplied screenshot of the native Dataverse
+      // choice field: no visible border at rest (border set to a transparent 1px rule, not
+      // omitted, so focus doesn't shift the box by 1px - same technique AdvancedLookUp's
+      // LookUpStyles.ts uses for its ComboBox border), and backgroundColor here matters far less
+      // than `title`'s now that both agree, but is kept transparent (not FIELD_BG) since `title`
+      // already has width:100% and fully covers this box's content area on its own.
       dropdown: [{
         borderRadius: "6px",
-        border: "1px solid #d2d0ce",
-        backgroundColor: "#ffffff",
+        border: "1px solid transparent",
+        backgroundColor: "transparent",
         maxHeight: "200px",
         overflowY: "auto",
         selectors: {
           ":focus": {
-            outline: "none"
+            outline: "none",
+            borderColor: FIELD_BORDER_FOCUS
           }
         }
       }],
@@ -254,8 +306,13 @@ export const dropdownStyles = (props: IDropdownStyleProps, selectedColor?: strin
         color: showColorBackground !== "No" && selectedColor ? "#605e5c" : "#605e5c",
         fontSize: "12px"
       }],
+      // Pixel-measured against the same reference screenshot as FIELD_BG above: the native
+      // Dataverse choice field's chevron sits noticeably further inset from the field's right
+      // edge than Fluent's own default caretDownWrapper offset. `paddingRight` above (on `title`)
+      // is bumped in lockstep with this, keeping the same reserved-space relationship, so long
+      // option text still stops before running under the chevron rather than colliding with it.
       caretDownWrapper: [{
-        right: "8px",
+        right: "14px",
         top: "50%",
         transform: "translateY(-50%)"
       }],

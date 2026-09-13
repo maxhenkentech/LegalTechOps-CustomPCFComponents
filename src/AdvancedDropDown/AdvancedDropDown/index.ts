@@ -135,7 +135,7 @@ export class AdvancedDropDown implements ComponentFramework.ReactControl<IInputs
 	}
 
 
-	private parseIconConfig(defaultIcon: string, iconConfig?: string, sortBy?: "Text" | "Value", hideHiddenOptions?: boolean, showColorIcon?: boolean, showColorBorder?: boolean, showColorBackground?: "No" | "Lighter" | "Full", makeFontBold?: boolean, componentHeight?: "Tall" | "Short", iconColorOverride?: string, useExternalValueForIcon?: boolean): IConfig {
+	private parseIconConfig(defaultIcon: string, iconConfig?: string, sortBy?: "Text" | "Value", hideHiddenOptions?: boolean, showColorIcon?: boolean, showColorBorder?: boolean, showColorBackground?: "No" | "Lighter" | "Full", makeFontBold?: boolean, componentHeight?: "Tall" | "Short", iconColorOverride?: string, useExternalValueForIcon?: boolean, placeholderText?: string): IConfig {
 		const isJSON = iconConfig && iconConfig.includes("{");
 
 		// Normalize hex color (ensure it starts with #)
@@ -155,7 +155,8 @@ export class AdvancedDropDown implements ComponentFramework.ReactControl<IInputs
 			makeFontBold: makeFontBold ?? false,
 			componentHeight: componentHeight ?? "Tall",
 			iconColorOverride: normalizedIconColor,
-			useExternalValueForIcon: useExternalValueForIcon ?? false
+			useExternalValueForIcon: useExternalValueForIcon ?? false,
+			placeholderText: placeholderText || "---"
 		}
 		return this.config;
 	}
@@ -203,6 +204,7 @@ export class AdvancedDropDown implements ComponentFramework.ReactControl<IInputs
 		const showColorBackground = context.parameters.showColorBackground?.raw ?? "No";
 		const makeFontBold = context.parameters.makeFontBold?.raw ?? false;
 		const useExternalValueForIcon = context.parameters.useExternalValueForIcon?.raw ?? false;
+		const placeholderText = context.parameters.placeholderText?.raw || "---";
 
 		// Determine which options to use - test mode or actual data
 		let sourceOptions: ComponentFramework.PropertyHelper.OptionMetadata[];
@@ -244,7 +246,8 @@ export class AdvancedDropDown implements ComponentFramework.ReactControl<IInputs
 				makeFontBold,
 				componentHeight,
 				iconColorOverride,
-				useExternalValueForIcon
+				useExternalValueForIcon,
+				placeholderText
 			),
 			selectedColor: selectedColor,
 			contextUtils: context.utils,

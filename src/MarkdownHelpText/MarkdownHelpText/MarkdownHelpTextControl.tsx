@@ -32,8 +32,15 @@ const colorSanitizeSchema = {
   attributes: {
     ...defaultSchema.attributes,
     span: [...(defaultSchema.attributes?.span ?? []), "style"],
-    [ALERT_TAG_NAME]: ["data-alert-type"],
-    [ALERT_LABEL_TAG_NAME]: ["data-alert-type"],
+    // hast-util-sanitize matches attribute allowlist entries against the hast tree's actual
+    // property keys, not literal HTML attribute names - mdast-util-to-hast normalizes the
+    // "data-alert-type" hProperties key from remarkAlertCallouts.ts into the DOM-style camelCase
+    // property "dataAlertType" (via hastscript/property-information) before sanitize ever sees
+    // it, so listing "data-alert-type" here silently matched nothing and rehypeSanitize stripped
+    // the property on every alert, leaving AlertCallout/AlertLabel to fall back to their "note"
+    // default regardless of the actual [!TIP]/[!WARNING]/etc. type.
+    [ALERT_TAG_NAME]: ["dataAlertType"],
+    [ALERT_LABEL_TAG_NAME]: ["dataAlertType"],
   },
 };
 

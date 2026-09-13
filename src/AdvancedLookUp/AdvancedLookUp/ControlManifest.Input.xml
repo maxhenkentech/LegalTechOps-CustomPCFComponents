@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<manifest>
+  <control namespace="lops" constructor="AdvancedLookUp" version="1.8.0" display-name-key="lops.AdvancedLookUp" description-key="AdvancedLookUp description" control-type="virtual">
+    <property name="lookupValue" display-name-key="Lookup Value" description-key="The lookup field this control replaces. Place this control directly on that field." of-type="Lookup.Simple" usage="bound" required="true" />
+    <property name="iconColumnName" display-name-key="Icon Column" description-key="Optional: logical name of a column on the target table to render as an icon on each record option. Point this at an Image column to show that picture, a text column containing an MDL2 icon name to show that icon, or a Choice (option set) column whose selected option label is either an MDL2 icon name or a web resource file name (e.g. logo.png) - all detected automatically from the column type. Every name entered here must be a real column on the target table - use Fixed Icon Name instead for a literal icon shown on every record. Semicolon-separate multiple names (col1;col2) to try them in order per record - the first one with a value wins." of-type="SingleLine.Text" usage="input" required="false" />
+    <property name="iconFixedName" display-name-key="Fixed Icon Name" description-key="Optional: a literal MDL2 icon name shown as the icon for any record where Icon Column produced no value - or for every record, if Icon Column is left blank entirely. Tried last, after every column in Icon Column has already been tried and come up empty." of-type="SingleLine.Text" usage="input" required="false" />
+    <property name="iconShape" display-name-key="Icon Shape" description-key="Shape drawn behind each record icon or picture. Full fills the icons square box edge to edge (default). Rounded Square uses a small corner radius. Circle fully rounds it. None applies no shape or background at all, regardless of Icon Background Color." of-type="Enum" usage="input" required="false" default-value="Full">
+      <value name="Full" display-name-key="Full" description-key="Square box, fills edge to edge (default)">Full</value>
+      <value name="RoundedSquare" display-name-key="Rounded Square" description-key="Square box with rounded corners">RoundedSquare</value>
+      <value name="Circle" display-name-key="Circle" description-key="Fully rounded circular box">Circle</value>
+      <value name="None" display-name-key="None" description-key="No shape or background - icon or picture rendered with no box">None</value>
+    </property>
+    <property name="iconBackgroundColor" display-name-key="Icon Background Color" description-key="Optional: hex color (e.g. #0078D4) painted behind each record icon or picture, in the shape set by Icon Shape. Blank by default - no background is drawn. Ignored when Icon Shape is None." of-type="SingleLine.Text" usage="input" required="false" />
+    <property name="iconColor" display-name-key="Icon Color" description-key="Optional: hex color (e.g. #0078D4) applied to MDL2 icon glyphs shown as each records icon. Blank by default - the icon renders in its natural color. Ignored for picture/web-resource images, which are not recolored." of-type="SingleLine.Text" usage="input" required="false" />
+    <property name="recordBackdropColor" display-name-key="Record Backdrop Color" description-key="Hex color (e.g. #EDF3FB) painted behind the selected records icon and name, matching the faint colored chip the out-of-the-box Dataverse lookup field uses. Defaults to that same out-of-the-box color." of-type="SingleLine.Text" usage="input" required="false" default-value="#EDF3FB" />
+    <property name="tooltipColumnName" display-name-key="Tooltip Column" description-key="Optional: logical name of a column on the target table whose value is shown as a tooltip when hovering over the currently selected record. Semicolon-separate multiple names (col1;col2) to try them in order per record - the first one with a value wins." of-type="SingleLine.Text" usage="input" required="false" />
+    <property name="labelColumnName" display-name-key="Label Column" description-key="Optional: logical name of a column on the target table to display as the label for each record, in the dropdown list and the selected value, instead of the primary name column. Semicolon-separate multiple names (col1;col2) to try them in order per record - the first one with a value wins." of-type="SingleLine.Text" usage="input" required="false" />
+    <property name="searchColumns" display-name-key="Additional Search Columns" description-key="Optional: comma-separated logical names of additional columns on the target table to search against, besides its primary name column (always searched)." of-type="SingleLine.Text" usage="input" required="false" />
+    <property name="sortColumnName" display-name-key="Sort Column" description-key="Optional: logical name of a column on the target table to sort search results by, always ascending. Both text and number columns are supported. Defaults to the primary name column when left blank." of-type="SingleLine.Text" usage="input" required="false" />
+    <property name="additionalDisplayColumns" display-name-key="Additional Display Columns" description-key="Optional: semicolon-separated logical names of columns on the target table to show as smaller context text underneath each record name in the dropdown list (not the selected value). Every listed column value is shown, not a fallback chain. Every column type is supported - Choice/Status/State show their label, Lookup/Owner/Customer show the referenced record name, Currency shows the formatted amount, dates and numbers use their formatted display value." of-type="SingleLine.Text" usage="input" required="false" />
+    <property name="showInactiveRecords" display-name-key="Show Inactive Records" description-key="If false (default), search results only include active records. If true, inactive records are included too." of-type="TwoOptions" usage="input" required="false" default-value="false" />
+    <property name="resultLimit" display-name-key="Result Limit" description-key="Maximum number of matching records fetched and shown per search - re-queried from the server on every search, not a client-side page size." of-type="Whole.None" usage="input" required="false" default-value="10" />
+    <property name="componentHeight" display-name-key="Component Height" description-key="Set the height of the lookup component" of-type="Enum" usage="input" required="false" default-value="Short">
+      <value name="Tall" display-name-key="Tall" description-key="Standard height field">Tall</value>
+      <value name="Short" display-name-key="Short" description-key="Compact height field (75% of standard)">Short</value>
+    </property>
+    <property name="placeholderText" display-name-key="Placeholder Text" description-key="Placeholder text shown when no record is selected." of-type="SingleLine.Text" usage="input" required="false" default-value="Search records..." />
+    <resources>
+      <code path="index.ts" order="1"/>
+      <css path="CSS/AdvancedLookUp.css" order="1" />
+      <platform-library name="React" version="16.8.6" />
+      <platform-library name="Fluent" version="8.29.0" />
+    </resources>
+    <feature-usage>
+      <uses-feature name="WebAPI" required="true" />
+      <uses-feature name="Utility" required="true" />
+    </feature-usage>
+  </control>
+</manifest>

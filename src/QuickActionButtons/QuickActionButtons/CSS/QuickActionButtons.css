@@ -1,0 +1,26 @@
+.lops-qab-root {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.lops-qab-tile {
+  outline: none;
+}
+
+.lops-qab-tile:focus-visible {
+  box-shadow: 0 0 0 2px #0078D4;
+}
+
+.lops-qab-label {
+  pointer-events: none;
+  /* !important is deliberate: a model-driven form's own global stylesheet can carry a
+     higher-specificity or !important font-weight rule for button-adjacent text (observed in
+     practice making "Make font bold" appear to do nothing regardless of its value), so this
+     rule -- shipped as part of the control's own stylesheet -- has to be able to win that fight
+     in both directions, not just when turning bold on. */
+  font-weight: 400 !important;
+}
+
+.lops-qab-label.lops-qab-label--bold {
+  font-weight: 600 !important;
+}

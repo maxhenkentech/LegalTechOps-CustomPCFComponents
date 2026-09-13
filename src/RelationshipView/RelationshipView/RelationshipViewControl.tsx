@@ -56,6 +56,15 @@ interface ITreeRecord {
   // Set only when thumbnailColumnName resolves to a text column instead of an Image column - the
   // raw MDL2 icon name string, rendered via Thumbnail instead of a fetched image.
   thumbnailIconName?: string;
+  // Set only when thumbnailColumnName (no dot notation) resolves to a Choice/Picklist column - the
+  // raw numeric option value from this record's own $select, looked up against
+  // thumbnailChoiceOptions (resolved once per column, not per record) to get that option's icon
+  // (ExternalValue) and color at render time.
+  thumbnailChoiceOptionValue?: number;
+  // Set only when thumbnailColumnName uses "<lookupField>.<column>" dot notation - this record's
+  // own value for that lookup ("_<lookupField>_value"), i.e. the id of the RELATED record the
+  // thumbnail should actually be fetched from. Undefined if the lookup has no value on this record.
+  thumbnailLookupTargetId?: string;
   // Set only when sortByColumnName is configured - used to order records within the same tree
   // level (buildVirtualRoots), never rendered directly.
   sortValue?: ISortValue;
@@ -76,6 +85,95 @@ interface IEntityMeta {
   entitySetName: string;
   primaryIdAttribute: string;
   primaryNameAttribute: string;
+}
+
+// thumbnailColumnName normally names a column on this record's own entity. It also accepts
+// "<lookupField>.<column>" dot notation - e.g. "hek_type.hek_thumbnail" - to instead pull the
+// thumbnail from the record a lookup field points to (the "Type" record's own picture, not
+// anything stored on the current record). columnLogicalName is always the column to actually
+// render; lookupFieldLogicalName is only set when dot notation was used.
+interface IThumbnailColumnRef {
+  lookupFieldLogicalName?: string;
+  columnLogicalName: string;
+}
+
+function parseThumbnailColumnName(thumbnailColumnName: string | undefined): IThumbnailColumnRef | undefined {
+  if (!thumbnailColumnName) return undefined;
+  const dotIndex = thumbnailColumnName.indexOf(".");
+  if (dotIndex <= 0 || dotIndex === thumbnailColumnName.length - 1) {
+    return { columnLogicalName: thumbnailColumnName };
+  }
+  return {
+    lookupFieldLogicalName: thumbnailColumnName.slice(0, dotIndex),
+    columnLogicalName: thumbnailColumnName.slice(dotIndex + 1),
+  };
+}
+
+// Metadata needed to fetch a dot-notation lookup thumbnail: which entity/entity-set the lookup
+// points to, and the resolved type of the column on THAT entity (String -> icon name, ImageType ->
+// fetch bytes via fetchThumbnailUrl, same distinction already made for the current record's own
+// thumbnail column).
+interface ILookupThumbnailMeta {
+  targetEntityLogicalName: string;
+  targetEntitySetName: string;
+  targetColumnMeta: IAttributeMeta;
+}
+
+// Only single-target Lookups are supported - a polymorphic Customer/Owner field's Targets array
+// has more than one entry and there's no per-record way to know which one a given value actually
+// resolved to without an extra call per record, so this deliberately just uses Targets[0] and lets
+// a mismatched picture/404 be the visible symptom rather than adding that per-record resolution.
+async function resolveLookupThumbnailMeta(
+  entityLogicalName: string,
+  lookupFieldLogicalName: string,
+  targetColumnLogicalName: string
+): Promise<ILookupThumbnailMeta | undefined> {
+  const targetsUrl = `/api/data/v9.2/EntityDefinitions(LogicalName='${entityLogicalName}')/Attributes(LogicalName='${lookupFieldLogicalName}')/Microsoft.Dynamics.CRM.LookupAttributeMetadata?$select=Targets`;
+  const targetsResponse = await fetch(targetsUrl, { headers: { Accept: "application/json" } });
+  if (!targetsResponse.ok) {
+    throw new Error(`Failed to resolve lookup field "${lookupFieldLogicalName}" (${targetsResponse.status} ${targetsResponse.statusText})`);
+  }
+  const targetsData = (await targetsResponse.json()) as { Targets?: string[] };
+  const targetEntityLogicalName = targetsData.Targets?.[0];
+  if (!targetEntityLogicalName) {
+    throw new Error(`"${lookupFieldLogicalName}" does not resolve to a Lookup field with a target entity.`);
+  }
+
+  const [targetEntityMeta, targetAttributeMeta] = await Promise.all([
+    resolveEntityMetadata(targetEntityLogicalName),
+    resolveAttributeMetadata(targetEntityLogicalName, [targetColumnLogicalName]),
+  ]);
+
+  const targetColumnMeta = targetAttributeMeta[targetColumnLogicalName];
+  if (!targetColumnMeta) {
+    throw new Error(`Column "${targetColumnLogicalName}" was not found on "${targetEntityLogicalName}".`);
+  }
+
+  return { targetEntityLogicalName, targetEntitySetName: targetEntityMeta.entitySetName, targetColumnMeta };
+}
+
+// A Choice/Picklist option's icon (its ExternalValue, same convention ModernChoiceButtons and
+// AdvancedDropDown already use for icon-by-ExternalValue) and configured Color, keyed by the
+// option's raw numeric value. Resolved once per thumbnail column (not per record) and looked up at
+// render time against each record's own resolved option value.
+interface IChoiceThumbnailOption {
+  icon?: string;
+  color?: string;
+}
+
+async function resolveChoiceThumbnailOptions(entityLogicalName: string, columnLogicalName: string): Promise<Record<number, IChoiceThumbnailOption>> {
+  const url = `/api/data/v9.2/EntityDefinitions(LogicalName='${entityLogicalName}')/Attributes(LogicalName='${columnLogicalName}')/Microsoft.Dynamics.CRM.PicklistAttributeMetadata?$expand=OptionSet`;
+  const response = await fetch(url, { headers: { Accept: "application/json" } });
+  if (!response.ok) {
+    throw new Error(`Failed to resolve choice options for "${columnLogicalName}" (${response.status} ${response.statusText})`);
+  }
+  const data = (await response.json()) as { OptionSet?: { Options?: { Value: number; Color?: string; ExternalValue?: string }[] } };
+  const options = data.OptionSet?.Options ?? [];
+  const result: Record<number, IChoiceThumbnailOption> = {};
+  options.forEach((opt) => {
+    result[opt.Value] = { icon: opt.ExternalValue || undefined, color: opt.Color || undefined };
+  });
+  return result;
 }
 
 interface IQuickViewField {
@@ -120,6 +218,7 @@ export interface IRelationshipViewProps {
   thumbnailColumnName?: string;
   thumbnailStyle: string;
   thumbnailRenderingOption: string;
+  thumbnailIconColorMode: string;
   quickViewFormName?: string;
   choiceColorDisplay: string;
   currentRecordHighlightColor: string;
@@ -336,22 +435,29 @@ function toWebApiSelectFields(logicalName: string, attributeMeta: Record<string,
 // mode) - an Image-column thumbnail is deliberately NOT selected here, since its bytes are already
 // fetched lazily per-visible-record via fetchThumbnailUrl; embedding it here too would pull a
 // base64 blob into every single row of the tree/ancestor/descendant/sibling queries.
+// When thumbnailColumnRef resolves to "<lookupField>.<column>" dot notation, the actual thumbnail
+// column lives on a DIFFERENT entity (whatever the lookup points to) and can't be $select-ed from
+// this query at all - only the lookup's own bound value ("_<lookupField>_value") is added here, so
+// each row knows which related record to fetch its thumbnail from later (see the thumbnail-fetch
+// effect / thumbnailLookupTargetId).
 function buildSelectClause(
   primaryNameAttribute: string,
   parentAttributeLogicalName: string,
   customAttributes: (string | undefined)[],
   attributeMeta: Record<string, IAttributeMeta>,
-  thumbnailColumnName: string | undefined,
+  thumbnailColumnRef: IThumbnailColumnRef | undefined,
   sortByColumnName: string | undefined
 ): string {
   const fixedFields = [primaryNameAttribute, "statecode", `_${parentAttributeLogicalName}_value`];
   const customFields = customAttributes
     .filter((value): value is string => !!value)
     .flatMap((value) => toWebApiSelectFields(value, attributeMeta));
-  const thumbnailFields =
-    thumbnailColumnName && attributeMeta[thumbnailColumnName]?.attributeType === "String"
-      ? toWebApiSelectFields(thumbnailColumnName, attributeMeta)
-      : [];
+  const thumbnailOwnColumnType = thumbnailColumnRef && attributeMeta[thumbnailColumnRef.columnLogicalName]?.attributeType;
+  const thumbnailFields = thumbnailColumnRef?.lookupFieldLogicalName
+    ? [`_${thumbnailColumnRef.lookupFieldLogicalName}_value`]
+    : thumbnailOwnColumnType === "String" || thumbnailOwnColumnType === "Picklist"
+    ? toWebApiSelectFields(thumbnailColumnRef!.columnLogicalName, attributeMeta)
+    : [];
   const sortFields = sortByColumnName ? toWebApiSelectFields(sortByColumnName, attributeMeta) : [];
   return [...fixedFields, ...customFields, ...thumbnailFields, ...sortFields].join(",");
 }
@@ -399,7 +505,7 @@ function mapWebApiRecordToTreeRecord(
   customAttribute1?: string,
   customAttribute2?: string,
   customAttribute3?: string,
-  thumbnailColumnName?: string,
+  thumbnailColumnRef?: IThumbnailColumnRef,
   sortByColumnName?: string
 ): ITreeRecord {
   const stateRaw = record.statecode as number | undefined;
@@ -411,10 +517,18 @@ function mapWebApiRecordToTreeRecord(
     return formatAttributeValue(record, logicalName, attributeMeta[logicalName], entityLogicalName, entitySetName, id);
   };
 
+  const isOwnColumnThumbnail = thumbnailColumnRef && !thumbnailColumnRef.lookupFieldLogicalName;
+  const ownThumbnailColumnType = isOwnColumnThumbnail ? attributeMeta[thumbnailColumnRef!.columnLogicalName]?.attributeType : undefined;
+
   const thumbnailIconName =
-    thumbnailColumnName && attributeMeta[thumbnailColumnName]?.attributeType === "String"
-      ? (record[thumbnailColumnName] as string | undefined)
-      : undefined;
+    ownThumbnailColumnType === "String" ? (record[thumbnailColumnRef!.columnLogicalName] as string | undefined) : undefined;
+
+  const thumbnailChoiceOptionValue =
+    ownThumbnailColumnType === "Picklist" ? (record[thumbnailColumnRef!.columnLogicalName] as number | undefined) : undefined;
+
+  const thumbnailLookupTargetId = thumbnailColumnRef?.lookupFieldLogicalName
+    ? (record[`_${thumbnailColumnRef.lookupFieldLogicalName}_value`] as string | undefined)
+    : undefined;
 
   return {
     id,
@@ -427,6 +541,8 @@ function mapWebApiRecordToTreeRecord(
     attr2: readAttr(customAttribute2),
     attr3: readAttr(customAttribute3),
     thumbnailIconName: thumbnailIconName || undefined,
+    thumbnailChoiceOptionValue: thumbnailChoiceOptionValue ?? undefined,
+    thumbnailLookupTargetId: thumbnailLookupTargetId || undefined,
     sortValue: sortByColumnName ? readSortValue(record, sortByColumnName, attributeMeta[sortByColumnName]) : undefined,
   };
 }
@@ -443,7 +559,7 @@ async function walkAncestors(
   customAttribute1: string | undefined,
   customAttribute2: string | undefined,
   customAttribute3: string | undefined,
-  thumbnailColumnName: string | undefined,
+  thumbnailColumnRef: IThumbnailColumnRef | undefined,
   sortByColumnName: string | undefined,
   maxLevels: number,
   visited: Set<string>,
@@ -470,7 +586,7 @@ async function walkAncestors(
       customAttribute1,
       customAttribute2,
       customAttribute3,
-      thumbnailColumnName,
+      thumbnailColumnRef,
       sortByColumnName
     );
     result.unshift(mapped);
@@ -494,7 +610,7 @@ async function walkDescendants(
   customAttribute1: string | undefined,
   customAttribute2: string | undefined,
   customAttribute3: string | undefined,
-  thumbnailColumnName: string | undefined,
+  thumbnailColumnRef: IThumbnailColumnRef | undefined,
   sortByColumnName: string | undefined,
   maxLevels: number,
   level: number,
@@ -532,7 +648,7 @@ async function walkDescendants(
       customAttribute1,
       customAttribute2,
       customAttribute3,
-      thumbnailColumnName,
+      thumbnailColumnRef,
       sortByColumnName
     );
     const children = await walkDescendants(
@@ -548,7 +664,7 @@ async function walkDescendants(
       customAttribute1,
       customAttribute2,
       customAttribute3,
-      thumbnailColumnName,
+      thumbnailColumnRef,
       sortByColumnName,
       maxLevels,
       level + 1,
@@ -581,7 +697,7 @@ async function fetchSiblings(
   customAttribute1: string | undefined,
   customAttribute2: string | undefined,
   customAttribute3: string | undefined,
-  thumbnailColumnName: string | undefined,
+  thumbnailColumnRef: IThumbnailColumnRef | undefined,
   sortByColumnName: string | undefined,
   includeChildren: boolean,
   maxChildLevels: number,
@@ -615,7 +731,7 @@ async function fetchSiblings(
       customAttribute1,
       customAttribute2,
       customAttribute3,
-      thumbnailColumnName,
+      thumbnailColumnRef,
       sortByColumnName
     );
 
@@ -633,7 +749,7 @@ async function fetchSiblings(
           customAttribute1,
           customAttribute2,
           customAttribute3,
-          thumbnailColumnName,
+          thumbnailColumnRef,
           sortByColumnName,
           maxChildLevels,
           0,
@@ -1206,17 +1322,79 @@ function AttributeValueText({
   );
 }
 
+// Same luminance-based contrast check ModernChoiceButtons uses for its automatic icon/label
+// contrast (duplicated, not imported - this repo has no shared code between controls).
+function isColorDark(color: string): boolean {
+  if (!color || !color.startsWith("#") || color.length < 7) return false;
+  const hex = color.replace("#", "");
+  const r = parseInt(hex.substr(0, 2), 16);
+  const g = parseInt(hex.substr(2, 2), 16);
+  const b = parseInt(hex.substr(4, 2), 16);
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  return luminance < 0.55;
+}
+
+const THUMBNAIL_FIXED_SOLID_GREY = "#201F1E";
+const THUMBNAIL_FIXED_LIGHT_GREY = "#A19F9D";
+
+interface IThumbnailIconColorStyle {
+  background: string;
+  iconColor: string;
+  border?: string;
+}
+
+// "Default"/unset preserves the original plain look entirely (CSS-driven: light grey background,
+// dark grey icon, no border - see .rv-thumb/.rv-thumb-icon) by returning undefined so Thumbnail
+// falls back to those classes untouched - existing configurations render identically to before
+// this property existed. Every other mode returns explicit colors instead of relying on the
+// choiceColor-less .rv-thumb-icon default, since a colored icon on the default light-grey
+// background would look inconsistent with the white-background + stroke look these modes want.
+// choiceColor is only ever present for a Choice/Picklist-sourced icon (own column or dot-notation
+// lookup) - a plain icon-name column or the fixed-icon fallback never has one, so the two
+// "ChoiceColorFor*" modes gracefully fall back to the Fixed Solid look when it's missing, same as
+// ModernChoiceButtons falling back to its custom color when an option has no configured Color.
+function resolveThumbnailIconColorStyle(mode: string | undefined, choiceColor: string | undefined): IThumbnailIconColorStyle | undefined {
+  if (!mode || mode === "Default") return undefined;
+
+  if (mode === "ChoiceColorForIcon") {
+    const color = choiceColor || THUMBNAIL_FIXED_SOLID_GREY;
+    return { background: "#FFFFFF", iconColor: color, border: `1px solid ${color}` };
+  }
+
+  if (mode === "ChoiceColorForBackground") {
+    if (choiceColor) {
+      return { background: choiceColor, iconColor: isColorDark(choiceColor) ? "#FFFFFF" : THUMBNAIL_FIXED_SOLID_GREY };
+    }
+    return { background: "#FFFFFF", iconColor: THUMBNAIL_FIXED_SOLID_GREY, border: `1px solid ${THUMBNAIL_FIXED_SOLID_GREY}` };
+  }
+
+  if (mode === "FixedLight") {
+    return { background: "#FFFFFF", iconColor: THUMBNAIL_FIXED_LIGHT_GREY, border: `1px solid ${THUMBNAIL_FIXED_LIGHT_GREY}` };
+  }
+
+  // "FixedSolid", and the fallback for any unrecognized value.
+  return { background: "#FFFFFF", iconColor: THUMBNAIL_FIXED_SOLID_GREY, border: `1px solid ${THUMBNAIL_FIXED_SOLID_GREY}` };
+}
+
 interface IThumbnailProps {
   style: string;
   url?: string;
   iconName?: string;
   renderingOption: string;
+  // Only meaningful when iconName is set (a picture URL has its own real colors, nothing to
+  // theme) - "Default"/undefined keeps today's plain look; see resolveThumbnailIconColorStyle.
+  iconColorMode?: string;
+  choiceColor?: string;
+  // The current record's row is highlighted with currentRecordHighlightColor, which defaults to
+  // the same grey as the plain .rv-thumb background - on that row a Default-mode icon thumbnail
+  // would visually blend into the highlighted row background, so it renders on white instead.
+  isCurrent?: boolean;
 }
 
 // iconName takes priority over url when both are somehow present - thumbnailColumnName resolves
 // to exactly one mode per record (Image column vs text/icon column), so this shouldn't happen in
 // practice, but iconName is the simpler/cheaper render path if it ever does.
-function Thumbnail({ style, url, iconName, renderingOption }: IThumbnailProps): React.ReactElement {
+function Thumbnail({ style, url, iconName, renderingOption, iconColorMode, choiceColor, isCurrent }: IThumbnailProps): React.ReactElement {
   const containerRef = React.useRef<HTMLDivElement>(null);
   const imgRef = React.useRef<HTMLImageElement>(null);
   const [failed, setFailed] = React.useState(false);
@@ -1246,9 +1424,15 @@ function Thumbnail({ style, url, iconName, renderingOption }: IThumbnailProps): 
   const shapeClass = style === "Square" ? "rv-thumb-square" : style === "RoundedSquare" ? "rv-thumb-rounded" : "rv-thumb-circle";
 
   if (iconName) {
+    const colorStyle = resolveThumbnailIconColorStyle(iconColorMode, choiceColor);
+    const containerStyle: React.CSSProperties | undefined = colorStyle
+      ? { backgroundColor: colorStyle.background, border: colorStyle.border ?? "none" }
+      : isCurrent
+      ? { backgroundColor: "#FFFFFF" }
+      : undefined;
     return (
-      <div className={`rv-thumb ${shapeClass}`}>
-        <Icon iconName={iconName} className="rv-thumb-icon" />
+      <div className={`rv-thumb ${shapeClass}`} style={containerStyle}>
+        <Icon iconName={iconName} className="rv-thumb-icon" style={colorStyle ? { color: colorStyle.iconColor } : undefined} />
       </div>
     );
   }
@@ -1399,7 +1583,23 @@ interface IRowContext {
   thumbnailStyle: string;
   thumbnailRenderingOption: string;
   thumbnailColumnName?: string;
+  thumbnailIconColorMode: string;
   thumbnailUrls: Record<string, string>;
+  // Icon names resolved for a dot-notation lookup thumbnail whose target column is a text/icon
+  // column - falls back to record.thumbnailIconName (own-entity icon columns) when absent; see the
+  // thumbnail-fetch effect for how each is populated.
+  thumbnailIconNames: Record<string, string>;
+  // A literal MDL2 icon name, used for every record - set when thumbnailColumnName doesn't
+  // resolve to any real column at all on this entity (see the main load effect's fixed-icon
+  // detection), taking lowest priority among all the icon sources below.
+  thumbnailFixedIconName?: string;
+  // Choice/Picklist option icon (ExternalValue) + color, keyed by the option's raw numeric value -
+  // resolved once per thumbnail column, not per record (see resolveChoiceThumbnailOptions).
+  thumbnailChoiceOptions: Record<number, IChoiceThumbnailOption>;
+  // Resolved option value for a dot-notation lookup thumbnail whose target column is a Choice
+  // column - the own-column case instead has this on ITreeRecord.thumbnailChoiceOptionValue
+  // directly (known synchronously from the row's own $select, no extra fetch needed).
+  thumbnailLookupChoiceValues: Record<string, number>;
   hasQuickView: boolean;
   quickViewLayout: IQuickViewSectionGroup[];
   expandedIds: Set<string>;
@@ -1528,10 +1728,10 @@ function TreeRow({ node, depth, continuationFlags, isLast, ctx }: ITreeRowProps)
       <div className="rv-row">
         <Rail depth={depth} continuationFlags={continuationFlags} isLast={isLast} colWidth={ctx.colWidth} />
         <div
-          className={`rv-row-content ${isCurrent ? "rv-row-current" : ""}`}
+          className={`rv-row-content ${isCurrent ? "rv-row-current" : ""} ${!ctx.hasQuickView ? "rv-row-content-no-chevron" : ""}`}
           style={isCurrent ? { backgroundColor: ctx.currentRecordHighlightColor } : undefined}
         >
-          {ctx.hasQuickView ? (
+          {ctx.hasQuickView && (
             <button
               type="button"
               className="rv-chevron"
@@ -1540,17 +1740,32 @@ function TreeRow({ node, depth, continuationFlags, isLast, ctx }: ITreeRowProps)
             >
               <Icon iconName={isExpanded ? "ChevronDown" : "ChevronRight"} />
             </button>
-          ) : (
-            <span className="rv-chevron-spacer" />
           )}
-          {ctx.thumbnailColumnName && (
-            <Thumbnail
-              style={ctx.thumbnailStyle}
-              url={ctx.thumbnailUrls[record.id]}
-              iconName={record.thumbnailIconName}
-              renderingOption={ctx.thumbnailRenderingOption}
-            />
-          )}
+          {ctx.thumbnailColumnName &&
+            (() => {
+              // Choice-sourced icon: the option value is known synchronously for an own-column
+              // Choice (ITreeRecord.thumbnailChoiceOptionValue) or async-fetched for a dot-notation
+              // lookup Choice column (ctx.thumbnailLookupChoiceValues, keyed by this row's id).
+              const choiceOptionValue = record.thumbnailChoiceOptionValue ?? ctx.thumbnailLookupChoiceValues[record.id];
+              const choiceOption = choiceOptionValue !== undefined ? ctx.thumbnailChoiceOptions[choiceOptionValue] : undefined;
+              // Priority: own-entity plain icon-name column > dot-notation lookup icon-name column
+              // > Choice option icon (ExternalValue) > the fixed literal icon (lowest priority -
+              // only ever present when none of the column-driven sources apply, see the main load
+              // effect's fixed-icon detection).
+              const resolvedIconName =
+                record.thumbnailIconName ?? ctx.thumbnailIconNames[record.id] ?? choiceOption?.icon ?? ctx.thumbnailFixedIconName;
+              return (
+                <Thumbnail
+                  style={ctx.thumbnailStyle}
+                  url={ctx.thumbnailUrls[record.id]}
+                  iconName={resolvedIconName}
+                  renderingOption={ctx.thumbnailRenderingOption}
+                  iconColorMode={ctx.thumbnailIconColorMode}
+                  choiceColor={choiceOption?.color}
+                  isCurrent={isCurrent}
+                />
+              );
+            })()}
           <div className="rv-row-main">
             <div className="rv-title-line">
               {isCurrent ? (
@@ -1631,6 +1846,30 @@ function collectAllIds(
   return ids;
 }
 
+// Same traversal as collectAllIds, but returns the full ITreeRecord so callers can read fields
+// other than id (specifically thumbnailLookupTargetId, for the dot-notation lookup thumbnail
+// fetch effect - collectAllIds' callers only ever needed the id).
+function collectAllRecords(
+  ancestors: ITreeRecord[],
+  current: ITreeRecord | undefined,
+  descendants: IDescendantNode[],
+  siblings: IDescendantNode[],
+  ancestorSiblings: IDescendantNode[][]
+): ITreeRecord[] {
+  const records: ITreeRecord[] = [...ancestors];
+  if (current) records.push(current);
+  const walk = (nodes: IDescendantNode[]): void => {
+    nodes.forEach((n) => {
+      records.push(n.record);
+      walk(n.children);
+    });
+  };
+  walk(descendants);
+  walk(siblings);
+  ancestorSiblings.forEach(walk);
+  return records;
+}
+
 export const RelationshipViewControl = (props: IRelationshipViewProps): React.ReactElement => {
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | undefined>(undefined);
@@ -1648,7 +1887,24 @@ export const RelationshipViewControl = (props: IRelationshipViewProps): React.Re
   const [quickViewDataByRecord, setQuickViewDataByRecord] = React.useState<Record<string, IQuickViewEntry>>({});
   const [choiceColors, setChoiceColors] = React.useState<Record<string, Record<number, string>>>({});
   const [thumbnailUrls, setThumbnailUrls] = React.useState<Record<string, string>>({});
+  // Icon names for a dot-notation lookup thumbnail ("<lookup>.<column>") whose target column is a
+  // text/icon column rather than an Image column - unlike thumbnailIconName (own-entity icon
+  // columns, resolved synchronously as part of the row's own $select), the value here lives on a
+  // different entity and is only known once fetched, so it's tracked as async state, keyed by this
+  // row's own id (same keying convention as thumbnailUrls).
+  const [thumbnailIconNames, setThumbnailIconNames] = React.useState<Record<string, string>>({});
+  // Choice/Picklist option icon+color, keyed by the option's raw numeric value - resolved once per
+  // thumbnail column (own entity or dot-notation lookup target), not per record.
+  const [thumbnailChoiceOptions, setThumbnailChoiceOptions] = React.useState<Record<number, IChoiceThumbnailOption>>({});
+  // Resolved Choice option value for a dot-notation lookup thumbnail, keyed by row id - the
+  // own-column case instead reads ITreeRecord.thumbnailChoiceOptionValue directly (already known
+  // synchronously from the row's own $select).
+  const [thumbnailLookupChoiceValues, setThumbnailLookupChoiceValues] = React.useState<Record<string, number>>({});
+  // A literal MDL2 icon name used for every record, set when thumbnailColumnName (no dot notation)
+  // doesn't resolve to any real column on this entity at all - see the main load effect.
+  const [thumbnailFixedIconName, setThumbnailFixedIconName] = React.useState<string | undefined>(undefined);
   const [attributeMeta, setAttributeMeta] = React.useState<Record<string, IAttributeMeta>>({});
+  const [lookupThumbnailMeta, setLookupThumbnailMeta] = React.useState<ILookupThumbnailMeta | undefined>(undefined);
 
   // True once a real (non-design-time) tree has been rendered at least once. PCF calls updateView
   // again during form startup once the record context / bound lookup value finishes hydrating,
@@ -1662,6 +1918,16 @@ export const RelationshipViewControl = (props: IRelationshipViewProps): React.Re
   React.useEffect(() => {
     thumbnailUrlsRef.current = thumbnailUrls;
   }, [thumbnailUrls]);
+  // Read (not a dep) inside the thumbnail-fetch effect below, same reasoning as thumbnailUrlsRef -
+  // putting the state itself in that effect's deps would re-run it on every icon name that loads.
+  const thumbnailIconNamesRef = React.useRef<Record<string, string>>({});
+  React.useEffect(() => {
+    thumbnailIconNamesRef.current = thumbnailIconNames;
+  }, [thumbnailIconNames]);
+  const thumbnailLookupChoiceValuesRef = React.useRef<Record<string, number>>({});
+  React.useEffect(() => {
+    thumbnailLookupChoiceValuesRef.current = thumbnailLookupChoiceValues;
+  }, [thumbnailLookupChoiceValues]);
   React.useEffect(() => {
     return () => {
       Object.values(thumbnailUrlsRef.current).forEach((url) => {
@@ -1679,6 +1945,7 @@ export const RelationshipViewControl = (props: IRelationshipViewProps): React.Re
   const initialParentId = props.isTestMode
     ? TEST_MODE_RECORDS.find((r) => r.id === TEST_MODE_CURRENT_RECORD_ID)?.parentId
     : props.parentLookupProperty.raw?.[0]?.id;
+  const thumbnailColumnRef = React.useMemo(() => parseThumbnailColumnName(props.thumbnailColumnName), [props.thumbnailColumnName]);
 
   React.useEffect(() => {
     let cancelled = false;
@@ -1697,7 +1964,9 @@ export const RelationshipViewControl = (props: IRelationshipViewProps): React.Re
           const current = byId.get(TEST_MODE_CURRENT_RECORD_ID);
           if (!current) throw new Error("Test mode data is missing the current record.");
 
-          const thumbnailIsIcon = !!props.thumbnailColumnName && props.thumbnailColumnName.toLowerCase().includes("icon");
+          // Test mode has no other entities to simulate a dot-notation lookup thumbnail against, so
+          // only the column portion (after the dot, if any) drives the icon-vs-image heuristic here.
+          const thumbnailIsIcon = !!thumbnailColumnRef?.columnLogicalName.toLowerCase().includes("icon");
 
           const ancestorsList: ITreeRecord[] = [];
           if (props.maxParentLevels !== 0) {
@@ -1785,11 +2054,66 @@ export const RelationshipViewControl = (props: IRelationshipViewProps): React.Re
           props.customAttribute1,
           props.customAttribute2,
           props.customAttribute3,
-          props.thumbnailColumnName,
+          // A dot-notation thumbnail ("<lookup>.<column>") doesn't name a real attribute on THIS
+          // entity, so it's excluded here - resolveLookupThumbnailMeta below resolves the target
+          // entity's column metadata separately instead.
+          thumbnailColumnRef?.lookupFieldLogicalName ? undefined : thumbnailColumnRef?.columnLogicalName,
           props.sortByColumnName,
         ].filter((v): v is string => !!v);
         const resolvedAttributeMeta = await resolveAttributeMetadata(entityTypeName, customAttrNames);
         if (cancelled) return;
+
+        // Plain (non-dot-notation) thumbnailColumnName that does NOT resolve to any real column on
+        // this entity at all - confirmed by resolvedAttributeMeta simply having no entry for it, the
+        // same "not a real attribute" signal already implied by that lookup being empty - is treated
+        // as a literal MDL2 icon name shown for every record, rather than a column reference. Only
+        // applies to the plain case: dot notation ("<lookup>.<column>") always means "look up a
+        // column", so an unresolvable target column there stays an error (see the catch below),
+        // never a fixed-icon fallback.
+        const isPlainThumbnailColumn = !!thumbnailColumnRef && !thumbnailColumnRef.lookupFieldLogicalName;
+        const plainThumbnailType = isPlainThumbnailColumn ? resolvedAttributeMeta[thumbnailColumnRef!.columnLogicalName]?.attributeType : undefined;
+        const resolvedFixedIconName =
+          isPlainThumbnailColumn && !plainThumbnailType ? thumbnailColumnRef!.columnLogicalName : undefined;
+        if (!cancelled) setThumbnailFixedIconName(resolvedFixedIconName);
+
+        if (thumbnailColumnRef?.lookupFieldLogicalName) {
+          try {
+            const resolvedLookupThumbnailMeta = await resolveLookupThumbnailMeta(
+              entityTypeName,
+              thumbnailColumnRef.lookupFieldLogicalName,
+              thumbnailColumnRef.columnLogicalName
+            );
+            if (!cancelled) setLookupThumbnailMeta(resolvedLookupThumbnailMeta);
+            // Choice icon/color options live on the TARGET entity for a dot-notation lookup
+            // thumbnail - resolved here (once resolveLookupThumbnailMeta confirms the target column
+            // is actually a Picklist) rather than in the plain-column branch below.
+            if (!cancelled && resolvedLookupThumbnailMeta?.targetColumnMeta.attributeType === "Picklist") {
+              const lookupChoiceOptions = await resolveChoiceThumbnailOptions(
+                resolvedLookupThumbnailMeta.targetEntityLogicalName,
+                resolvedLookupThumbnailMeta.targetColumnMeta.logicalName
+              );
+              if (!cancelled) setThumbnailChoiceOptions(lookupChoiceOptions);
+            }
+          } catch (lookupThumbnailErr) {
+            if (!cancelled) setLookupThumbnailMeta(undefined);
+            console.error(
+              `[RelationshipView] failed to resolve lookup thumbnail "${props.thumbnailColumnName}"`,
+              lookupThumbnailErr
+            );
+          }
+        } else {
+          if (!cancelled) setLookupThumbnailMeta(undefined);
+          // Own-column Choice thumbnail - resolved against this entity directly, the mirror of the
+          // dot-notation branch above.
+          if (plainThumbnailType === "Picklist") {
+            try {
+              const ownChoiceOptions = await resolveChoiceThumbnailOptions(entityTypeName, thumbnailColumnRef!.columnLogicalName);
+              if (!cancelled) setThumbnailChoiceOptions(ownChoiceOptions);
+            } catch (choiceThumbnailErr) {
+              console.error(`[RelationshipView] failed to resolve choice thumbnail options for "${props.thumbnailColumnName}"`, choiceThumbnailErr);
+            }
+          }
+        }
         // Merge, don't replace - this load effect re-runs on more than just first mount (PCF calls
         // updateView, and thus can re-trigger this effect, repeatedly during normal form use - see
         // hasContentRef above). A plain replace here wiped out whichever Quick View field metadata
@@ -1807,7 +2131,7 @@ export const RelationshipViewControl = (props: IRelationshipViewProps): React.Re
           parentAttributeLogicalName,
           [props.customAttribute1, props.customAttribute2, props.customAttribute3],
           resolvedAttributeMeta,
-          props.thumbnailColumnName,
+          thumbnailColumnRef,
           props.sortByColumnName
         );
 
@@ -1828,7 +2152,7 @@ export const RelationshipViewControl = (props: IRelationshipViewProps): React.Re
                 props.customAttribute1,
                 props.customAttribute2,
                 props.customAttribute3,
-                props.thumbnailColumnName,
+                thumbnailColumnRef,
                 props.sortByColumnName,
                 props.maxParentLevels,
                 visited,
@@ -1856,7 +2180,7 @@ export const RelationshipViewControl = (props: IRelationshipViewProps): React.Re
           props.customAttribute1,
           props.customAttribute2,
           props.customAttribute3,
-          props.thumbnailColumnName,
+          thumbnailColumnRef,
           props.sortByColumnName
         );
         if (cancelled) return;
@@ -1877,7 +2201,7 @@ export const RelationshipViewControl = (props: IRelationshipViewProps): React.Re
               props.customAttribute1,
               props.customAttribute2,
               props.customAttribute3,
-              props.thumbnailColumnName,
+              thumbnailColumnRef,
               props.sortByColumnName,
               props.maxChildLevels,
               0,
@@ -1904,7 +2228,7 @@ export const RelationshipViewControl = (props: IRelationshipViewProps): React.Re
                 props.customAttribute1,
                 props.customAttribute2,
                 props.customAttribute3,
-                props.thumbnailColumnName,
+                thumbnailColumnRef,
                 props.sortByColumnName,
                 props.siblingDisplay === "SistersAndChildren",
                 props.maxChildLevels,
@@ -1941,7 +2265,7 @@ export const RelationshipViewControl = (props: IRelationshipViewProps): React.Re
               props.customAttribute1,
               props.customAttribute2,
               props.customAttribute3,
-              props.thumbnailColumnName,
+              thumbnailColumnRef,
               props.sortByColumnName,
               props.siblingDisplay === "SistersAndChildren",
               props.maxChildLevels,
@@ -2013,6 +2337,7 @@ export const RelationshipViewControl = (props: IRelationshipViewProps): React.Re
     props.customAttribute2,
     props.customAttribute3,
     props.thumbnailColumnName,
+    thumbnailColumnRef,
     props.sortByColumnName,
     props.quickViewFormName,
     props.siblingDisplay,
@@ -2056,14 +2381,102 @@ export const RelationshipViewControl = (props: IRelationshipViewProps): React.Re
   }, [expandedIds, quickViewLayout, entityTypeName, props.isTestMode, attributeMeta, props.webAPI, entityMeta, choiceColors]);
 
   React.useEffect(() => {
-    if (!props.thumbnailColumnName) return;
+    if (!thumbnailColumnRef) return;
 
-    // Icon-mode thumbnails come straight from ITreeRecord.thumbnailIconName (already resolved in
-    // mapWebApiRecordToTreeRecord/testModeToTreeRecord as part of the main tree fetch) - no blob
-    // fetch is needed or possible for a plain text column.
+    // A literal fixed icon name (thumbnailColumnName didn't resolve to any real column - see the
+    // main load effect) needs no data fetch at all; it's rendered directly from state as-is.
+    if (thumbnailFixedIconName) return;
+
+    // Dot-notation lookup thumbnail ("<lookupField>.<column>") - the value lives on whatever
+    // record the lookup points to, not this row's own record, so each row is fetched by its own
+    // resolved thumbnailLookupTargetId (set in mapWebApiRecordToTreeRecord from
+    // "_<lookupField>_value") rather than by the row's own id, and rows sharing the same target
+    // (e.g. many records of the same "Type") are grouped so that target is only fetched once.
+    if (thumbnailColumnRef.lookupFieldLogicalName) {
+      // Not simulated in test mode - the harness's flat TEST_MODE_RECORDS has no other entity to
+      // resolve a lookup target against (see parseThumbnailColumnName's test-mode note above).
+      if (props.isTestMode || !lookupThumbnailMeta) return;
+
+      const allRecords = collectAllRecords(ancestors, currentRecord, descendantTree, siblingTree, ancestorSiblingTree);
+      const isIconColumn = lookupThumbnailMeta.targetColumnMeta.attributeType === "String";
+      const isPicklistColumn = lookupThumbnailMeta.targetColumnMeta.attributeType === "Picklist";
+      const preferFullSize = ASPECT_SENSITIVE_RENDERING_OPTIONS.has(props.thumbnailRenderingOption);
+
+      const rowIdsByTargetId = new Map<string, string[]>();
+      allRecords.forEach((r: ITreeRecord) => {
+        if (!r.thumbnailLookupTargetId) return;
+        const alreadyLoaded = isIconColumn
+          ? thumbnailIconNamesRef.current[r.id]
+          : isPicklistColumn
+          ? thumbnailLookupChoiceValuesRef.current[r.id] !== undefined
+          : thumbnailUrlsRef.current[r.id];
+        if (alreadyLoaded) return;
+        const rowIds = rowIdsByTargetId.get(r.thumbnailLookupTargetId) ?? [];
+        rowIds.push(r.id);
+        rowIdsByTargetId.set(r.thumbnailLookupTargetId, rowIds);
+      });
+
+      rowIdsByTargetId.forEach((rowIds, targetId) => {
+        if (isIconColumn) {
+          const columnName = lookupThumbnailMeta.targetColumnMeta.logicalName;
+          props.webAPI
+            .retrieveRecord(lookupThumbnailMeta.targetEntityLogicalName, targetId, `?$select=${columnName}`)
+            .then((record: ComponentFramework.WebApi.Entity) => {
+              const iconName = record[columnName] as string | undefined;
+              if (!iconName) return undefined;
+              setThumbnailIconNames((prev) => {
+                const next = { ...prev };
+                rowIds.forEach((id) => {
+                  if (!next[id]) next[id] = iconName;
+                });
+                return next;
+              });
+              return undefined;
+            })
+            .catch((err: Error) => console.error("Failed to load lookup thumbnail icon", err));
+        } else if (isPicklistColumn) {
+          const columnName = lookupThumbnailMeta.targetColumnMeta.logicalName;
+          props.webAPI
+            .retrieveRecord(lookupThumbnailMeta.targetEntityLogicalName, targetId, `?$select=${columnName}`)
+            .then((record: ComponentFramework.WebApi.Entity) => {
+              const optionValue = record[columnName] as number | undefined;
+              if (optionValue === undefined || optionValue === null) return undefined;
+              setThumbnailLookupChoiceValues((prev) => {
+                const next = { ...prev };
+                rowIds.forEach((id) => {
+                  if (next[id] === undefined) next[id] = optionValue;
+                });
+                return next;
+              });
+              return undefined;
+            })
+            .catch((err: Error) => console.error("Failed to load lookup thumbnail choice value", err));
+        } else {
+          fetchThumbnailUrl(lookupThumbnailMeta.targetEntitySetName, targetId, lookupThumbnailMeta.targetColumnMeta.logicalName, preferFullSize)
+            .then((url) => {
+              if (!url) return undefined;
+              setThumbnailUrls((prev) => {
+                const next = { ...prev };
+                rowIds.forEach((id) => {
+                  if (!next[id]) next[id] = url;
+                });
+                return next;
+              });
+              return undefined;
+            })
+            .catch((err: Error) => console.error("Failed to load lookup thumbnail", err));
+        }
+      });
+      return;
+    }
+
+    // Icon-mode thumbnails come straight from ITreeRecord.thumbnailIconName/thumbnailChoiceOptionValue
+    // (already resolved in mapWebApiRecordToTreeRecord/testModeToTreeRecord as part of the main tree
+    // fetch) - no blob fetch is needed or possible for a plain text or Choice column.
+    const ownColumnType = attributeMeta[thumbnailColumnRef.columnLogicalName]?.attributeType;
     const thumbnailIsIcon = props.isTestMode
-      ? props.thumbnailColumnName.toLowerCase().includes("icon")
-      : attributeMeta[props.thumbnailColumnName]?.attributeType === "String";
+      ? thumbnailColumnRef.columnLogicalName.toLowerCase().includes("icon")
+      : ownColumnType === "String" || ownColumnType === "Picklist";
     if (thumbnailIsIcon) return;
 
     const allIds = collectAllIds(ancestors, currentRecord, descendantTree, siblingTree, ancestorSiblingTree);
@@ -2087,7 +2500,7 @@ export const RelationshipViewControl = (props: IRelationshipViewProps): React.Re
     const preferFullSize = ASPECT_SENSITIVE_RENDERING_OPTIONS.has(props.thumbnailRenderingOption);
     allIds.forEach((id) => {
       if (thumbnailUrlsRef.current[id]) return;
-      fetchThumbnailUrl(entityMeta.entitySetName, id, props.thumbnailColumnName as string, preferFullSize)
+      fetchThumbnailUrl(entityMeta.entitySetName, id, thumbnailColumnRef.columnLogicalName, preferFullSize)
         .then((url) => {
           if (url) setThumbnailUrls((prev) => (prev[id] ? prev : { ...prev, [id]: url }));
           return undefined;
@@ -2097,9 +2510,12 @@ export const RelationshipViewControl = (props: IRelationshipViewProps): React.Re
         });
     });
   }, [
-    props.thumbnailColumnName,
+    thumbnailColumnRef,
+    thumbnailFixedIconName,
+    lookupThumbnailMeta,
     props.thumbnailRenderingOption,
     props.isTestMode,
+    props.webAPI,
     entityMeta,
     attributeMeta,
     ancestors,
@@ -2153,7 +2569,12 @@ export const RelationshipViewControl = (props: IRelationshipViewProps): React.Re
     thumbnailStyle: props.thumbnailStyle,
     thumbnailRenderingOption: props.thumbnailRenderingOption,
     thumbnailColumnName: props.thumbnailColumnName,
+    thumbnailIconColorMode: props.thumbnailIconColorMode,
     thumbnailUrls,
+    thumbnailIconNames,
+    thumbnailFixedIconName,
+    thumbnailChoiceOptions,
+    thumbnailLookupChoiceValues,
     hasQuickView: !!props.quickViewFormName,
     quickViewLayout: quickViewLayout ?? [],
     expandedIds,

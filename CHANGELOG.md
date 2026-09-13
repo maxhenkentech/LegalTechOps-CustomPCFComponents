@@ -2,7 +2,43 @@
 
 # Changelog
 
-## Version 6.0.0 (Current)
+## Version 7.0.0.0 (Current)
+#### 🔍 Advanced LookUp Component (NEW)
+- **NEW**: Field control bound to a lookup field that replaces the standard lookup dialog with a searchable, type-to-filter dropdown backed by live, debounced Dataverse search
+- **NEW**: `Icon Column` supports three sources for a per-record icon - a picture (Image) column, a text column holding an MDL2 icon name per record, or a fixed literal MDL2 icon name shown for every record - plus support for an image web resource as the icon
+- **NEW**: `Tooltip Column` shows a column's value as a hover tooltip on the currently selected value
+- **NEW**: `Additional Search Columns` searches extra columns beyond the target table's primary name column; `Additional Display Columns` shows a semicolon-separated list of columns as smaller context text under each result, with every column type supported (Choice, Lookup, Currency, dates, numbers, and more)
+- **NEW**: `Show Inactive Records` toggle, configurable `Result Limit` per search (10 by default), `Component Height` (Tall/Short), configurable placeholder text, and a clear ("x") affordance to reset the value
+
+#### ⚡ Quick Action Buttons Component (NEW)
+- **NEW**: Field control that is **not bound to any single field's value** - it renders up to 5 independently configured icon+label buttons instead, each with its own Label, Icon, Accent color, Tooltip, and an `Actions` JSON map (`{"<target field>": "<value or @{expression}>", ...}`)
+- **NEW**: Clicking a button writes the resolved values onto the **current form** via `Xrm.Page`, exactly as if a user edited those fields directly; an opt-in `Save record on click` property saves the record afterward (off by default)
+- **NEW**: A Power Automate-style expression language for computed values (`@{...}`) - string (`concat`/`toUpper`/`toLower`/`trim`/`substring`/`replace`/`length`), math (`add`/`sub`/`mul`/`div`/`mod`/`min`/`max`/`abs`/`round`), date (`utcNow`/`addDays`/`addToTime`/`formatDateTime`/`ticks`/etc.), `coalesce`, `guid()`, `rand(min, max)`, and `me()` for the current user
+- **NEW**: Lookup target fields (`@{field}`, `me()`, or a literal `{"id":...,"entityType":...}`) and multi-select choice target fields are both supported, alongside plain text/number/date/choice targets
+- **NEW**: `Icon position` (Above/Below/Left/Right) and `Reflow behaviour` (Wrap/Flexible) properties, per-button Accent color with independent background/border/icon color modes, Button shape (Square/Rounded), Button size (Small/Normal/Large), and a brief "just clicked" color flash as click confirmation
+- **NEW**: An on-screen error panel names exactly which field or expression failed on a real-form click, instead of only logging to the browser console
+
+#### 🎨 Advanced Dropdown Component
+- **NEW**: An icon value can now be the name of an **image web resource** in the environment instead of an MDL2 icon name, accepted by the `Icon` property and an option's `External Value` alike
+
+#### 🎛️ Modern Choice Buttons Component
+- **NEW**: `Icon position` property - place each tile's icon Above (default), Below, Left, or Right of its label
+- **NEW**: `Show selection option only` property - shows just the currently selected tile, sized to fit, with all others hidden
+- **NEW**: `Reflow behaviour` property - `Wrap` (default) keeps every tile at a fixed width, wrapping as needed; `Flexible` shrinks or grows each tile to fit its icon and label
+- **NEW**: Same image web resource icon support as Advanced Dropdown
+
+#### 📄 PDF Gallery Component
+- **NEW**: `File Column(s)` now accepts a semicolon-separated fallback chain (e.g. `lops_signedpdf;lops_draftpdf;lops_externalurl`) - the first column with a value on a given record is used
+- **NEW**: A fallback candidate can now be a text column holding a web location instead of a Dataverse File column - a link to a PDF renders inline in the native viewer, any other page gets a best-effort embedded preview with an "Open Page" fallback
+
+#### 🌳 Relationship View Component
+- **NEW**: `Thumbnail Column` now also accepts a Choice/Picklist column (showing the selected option's icon), a literal MDL2 icon name, or `<lookup field>.<column>` dot notation to pull a picture/icon from a related record
+- **NEW**: `Thumbnail Icon Color Mode` property colors any icon-based thumbnail using the selected option's own color (as the icon or as a background fill) or a fixed dark/light grey
+
+#### 📝 Markdown Help Text Component
+- **FIX**: Alert callouts (`[!TIP]`, `[!IMPORTANT]`, `[!WARNING]`, `[!CAUTION]`) now render with their own distinct icon/color instead of all falling back to the generic `Note` style
+
+## Version 6.0.0 (Previous)
 #### 📝 Markdown Help Text Component (NEW)
 - **NEW**: Field control that renders Markdown as formatted, visually polished help text on a form, via `react-markdown` + `remark-gfm` + `rehype-highlight` - headings, emphasis, lists, links, images, blockquotes, tables, task lists, strikethrough, and syntax-highlighted fenced code blocks
 - **NEW**: GitHub-style alert callouts (`[!NOTE]`/`[!TIP]`/`[!IMPORTANT]`/`[!WARNING]`/`[!CAUTION]`)

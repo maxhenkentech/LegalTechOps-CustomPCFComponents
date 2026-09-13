@@ -1,0 +1,256 @@
+.lops-alu-root {
+  position: relative;
+  width: 100%;
+  display: flex;
+  align-items: center;
+}
+
+.lops-alu-icon {
+  position: absolute;
+  left: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  /* width/height/border-radius/background-color come from LookUpStyles.ts's
+     iconContainerStyle(), driven by the Icon Shape / Icon Background Color properties - not set
+     here, so they can't drift out of sync with the option-row icon's identical treatment. */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+  pointer-events: none;
+}
+
+/* Sizing/object-fit come from LookUpStyles.ts's iconImageStyle(), inline on the <img> itself -
+   it differs by Icon Shape (see iconContainerStyle's comment), so it can't be a static rule here. */
+
+/* Fluent 8.29.0's own caret button is hidden in favor of the decorative search-glyph affordance
+   below, to match the out-of-the-box Dataverse lookup field's look (see CLAUDE.md screenshot).
+   Clicking anywhere in this box still opens the results panel via .lops-alu-root's own onClick -
+   nothing here depended on the caret button itself being clickable. */
+.lops-alu-root .ms-ComboBox-CaretDown-button {
+  display: none;
+}
+
+/* Border fix - root-caused, not guessed. Two earlier attempts here targeted `.ms-ComboBox`'s own
+   `border`/`box-shadow`/`outline` (both via LookUpStyles.ts's `styles` prop and, when that proved
+   insufficient on a real Dataverse form, via `!important` rules on the element itself) and BOTH
+   turned out to be fixing the wrong thing. `getComputedStyle(document.querySelector('.ms-ComboBox'),
+   '::after')` (checked directly against this same local harness build) revealed the actual
+   culprit: Fluent 8.29.0 renders the visible border as a **`::after` pseudo-element**
+   (`content: ""`, `display: block`, `border: 1px solid rgb(55,55,55)` - #373737, myTheme's
+   auto-derived neutralSecondary again), entirely separate from `.ms-ComboBox`'s own `border`
+   property. That's exactly why overriding the real element's border/box-shadow/outline - however
+   thoroughly - never touched it: a `::after` pseudo-element's own `border` is not affected by
+   ANY style rule that doesn't explicitly target `::after` itself. This is presumably a
+   layout-shift-avoidance technique (an absolutely-positioned decorative border layer can change
+   color on focus without the real box changing size), and 8.29.0 doesn't expose it as a `styles`
+   prop slot - a real CSS rule targeting the pseudo-element is the only way to reach it. Keep the
+   colors in sync with FIELD_BG/FIELD_BORDER_FOCUS in LookUpStyles.ts. If a border-suppression bug
+   like this shows up again, check `::before`/`::after` computed styles FIRST, before re-guessing
+   at which real element carries it. */
+.lops-alu-root .ms-ComboBox::after {
+  border-color: transparent !important;
+}
+
+.lops-alu-root:focus-within .ms-ComboBox::after {
+  border-color: #a9a9a9 !important;
+}
+
+.lops-alu-search-icon {
+  position: absolute;
+  right: 0;
+  top: 0;
+  width: 32px;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+  /* Purely decorative - the click-to-open affordance lives on .lops-alu-root's own onClick
+     handler, so pointer events pass straight through to it rather than being consumed here. */
+  pointer-events: none;
+}
+
+.lops-alu-clear {
+  position: absolute;
+  /* No `right` here on purpose: it is set inline from CLEAR_BUTTON_RIGHT_OFFSET (LookUpStyles.ts),
+     the same constant that pins Fluent's caret button and sizes the input's right padding, so the
+     three cannot drift apart. Do not reintroduce a hardcoded value. */
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 1;
+  cursor: pointer;
+  color: #605e5c;
+}
+
+.lops-alu-clear:hover {
+  color: #323130;
+}
+
+.lops-alu-option-row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  width: 100%;
+  gap: 8px;
+}
+
+/* Reinforces topMatchOptionStyles (LookUpStyles.ts) directly on the row content - see the comment
+   in onRenderOption for why this exists alongside the Fluent-level option.styles override.
+   Deliberately flush (no margin/padding offset): an earlier version tried to extend this rectangle
+   out into the option button's own padding with a guessed -6px/-12px offset, which didn't match
+   Fluent's actual padding and left slivers of the row's square corners uncovered by the row's
+   rounded default background - the "pill with black corners" look. The Fluent-level background
+   (topMatchOptionStyles, now borderRadius: 0) is the sole source of truth for the button's own
+   padding area; this only needs to match it exactly across the row's own content box. */
+.lops-alu-option-row-top-match {
+  background-color: #f3f2f1;
+}
+
+.lops-alu-option-icon {
+  /* width/height/border-radius/background-color come from LookUpStyles.ts's
+     iconContainerStyle() - see .lops-alu-icon above. */
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Sizing/object-fit come from LookUpStyles.ts's iconImageStyle(), inline on the <img> itself -
+   see the .lops-alu-icon comment above. */
+
+.lops-alu-option-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Wraps the name (.lops-alu-option-text) and, when Additional Display Columns is configured, a
+   second smaller context line (.lops-alu-option-context) beneath it - stacked vertically, unlike
+   the icon+text-col pairing in .lops-alu-option-row, which stays a horizontal flex row. min-width:0
+   is required for the ellipsis on either child to actually kick in inside a flex row ancestor -
+   without it a flex item defaults to min-width:auto, which lets it overflow its container instead
+   of truncating. flex:1 1 auto lets it fill the remaining row width after the icon. */
+.lops-alu-option-text-col {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+/* Additional Display Columns' rendered value - dropdown rows only, never the selected pill (see
+   ITargetRecordData.contextText's own comment in AdvancedLookUpControl.tsx). Same muted grey as
+   this control's other secondary-text uses (.lops-alu-clear/.lops-alu-search-icon's resting color). */
+.lops-alu-option-context {
+  font-size: 11px;
+  line-height: 14px;
+  color: #605e5c;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* "Selected record" display mode - the OOTB Dataverse lookup's read-only view of a chosen value:
+   icon + a clickable link (opens the record) + an inline clear "x" right next to it, rather than
+   the record's name sitting inside an editable text box. Shown whenever a value is selected and
+   the field isn't actively being edited/searched (see AdvancedLookUpControl.tsx's `showPill`) -
+   clicking the pill's own background (not the link or the clear glyph) swaps back to the ComboBox
+   for typing a new search, exactly like clicking into the native lookup field does. Base
+   colors/radius/height match comboBoxStyles' root exactly (FIELD_BG/FIELD_BORDER_RADIUS in
+   LookUpStyles.ts, applied inline) - only the :hover shade needs a real CSS rule, since inline
+   style has no pseudo-class support; keep it in sync with FIELD_BG_HOVER there. */
+.lops-alu-pill {
+  cursor: pointer;
+  overflow: hidden;
+}
+
+.lops-alu-pill:hover {
+  background-color: #ececec;
+}
+
+/* The tinted chip around icon+name+clear - pixel-matched against the native lookup's own
+   selected-value chip (see recordBackdropColor's comment in AdvancedLookUpControl.tsx): it hugs
+   its content rather than stretching to fill the row, and sits inset within the field rather than
+   flush against its edges (hence the margin, not just padding). max-width leaves room so a long
+   record name's ellipsis kicks in before the chip would otherwise run under the search icon.
+   margin-left was originally 8px, halved to 4px after a side-by-side screenshot comparison showed
+   the chip sitting noticeably further from the field's left edge than the OOTB lookup's own chip -
+   pixel-measuring both against their shared field-left-edge landmark gave a 2:1 ratio, not just a
+   "looks a bit off" guess. */
+.lops-alu-pill-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  overflow: hidden;
+  min-width: 0;
+  max-width: calc(100% - 48px);
+  margin: 4px 4px 4px 4px;
+  padding: 3px 8px;
+  border-radius: 4px;
+}
+
+.lops-alu-pill-link {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-decoration: underline;
+  cursor: pointer;
+  /* color is set inline (pillAccentColor = darkenHexColor(recordBackdropColor) in
+     AdvancedLookUpControl.tsx, shared with .lops-alu-pill-clear below) - a plain class :hover
+     rule here would never win against that (inline styles beat stylesheet rules regardless of
+     pseudo-class), so there's deliberately no :hover color override; the underline plus pointer
+     cursor are the hover affordance. */
+}
+
+.lops-alu-pill-clear {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  /* color is set inline (pillAccentColor, same value as .lops-alu-pill-link above - the OOTB
+     chip's link text and clear glyph are the same color, not two different accents) - not a
+     fixed grey, and not overridable by a class :hover rule for the same reason as above. This is
+     a fallback only for the (never-expected) case the inline style is somehow absent. */
+  color: #605e5c;
+}
+
+/* Mirrors QuickActionButtons' config-error panel (QuickActionButtonsControl.tsx) so a maker sees
+   the same visual language - red border/background, monospace error list - for any control in
+   this repo that validates its own configuration. See validateConfig() in
+   AdvancedLookUpControl.tsx. */
+.lops-alu-config-error {
+  border: 1px solid #d13438;
+  border-radius: 4px;
+  padding: 10px 12px;
+  background-color: #fde7e9;
+  color: #a4262c;
+  font-size: 13px;
+  font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, "Roboto", "Helvetica Neue", sans-serif;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.lops-alu-config-error-title {
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.lops-alu-config-error-list {
+  margin: 2px 0 0 18px;
+  padding: 0;
+}
+
+.lops-alu-config-error-list li {
+  font-family: monospace;
+}
+
+/* Non-blocking sibling to the hard-block .lops-alu-config-error panel above - see
+   metadataDiagnostic's own comment in AdvancedLookUpControl.tsx for why this stays a small note
+   under the (still fully functional) field rather than replacing it. Amber, not red, since this
+   isn't a maker-fixable misconfiguration the way an invalid hex color or a typo'd column name is. */
+.lops-alu-metadata-diagnostic {
+  margin-top: 4px;
+  font-size: 11px;
+  color: #8a6d1a;
+  font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, "Roboto", "Helvetica Neue", sans-serif;
+}

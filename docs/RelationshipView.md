@@ -22,7 +22,9 @@ A field control, bound directly to a self-referential lookup (e.g. "Parent Contr
 - **Choice Color Display**: show a Choice field's configured color in the Quick View panel as plain text (**None**), a **Circle**, a filled **Pill**, or colored **Font**
 - **Active/Inactive State Pills**: shows each record's state, with an option to exclude inactive records - and everything below them - from the tree entirely
 - **Custom Attribute Columns**: up to three additional columns shown directly in each row's subtitle
-- **Flexible Thumbnails**: point at an Image column, or a text column holding an MDL2 icon name (detected automatically) - with 3 frame shapes (Circle/Square/Rounded Square) and 7 fill modes (Cover/Stretch/Contain/Center/Tile/Fit Width/Fit Height)
+- **Flexible Thumbnails**: point at an Image column, a text column holding an MDL2 icon name, or a Choice/Picklist column (showing the icon configured on the selected option) - all detected automatically - or type a fixed MDL2 icon name directly to show the same icon for every record. 3 frame shapes (Circle/Square/Rounded Square) and 7 fill modes (Cover/Stretch/Contain/Center/Tile/Fit Width/Fit Height) for a picture-based thumbnail
+- **Thumbnails from a Related Record**: point the thumbnail at a lookup field on the current record instead of a column on the current record itself, using `<lookup field>.<column>` dot notation (e.g. `lops_type.lops_thumbnail`) - shows the picture/icon/Choice value stored on the record that lookup points to (its "Type" record, for example) rather than requiring the picture to be duplicated onto every record
+- **Thumbnail Icon Color Mode**: recolor any icon-based thumbnail (Choice column, fixed icon, or icon-name text column) - use the Choice value's own configured color on the icon or the frame background (with automatic contrast), or a fixed dark/light grey look, each with a matching border around the thumbnail frame
 - **Configurable Indentation & Highlight**: adjust how far each tree level indents, and the highlight color used for the current record's row
 - **Cycle-Safe**: a shared visited-node guard protects against a corrupted self-referential lookup accidentally forming a cycle and infinite-looping the tree walk
 
@@ -52,12 +54,25 @@ A field control, bound directly to a self-referential lookup (e.g. "Parent Contr
 | `sortDirection` | Choice | Ascending/Descending | Sort direction when `sortByColumnName` is set | Ascending |
 | `currentRecordHighlightColor` | Text | Hex Color | Highlight color for the current record's row | #F3F2F1 |
 | `customAttribute1` / `2` / `3` | Text | - | Logical name of a column to display in each record's row subtitle | - |
-| `thumbnailColumnName` | Text | - | Logical name of a column to render on the left of each row - an Image column, or a text column holding an MDL2 icon name (detected automatically) | - |
+| `thumbnailColumnName` | Text | - | Logical name of a column to render on the left of each row - an Image column, a text column holding an MDL2 icon name, or a Choice/Picklist column (showing the selected option's icon) - all detected automatically. If the text entered does not match any real column, it is instead treated as a literal MDL2 icon name shown for every record. Also accepts `<lookup field>.<column>` dot notation (e.g. `lops_type.lops_thumbnail`) to instead show a picture/icon/Choice value from the record a lookup field on the current row points to - see note below | - |
 | `thumbnailStyle` | Choice | Circle/Square/RoundedSquare | Shape of the thumbnail frame | Circle |
+| `thumbnailIconColorMode` | Choice | Default/ChoiceColorForIcon/ChoiceColorForBackground/FixedSolid/FixedLight | How an icon-based thumbnail (Choice column, fixed icon, or icon-name text column) is colored - never affects an actual picture from an Image column. See note below | Default |
 | `thumbnailRenderingOption` | Choice | Cover/Stretch/Contain/Center/Tile/FitWidth/FitHeight | How the thumbnail image fills its frame | Cover |
 | `quickViewFormName` | Text | - | Unique name of a Quick View Form (a Main Form's name also works) on this table. When set, each row gets an expand chevron showing that form's fields | - |
 | `choiceColorDisplay` | Choice | None/Circle/Pill/Font | How Choice field colors are shown in the Quick View panel | None |
 | `indentation` | Choice | Low/Medium/High | How far each ancestor/descendant level is indented relative to its parent | Medium |
+
+> [!NOTE]
+> **Showing a thumbnail from a related record:** `thumbnailColumnName` normally names a column on the current record itself. Using `<lookup field>.<column>` dot notation instead - for example `lops_type.lops_thumbnail` - shows the picture (or icon-name/Choice column) stored on whatever record the `lops_type` lookup field points to, so a shared picture (e.g. a logo/photo on a "Type" or "Category" table) only needs to be maintained in one place instead of copied onto every record that references it. This only supports a single-target Lookup field - it does not work with a polymorphic Customer or Owner field, since there is no single target entity to resolve the column against. It is also not simulated in the local test harness (`npm start`/`npm run start:watch`), since the harness has no second entity to fetch a related picture from - test it against a real environment via `pac solution import` instead.
+
+> [!NOTE]
+> **Choice column and fixed icon thumbnails:** Pointing `thumbnailColumnName` at a Choice/Picklist column shows the icon configured on each record's selected option - its **External Value**, the same field Modern Choice Buttons and Advanced Dropdown already read icons from (Solution Explorer → the option set → each option's "External Value"). If `thumbnailColumnName` is set to text that does not match any real column on the entity at all, it is instead treated as a literal MDL2 icon name and that same icon is shown for every record - useful for a quick, uniform icon without configuring a column at all. `thumbnailIconColorMode` then controls how any of these icon-based thumbnails is colored:
+> - **Default** - the original plain look (light grey frame, dark grey icon, no border) - unchanged from before this property existed.
+> - **Choice Color for Icon** - the icon is colored with the Choice option's own configured color, on a white background, with a border in that same color around the thumbnail frame. Only meaningful for a Choice column; falls back to the Fixed Solid look when the selected option has no configured color, or the thumbnail is not Choice-sourced (a fixed icon or an icon-name text column).
+> - **Choice Color for Background** - the frame background is filled with the Choice option's color, and the icon itself automatically switches between white and dark grey for contrast against it. Same fallback as above when there is no configured color to use.
+> - **Fixed Solid** / **Fixed Light** - the icon is always a fixed dark grey or lighter grey, on a white background with a matching border, regardless of any Choice color - useful for a consistent, uncolored look even when a Choice column is the source.
+>
+> None of this affects an actual picture shown from an Image column - only icon-glyph thumbnails are colored this way.
 
 ## Configuring the Control
 
@@ -69,7 +84,7 @@ Unlike PDF Gallery, Relationship View is a **field** control, bound the same way
    - `maxParentLevels`/`maxChildLevels` to cap how far the tree walks in each direction
    - `siblingDisplay` to show other records sharing the same parent
    - `quickViewFormName` to give each row an expandable Quick View panel
-   - `thumbnailColumnName`, `customAttribute1`/`2`/`3`, `choiceColorDisplay`, `indentation`, and `currentRecordHighlightColor` to tune the visual presentation
+   - `thumbnailColumnName`/`thumbnailIconColorMode`, `customAttribute1`/`2`/`3`, `choiceColorDisplay`, `indentation`, and `currentRecordHighlightColor` to tune the visual presentation
 
 > [!NOTE]
 > **Why a Quick View Form name also accepts a Main Form's name:** There is no supported way to embed Microsoft's native Quick View Form control inside a custom PCF control, so the component fetches the named form's `formxml` directly from the table's form definitions and parses it client-side to reproduce the same tabs/columns/sections layout. Since any form matching that name on the table is used (not only ones of type "Quick View Form"), a Main Form's name resolves identically - useful if you'd rather reuse a form you've already built than create a dedicated Quick View Form.

@@ -1,6 +1,11 @@
 export interface ITestModeDocument {
   id: string;
   fileName: string;
+  // When set, this test doc exercises the URL-based fallback (web location) path instead of the
+  // File-column path - a ".pdf"-looking URL demonstrates the "PDF via web location" branch, anything
+  // else demonstrates the "webpage" (best-effort iframe) branch. See PDFGalleryControl's test-mode
+  // preview loader for how each is faked without a real network call.
+  url?: string;
 }
 
 export const TEST_MODE_DOCUMENTS: ITestModeDocument[] = [
@@ -14,6 +19,8 @@ export const TEST_MODE_DOCUMENTS: ITestModeDocument[] = [
   { id: "test-doc-8", fileName: "Renewal Notice - 2027.pdf" },
   { id: "test-doc-9", fileName: "Termination Letter.pdf" },
   { id: "test-doc-10", fileName: "Signed Cover Sheet.pdf" },
+  { id: "test-doc-11", fileName: "External Signed Copy (Web Location).pdf", url: "https://example.com/contracts/external-signed-copy.pdf" },
+  { id: "test-doc-12", fileName: "Vendor Portal Page (Web Location)", url: "https://example.com" },
 ];
 
 // A minimal one-page valid PDF ("PDFGallery Test Document"), used only in the PCF test harness

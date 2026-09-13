@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <manifest>
-  <control namespace="lops" constructor="MarkdownHelpText" version="1.2.1" display-name-key="lops.MarkdownHelpText" description-key="Renders Markdown-formatted help text, scaled to the text size of the form" control-type="virtual">
+  <control namespace="lops" constructor="MarkdownHelpText" version="1.2.2" display-name-key="lops.MarkdownHelpText" description-key="Renders Markdown-formatted help text, scaled to the text size of the form" control-type="virtual">
     <type-group name="strings">
       <type>SingleLine.Text</type>
       <type>Multiple</type>

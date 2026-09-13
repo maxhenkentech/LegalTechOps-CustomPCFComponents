@@ -166,3 +166,36 @@
   height: 100%;
   border: none;
 }
+
+/* Shown in place of the iframe for a "webpage" preview that never finished loading within the
+   best-effort timeout - see PDFGalleryControl's webpageBlocked handling. Mirrors
+   .pdfgallery-unsupported's layout/spacing since both are a centered "can't show this inline"
+   message with an icon, just with an extra host name line and an action button. */
+.pdfgallery-linkcard {
+  flex-direction: column;
+  gap: 8px;
+  padding: 24px;
+  box-sizing: border-box;
+  text-align: center;
+  color: #605e5c;
+  font-size: 14px;
+}
+
+.pdfgallery-linkcard-icon {
+  font-size: 24px;
+  color: #a19f9d;
+}
+
+.pdfgallery-linkcard-host {
+  font-weight: 600;
+  color: #323130;
+  word-break: break-all;
+}
+
+.pdfgallery-linkcard span {
+  display: block;
+  width: 100%;
+  max-width: 280px;
+  white-space: normal;
+  word-wrap: break-word;
+}

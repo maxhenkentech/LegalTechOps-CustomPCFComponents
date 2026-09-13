@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <manifest>
-  <control namespace="lops" constructor="ModernChoiceButtons" version="1.4.0" display-name-key="lops.ModernChoiceButtons" description-key="ModernChoiceButtons description" control-type="virtual">
+  <control namespace="lops" constructor="ModernChoiceButtons" version="1.8.3" display-name-key="lops.ModernChoiceButtons" description-key="ModernChoiceButtons description" control-type="virtual">
     <property name="optionsInput" display-name-key="OptionSet" description-key="OptionSet" of-type="OptionSet" usage="bound" required="true" />
-    <property name="icon" display-name-key="Icon" description-key="Default MDL2 icon name shown on every tile (https://learn.microsoft.com/en-us/windows/apps/design/style/segoe-fluent-icons-font), or a JSON map of choice value to icon, e.g. {&quot;1&quot;:{&quot;icon&quot;:&quot;Accept&quot;}}" of-type="SingleLine.Text" usage="input" required="false" />
-    <property name="useExternalValueForIcon" display-name-key="Use external value for icon" description-key="When enabled, the External Value of each choice option is used as its icon name instead" of-type="TwoOptions" usage="input" required="false" default-value="false" />
+    <property name="showSelectedOnly" display-name-key="Show selection option only" description-key="When enabled, only the tile for the currently selected choice is shown -- sized to fit that one tile, with hovering and clicking disabled. All other tiles are hidden" of-type="TwoOptions" usage="input" required="false" default-value="false" />
+    <property name="icon" display-name-key="Icon" description-key="Default Fluent UI MDL2 icon name shown on every tile (browse and copy names at https://www.flicon.io), or the name of a square image web resource such as hek_MyLogo.png, or a JSON map of choice value to icon, e.g. {&quot;1&quot;:{&quot;icon&quot;:&quot;Accept&quot;}}" of-type="SingleLine.Text" usage="input" required="false" />
+    <property name="useExternalValueForIcon" display-name-key="Use external value for icon" description-key="When enabled, the External Value of each choice option is used as its icon name instead. Accepts an MDL2 icon name or the name of a square image web resource, e.g. hek_MyLogo.png" of-type="TwoOptions" usage="input" required="false" default-value="false" />
     <property name="hideHiddenOptions" display-name-key="Hide hidden choice options" description-key="Hide options marked as hidden in the option set" of-type="TwoOptions" usage="input" required="false" default-value="true" />
     <property name="sortBy" display-name-key="Sort by" description-key="Sort by" of-type="Enum" usage="input" required="false" default-value="Value">
       <value name="Value" display-name-key="Value" description-key="Sort by the value of the options" default="true">Value</value>
@@ -19,6 +20,16 @@
       <value name="Large" display-name-key="Large" description-key="Larger tiles">Large</value>
     </property>
     <property name="showChoiceValue" display-name-key="Show choice value" description-key="Show the choice options text label under the icon. When off, the label is hidden and the icon is shown larger, centered in the tile" of-type="TwoOptions" usage="input" required="false" default-value="true" />
+    <property name="iconPosition" display-name-key="Icon position" description-key="Position of the icon relative to the label on each tile. Has no effect when Show choice value is off, since the icon is always centered in that case" of-type="Enum" usage="input" required="false" default-value="Above">
+      <value name="Above" display-name-key="Above" description-key="Icon above the label (default)" default="true">Above</value>
+      <value name="Below" display-name-key="Below" description-key="Icon below the label">Below</value>
+      <value name="Left" display-name-key="Left" description-key="Icon to the left of the label">Left</value>
+      <value name="Right" display-name-key="Right" description-key="Icon to the right of the label">Right</value>
+    </property>
+    <property name="reflowBehaviour" display-name-key="Reflow behaviour" description-key="Whether each tile keeps a fixed width (Wrap, default -- tiles wrap onto a new row once they no longer fit) or sizes itself to exactly fit its icon and label (Flexible)" of-type="Enum" usage="input" required="false" default-value="Wrap">
+      <value name="Wrap" display-name-key="Wrap" description-key="Tiles keep a fixed width and wrap onto a new row when they run out of horizontal space (default)" default="true">Wrap</value>
+      <value name="Flexible" display-name-key="Flexible" description-key="Each tiles width shrinks or grows to exactly fit its icon and label">Flexible</value>
+    </property>
     <property name="makeFontBold" display-name-key="Make font bold" description-key="Display the tile label in bold font weight" of-type="TwoOptions" usage="input" required="false" default-value="false" />
     <property name="notSelectedColor" display-name-key="Not selected color" description-key="Background color of a tile that is not selected (hex, e.g. #FFFFFF)" of-type="SingleLine.Text" usage="input" required="false" default-value="#FFFFFF" />
     <property name="hoverColor" display-name-key="Hover color" description-key="Background color of a tile while hovered (hex, e.g. #DEECF9)" of-type="SingleLine.Text" usage="input" required="false" default-value="#DEECF9" />
@@ -44,7 +55,7 @@
     <property name="iconColor" display-name-key="Icon color" description-key="Icon color used when Icon color mode is Fixed color (hex, e.g. #201F1E)" of-type="SingleLine.Text" usage="input" required="false" default-value="#201F1E" />
     <property name="iconColorScope" display-name-key="Icon color scope" description-key="Whether Icon color mode is applied to every tiles icon, or only the selected tiles icon (other tiles then use automatic contrast)" of-type="Enum" usage="input" required="false" default-value="AllTiles">
       <value name="AllTiles" display-name-key="All tiles" description-key="Apply Icon color mode to every tiles icon" default="true">AllTiles</value>
-      <value name="SelectedOnly" display-name-key="Selected tile only" description-key="Apply Icon color mode only to the selected tiles icon; other tiles use automatic contrast">SelectedOnly</value>
+      <value name="SelectedOnly" display-name-key="Selected tile only" description-key="Apply Icon color mode only to the selected tiles icon; other tiles use automatic contrast, and image web resources on other tiles are shown greyscaled and faded">SelectedOnly</value>
     </property>
     <resources>
       <code path="index.ts" order="1"/>

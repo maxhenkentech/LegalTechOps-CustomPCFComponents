@@ -43,6 +43,7 @@ export class RelationshipView implements ComponentFramework.ReactControl<IInputs
     const thumbnailColumnName = context.parameters.thumbnailColumnName?.raw || undefined;
     const thumbnailStyle = context.parameters.thumbnailStyle?.raw ?? "Circle";
     const thumbnailRenderingOption = context.parameters.thumbnailRenderingOption?.raw ?? "Cover";
+    const thumbnailIconColorMode = context.parameters.thumbnailIconColorMode?.raw ?? "Default";
     const quickViewFormName = context.parameters.quickViewFormName?.raw || undefined;
     const choiceColorDisplay = context.parameters.choiceColorDisplay?.raw ?? "None";
     const currentRecordHighlightColor = context.parameters.currentRecordHighlightColor?.raw || "#F3F2F1";
@@ -63,6 +64,7 @@ export class RelationshipView implements ComponentFramework.ReactControl<IInputs
       thumbnailColumnName,
       thumbnailStyle,
       thumbnailRenderingOption,
+      thumbnailIconColorMode,
       quickViewFormName,
       choiceColorDisplay,
       currentRecordHighlightColor,

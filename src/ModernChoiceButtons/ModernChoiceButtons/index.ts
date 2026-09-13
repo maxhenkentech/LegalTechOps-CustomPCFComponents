@@ -91,13 +91,16 @@ export class ModernChoiceButtons implements ComponentFramework.ReactControl<IInp
 	private parseConfig(
 		defaultIcon: string,
 		iconConfig: string | undefined,
-		useExternalValueForIcon: boolean | undefined,
-		hideHiddenOptions: boolean | undefined,
+		showSelectedOnly: boolean | string | undefined,
+		useExternalValueForIcon: boolean | string | undefined,
+		hideHiddenOptions: boolean | string | undefined,
 		sortBy: "Value" | "Text" | undefined,
 		tileShape: "Square" | "Rounded" | undefined,
 		tileSize: "Small" | "Normal" | "Large" | undefined,
-		showChoiceValue: boolean | undefined,
-		makeFontBold: boolean | undefined,
+		showChoiceValue: boolean | string | undefined,
+		iconPosition: "Above" | "Below" | "Left" | "Right" | undefined,
+		reflowBehaviour: "Wrap" | "Flexible" | undefined,
+		makeFontBold: boolean | string | undefined,
 		notSelectedColor: string | undefined,
 		hoverColor: string | undefined,
 		selectedBackgroundMode: "CustomColor" | "ChoiceColor" | "CustomColorFaded" | undefined,
@@ -115,16 +118,30 @@ export class ModernChoiceButtons implements ComponentFramework.ReactControl<IInp
 			return value.startsWith('#') ? value : `#${value}`;
 		};
 
+		// Some hosts (observed in the Form Editor's live-preview canvas) hand TwoOptions
+		// properties back as the literal string "true"/"false" instead of a real boolean --
+		// `value ?? fallback` doesn't catch that, since a non-empty string is never
+		// null/undefined, and the string "false" is truthy in JS. Coerce explicitly instead
+		// of trusting the platform to always deliver a boolean.
+		const toBool = (value: boolean | string | undefined, fallback: boolean): boolean => {
+			if (value === undefined || value === null) return fallback;
+			if (typeof value === 'string') return value.trim().toLowerCase() === 'true';
+			return value;
+		};
+
 		this.config = {
 			jsonConfig: isJSON ? JSON.parse(iconConfig as string) as ISetupSchema : undefined,
 			defaultIconName: (!isJSON ? iconConfig : undefined) ?? defaultIcon,
-			useExternalValueForIcon: useExternalValueForIcon ?? false,
-			hideHiddenOptions: hideHiddenOptions ?? true,
+			showSelectedOnly: toBool(showSelectedOnly, false),
+			useExternalValueForIcon: toBool(useExternalValueForIcon, false),
+			hideHiddenOptions: toBool(hideHiddenOptions, true),
 			sortBy: sortBy ?? "Value",
 			tileShape: tileShape ?? "Rounded",
 			tileSize: tileSize ?? "Normal",
-			showChoiceValue: showChoiceValue ?? true,
-			makeFontBold: makeFontBold ?? false,
+			showChoiceValue: toBool(showChoiceValue, true),
+			iconPosition: iconPosition ?? "Above",
+			reflowBehaviour: reflowBehaviour ?? "Wrap",
+			makeFontBold: toBool(makeFontBold, false),
 			notSelectedColor: normalizeHex(notSelectedColor, "#FFFFFF"),
 			hoverColor: normalizeHex(hoverColor, "#DEECF9"),
 			selectedBackgroundMode: selectedBackgroundMode ?? "CustomColor",
@@ -139,7 +156,7 @@ export class ModernChoiceButtons implements ComponentFramework.ReactControl<IInp
 	}
 
 	public init(context: ComponentFramework.Context<IInputs>, notifyOutputChanged: () => void, state: ComponentFramework.Dictionary, container: HTMLDivElement) {
-		console.log("🚀 ModernChoiceButtons: Version 1.4.0 Loaded");
+		console.log("🚀 ModernChoiceButtons: Version 1.8.3 Loaded");
 
 		try {
 			initializeIconsForEnvironment();
@@ -171,12 +188,15 @@ export class ModernChoiceButtons implements ComponentFramework.ReactControl<IInp
 		const config = this.parseConfig(
 			"RadioBtnOff",
 			context.parameters.icon?.raw ?? undefined,
+			context.parameters.showSelectedOnly?.raw,
 			context.parameters.useExternalValueForIcon?.raw,
 			context.parameters.hideHiddenOptions?.raw,
 			context.parameters.sortBy?.raw,
 			context.parameters.tileShape?.raw,
 			context.parameters.tileSize?.raw,
 			context.parameters.showChoiceValue?.raw,
+			context.parameters.iconPosition?.raw,
+			context.parameters.reflowBehaviour?.raw,
 			context.parameters.makeFontBold?.raw,
 			context.parameters.notSelectedColor?.raw || undefined,
 			context.parameters.hoverColor?.raw || undefined,
