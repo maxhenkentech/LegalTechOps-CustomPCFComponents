@@ -2,7 +2,15 @@
 
 # Changelog
 
-## Version 7.0.0.0 (Current)
+## Version 7.2.2.0 (Current)
+#### 🔍 Advanced LookUp Component
+- **NEW**: `Icon Column` now accepts `<lookup field>.<column>` dot notation to pull the icon from a related record a lookup field on the target table points to, instead of only a column on the target table itself - works for all three icon source types (Image, MDL2 icon-name text, Choice)
+- **NEW**: `Additional Search Columns` now supports lookup columns - a lookup entry is matched against the primary name of the record it points to (e.g. searching by a related Account's name), instead of being rejected
+- **FIX**: The field no longer accepted searches or selections while set to Read Only on the form
+- **FIX**: The results dropdown could silently fail to appear once a search narrowed results, on any field where `Label Column` shows something other than the target table's true primary name - typing text that matched what was on screen found no results, because the search itself was never checking that column
+- **FIX**: A search typed into the field and then abandoned (clicked away without picking a result) could leave a stale filter in place - reopening the field showed the same narrowed results again instead of the full list, even though the field itself looked empty
+
+## Version 7.0.0.0 (Previous)
 #### 🔍 Advanced LookUp Component (NEW)
 - **NEW**: Field control bound to a lookup field that replaces the standard lookup dialog with a searchable, type-to-filter dropdown backed by live, debounced Dataverse search
 - **NEW**: `Icon Column` supports three sources for a per-record icon - a picture (Image) column, a text column holding an MDL2 icon name per record, or a fixed literal MDL2 icon name shown for every record - plus support for an image web resource as the icon

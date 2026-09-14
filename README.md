@@ -370,18 +370,10 @@ If you encounter any issues or have suggestions for improvements, please open an
 
 Full version history lives in [CHANGELOG.md](CHANGELOG.md).
 
-### Version 7.0.0.0 (Current)
-#### 🔍 Advanced LookUp Component (NEW)
-- **NEW**: Field control bound to a lookup field that replaces the standard lookup dialog with a searchable, type-to-filter dropdown backed by live, debounced Dataverse search, per-record icons, tooltips, additional search/display columns, and more.
-
-#### ⚡ Quick Action Buttons Component (NEW)
-- **NEW**: Field control that renders up to 5 configurable icon+label buttons, each writing a maker-configured set of field values (literal or Power Automate-style expressions, including lookups and multi-select choices) onto the current form on click.
-
-#### 🎨 Advanced Dropdown & 🎛️ Modern Choice Buttons Components
-- **NEW**: Icons can now be an image web resource instead of only an MDL2 icon name; Modern Choice Buttons also gains `Icon position`, `Show selection option only`, and `Reflow behaviour` properties.
-
-#### 📄 PDF Gallery & 🌳 Relationship View Components
-- **NEW**: PDF Gallery's `File Column(s)` now supports a fallback chain including web-location links; Relationship View's `Thumbnail Column` now supports Choice columns, literal icon names, related-record dot notation, and a `Thumbnail Icon Color Mode` property.
+### Version 7.2.2.0 (Current)
+#### 🔍 Advanced LookUp Component
+- **NEW**: `Icon Column` now accepts `<lookup field>.<column>` dot notation to pull the icon from a related record instead of only the target table itself; `Additional Search Columns` now supports lookup columns too, matched against the primary name of the record they point to.
+- **FIX**: The field no longer accepted searches or selections while set to Read Only, the results dropdown no longer silently fails to appear when `Label Column` differs from the true primary name, and a stale search filter no longer survives clicking away from the field without picking a result.
 
 See [CHANGELOG.md](CHANGELOG.md) for full details.
 

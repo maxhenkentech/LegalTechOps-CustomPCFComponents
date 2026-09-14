@@ -98,8 +98,46 @@ interface IAttributeMeta {
 type IconCandidateKind = "image" | "text" | "choice" | "fixed";
 interface IconCandidate {
   kind: IconCandidateKind;
+  // For a plain entry, a column on THIS record's own entity. For a "<lookupField>.<column>"
+  // dot-notation entry (see IIconColumnRef/parseIconColumnRef below), the column to read on
+  // lookupTargetEntityLogicalName instead - never both at once.
   column?: string; // "image" | "text" | "choice"
   fixedValue?: string; // "fixed"
+  // Set only when this candidate came from a "<lookupField>.<column>" entry - the logical name of
+  // the Lookup/Owner/Customer field on THIS entity that points at the related record `column`
+  // actually lives on. Its presence (not `kind`) is what forces this candidate through the async
+  // resolution path (see resolveIconForRecord/needsAsyncIconResolution) - none of image/text/choice
+  // can be read straight out of this record's own $select response when it's set, since the value
+  // being rendered isn't on this entity at all.
+  lookupFieldLogicalName?: string;
+  // The entity `lookupFieldLogicalName` resolves to (single-target Lookups only - same deliberate
+  // constraint as resolveTargetEntityType's own polymorphic-field limitation elsewhere in this
+  // file). Only ever set alongside lookupFieldLogicalName.
+  lookupTargetEntityLogicalName?: string;
+  // lookupTargetEntityLogicalName's own EntitySetName - needed to address the related record via
+  // a raw Web API URL (fetchImageUrl's /$value fetch, or the plain $select fetch a dot-notation
+  // text/choice candidate needs - see resolveDotNotationIconValue). Resolved once per distinct
+  // target entity, not per candidate or per record.
+  lookupTargetEntitySetName?: string;
+}
+
+// Icon Column's fallback-chain entries (see parseColumnList) normally name a column on this
+// record's own entity. Each entry ALSO accepts "<lookupField>.<column>" dot notation -
+// e.g. "lops_tableb.lops_thumbnail" - to instead pull that candidate's icon from the record a
+// Lookup/Owner/Customer field on this entity points to, rather than anything stored on this record
+// itself. Mirrors RelationshipView's identical thumbnailColumnName dot-notation convention
+// (parseThumbnailColumnName/IThumbnailColumnRef in RelationshipViewControl.tsx) - same syntax, same
+// single-target-Lookup-only constraint, ported here to work per-entry across a fallback chain and
+// across all three of Icon Column's candidate kinds (image/text/choice), not just one column.
+interface IIconColumnRef {
+  lookupFieldLogicalName?: string;
+  columnLogicalName: string;
+}
+
+function parseIconColumnRef(entry: string): IIconColumnRef {
+  const dotIndex = entry.indexOf(".");
+  if (dotIndex <= 0 || dotIndex === entry.length - 1) return { columnLogicalName: entry };
+  return { lookupFieldLogicalName: entry.slice(0, dotIndex), columnLogicalName: entry.slice(dotIndex + 1) };
 }
 
 // A Choice column's selected-option label (see IconCandidateKind's "choice") is maker-authored
@@ -286,6 +324,45 @@ async function resolveAttributeLogicalNames(entityLogicalName: string): Promise<
   return new Map(data.value.map((a) => [a.LogicalName.toLowerCase(), a.AttributeType || ""]));
 }
 
+// Backs Icon Column's "<lookupField>.<column>" dot notation (see IIconColumnRef/parseIconColumnRef)
+// - resolves which table a Lookup/Owner/Customer field on entityLogicalName actually points to, so
+// the dot's right-hand column can then be classified/fetched against THAT table instead of this
+// one. Directly mirrors RelationshipView's identical resolveLookupThumbnailMeta helper (same
+// endpoint, same single-target-only constraint - a polymorphic field's Targets array has more than
+// one entry and there's no per-record way to know which one a given value actually resolved to
+// without an extra call per record, so this deliberately just uses Targets[0]).
+async function resolveLookupTargetEntityLogicalName(entityLogicalName: string, lookupFieldLogicalName: string): Promise<string | undefined> {
+  const escaped = lookupFieldLogicalName.replace(/'/g, "''");
+  const url = `/api/data/v9.2/EntityDefinitions(LogicalName='${entityLogicalName}')/Attributes(LogicalName='${escaped}')/Microsoft.Dynamics.CRM.LookupAttributeMetadata?$select=Targets`;
+  const response = await fetch(url, { headers: { Accept: "application/json" } });
+  if (!response.ok) {
+    throw new Error(`Failed to resolve lookup field "${lookupFieldLogicalName}" (${response.status} ${response.statusText})`);
+  }
+  const data = (await response.json()) as { Targets?: string[] };
+  return data.Targets?.[0];
+}
+
+// Backs Additional Search Column's Lookup/Owner/Customer support (see runSearch/configErrors) -
+// resolves the REAL single-valued navigation-property name for a lookup field, needed to filter
+// into the related record's own primary name via OData nav-property syntax
+// (`contains(<navProperty>/<relatedAttribute>,'text')`). Unlike resolveLookupTargetEntityLogicalName
+// above, this cannot be sidestepped or approximated - OData navigation-property filtering has no
+// GUID-based alternative, and the navigation property name is NOT reliably the same as the
+// attribute's own logical name (it can be renamed independently, under "Referencing Entity
+// Navigation Property Name", in Advanced Find's relationship customization) - so it's resolved
+// properly here via the ManyToOneRelationships metadata endpoint, filtered to the one relationship
+// this specific attribute backs, rather than guessed.
+async function resolveLookupNavigationPropertyName(entityLogicalName: string, lookupFieldLogicalName: string): Promise<string | undefined> {
+  const escaped = lookupFieldLogicalName.replace(/'/g, "''");
+  const url = `/api/data/v9.2/EntityDefinitions(LogicalName='${entityLogicalName}')/ManyToOneRelationships?$filter=ReferencingAttribute eq '${escaped}'&$select=ReferencingEntityNavigationPropertyName`;
+  const response = await fetch(url, { headers: { Accept: "application/json" } });
+  if (!response.ok) {
+    throw new Error(`Failed to resolve navigation property for lookup field "${lookupFieldLogicalName}" (${response.status} ${response.statusText})`);
+  }
+  const data = (await response.json()) as { value: { ReferencingEntityNavigationPropertyName?: string }[] };
+  return data.value[0]?.ReferencingEntityNavigationPropertyName;
+}
+
 // A Lookup, Owner (ownerid - polymorphic user/team), and Customer (polymorphic account/contact)
 // attribute are all bound in the Web API under `_<name>_value`, never the bare logical name -
 // unlike every other attribute type, where the logical name is exactly what you $select and read
@@ -293,6 +370,19 @@ async function resolveAttributeLogicalNames(entityLogicalName: string): Promise<
 // right key is known, reading the value is identical for every type (see readContextColumnValue).
 function isLookupLikeAttributeType(attributeType: string | undefined): boolean {
   return attributeType === "Lookup" || attributeType === "Owner" || attributeType === "Customer";
+}
+
+// Dataverse's Web API `contains()` OData filter function only works on a String/Memo (text)
+// column - calling it on any other AttributeType (Picklist, Lookup, Boolean, DateTime, Money,
+// whole/decimal number, ...) throws a 400 for the WHOLE query, not just that one clause. Backs two
+// things in runSearch: (1) Additional Search Column's own config-error check, since that property
+// is explicitly search-only, so a non-text entry there is an outright maker mistake worth flagging
+// the same way every other column property's typos already are; (2) silently filtering which
+// labelColumnNames entries are safe to fold into the search filter (see runSearch's own comment -
+// Label Column is a display-first property, not search-only, so a non-text entry there is only
+// skipped, never reported as a config error).
+function isTextSearchableAttributeType(attributeType: string | undefined): boolean {
+  return attributeType === "String" || attributeType === "Memo";
 }
 
 // The actual $select/response key for a configured Additional Display Columns entry - `_col_value`
@@ -347,6 +437,35 @@ async function fetchImageUrl(entitySetName: string, id: string, columnLogicalNam
   return URL.createObjectURL(blob);
 }
 
+// Resolves ONE dot-notation Icon Column candidate's value for ONE already-known related record id -
+// the async counterpart to resolveIconValueSync's plain text/choice branches and fetchImageUrl's
+// image branch, just addressed at lookupTargetEntitySetName/targetId instead of this record's own
+// entity set. A raw same-origin fetch, not context.webAPI.retrieveRecord, matching every other
+// metadata/value call in this file (resolveEntityMetadata, resolveIconColumnMeta,
+// resolveAttributeLogicalNames, fetchImageUrl) - this function is module-level, outside the React
+// component, with no access to the webAPI prop anyway. Callers (resolveIconForRecord) are expected
+// to memoize this per {targetEntity, targetId, column, kind} so N rows sharing the same related
+// record only trigger one fetch, not N - see dotNotationIconCacheRef in the component.
+async function resolveDotNotationIconValue(candidate: IconCandidate, targetId: string): Promise<{ iconValue?: string; thumbnailUrl?: string }> {
+  const targetEntitySetName = candidate.lookupTargetEntitySetName;
+  const column = candidate.column;
+  if (!targetEntitySetName || !column) return {};
+  if (candidate.kind === "image") {
+    const url = await fetchImageUrl(targetEntitySetName, targetId, column);
+    return url ? { thumbnailUrl: url } : {};
+  }
+  const url = `/api/data/v9.2/${targetEntitySetName}(${targetId})?$select=${column}`;
+  const response = await fetch(url, { headers: { Accept: "application/json" } });
+  if (!response.ok) return {};
+  const record = (await response.json()) as ComponentFramework.WebApi.Entity;
+  if (candidate.kind === "choice") {
+    const label = readChoiceLabel(record, column);
+    return label ? resolveChoiceIconLabel(label) : {};
+  }
+  const v = record[column] as string | undefined;
+  return v ? { iconValue: v } : {};
+}
+
 // Shared fallback-chain syntax for Icon Column/Tooltip Column/Label Column: semicolon-separated
 // column names, tried in order, first one with a non-empty value on a given record wins. Comma is
 // deliberately NOT reused here - searchColumns already means something different with commas
@@ -377,6 +496,15 @@ function buildSelectColumns(
   // $select regardless (see fetchImageUrl's separate /$value fetch), so there's nothing to ask
   // for here.
   iconCandidates.forEach((c) => {
+    // A dot-notation candidate's own column lives on a DIFFERENT entity and cannot be $select'd
+    // through a nav property here - only the lookup field itself, as `_<field>_value`, so the
+    // related record's id is known per row. See resolveDotNotationIconValue for how that id is
+    // then used to fetch the actual value (a second round trip, deliberately not $expand - see
+    // the resolveMetadata effect's comment on why).
+    if (c.lookupFieldLogicalName) {
+      cols.add(`_${c.lookupFieldLogicalName}_value`);
+      return;
+    }
     if ((c.kind === "text" || c.kind === "choice") && c.column) cols.add(c.column);
   });
   tooltipColumnNames.forEach((c) => cols.add(c));
@@ -412,17 +540,21 @@ function readTooltipValue(record: ComponentFramework.WebApi.Entity, tooltipColum
 }
 
 // Icon Column's fallback chain, synchronous-only branch: used when NO candidate in the whole list
-// is an "image" kind, so every candidate can be resolved straight from the record payload already
-// in hand - no /$value fetch needed, so no reason to make this async and pay an extra render/
-// microtask for the common (still the most common) all-text-or-fixed-or-choice case. A "choice"
-// candidate is still resolvable synchronously even though it can produce a thumbnailUrl (a web
-// resource reference is just a relative URL string, not a fetch) - only real Image columns need
-// the async /$value round-trip. See resolveIconForRecord for the general (possibly-async) version
-// used whenever an image candidate is present anywhere in the chain - callers must only reach for
-// this one when they've confirmed there isn't one.
+// is an "image" kind or a dot-notation ("<lookupField>.<column>") entry, so every candidate can be
+// resolved straight from the record payload already in hand - no fetch needed, so no reason to make
+// this async and pay an extra render/microtask for the common (still the most common)
+// all-text-or-fixed-or-choice case. A "choice" candidate is still resolvable synchronously even
+// though it can produce a thumbnailUrl (a web resource reference is just a relative URL string, not
+// a fetch) - only real Image columns and dot-notation entries need a round trip. See
+// resolveIconForRecord for the general (possibly-async) version used whenever either is present
+// anywhere in the chain - callers must only reach for this one when they've confirmed neither is
+// (see needsAsyncIconResolution at the call sites). The `lookupFieldLogicalName` guards below are
+// defensive, not load-bearing - see resolveIconForRecord's own comment for why they should never
+// actually be reached.
 function resolveIconValueSync(candidates: IconCandidate[], record: ComponentFramework.WebApi.Entity): { iconValue?: string; thumbnailUrl?: string } {
   for (const c of candidates) {
     if (c.kind === "fixed") return { iconValue: c.fixedValue };
+    if (c.lookupFieldLogicalName) continue; // dot notation always needs resolveIconForRecord instead
     if (c.kind === "text" && c.column) {
       const v = record[c.column] as string | undefined;
       if (v) return { iconValue: v };
@@ -438,20 +570,50 @@ function resolveIconValueSync(candidates: IconCandidate[], record: ComponentFram
 }
 
 // General Icon Column fallback-chain resolution, for whenever at least one candidate is an
-// "image" kind (mixed with text/fixed candidates, or purely image ones) - walks candidates in
-// configured order, checking each synchronously (text/fixed) or via a real fetch (image), and
-// stops at the first one that actually produces a value. This is the only way to respect a mixed
-// chain's priority order correctly: whether an image candidate is "empty" can only be known by
-// actually fetching it (Dataverse doesn't return Image-column presence inline via $select), so a
-// candidate earlier in the list can't be skipped without first resolving it, image or not.
+// "image" kind and/or a dot-notation ("<lookupField>.<column>") entry (mixed with plain text/fixed/
+// choice candidates, or purely async ones) - walks candidates in configured order, checking each
+// synchronously (plain text/fixed/choice) or via a real fetch (image, or ANY dot-notation entry
+// regardless of its own kind - see IconCandidate.lookupFieldLogicalName), and stops at the first one
+// that actually produces a value. This is the only way to respect a mixed chain's priority order
+// correctly: whether an image or dot-notation candidate is "empty" can only be known by actually
+// fetching it (Dataverse doesn't return Image-column presence inline via $select, and a
+// dot-notation candidate's value isn't on this record's own $select response at all - only the
+// related record's id is, via `_<lookupField>_value`), so a candidate earlier in the list can't be
+// skipped without first resolving it.
+//
+// dotNotationCache is an optional {targetEntity}::{targetId}::{column}::{kind} -> Promise map
+// (created once per mounted control instance - see dotNotationIconCacheRef in the component) so
+// that when several rows in one search batch resolve to the SAME related record (a common case -
+// e.g. many child records all pointing at the same "Type" parent), that related record's value is
+// only ever fetched once, not once per row. Memoizing the in-flight Promise itself (not just the
+// resolved value) is what also de-dupes concurrent callers racing on the same key, not only
+// sequential ones.
 async function resolveIconForRecord(
   candidates: IconCandidate[],
   record: ComponentFramework.WebApi.Entity,
   entitySetName: string,
-  recordId: string
+  recordId: string,
+  dotNotationCache?: Map<string, Promise<{ iconValue?: string; thumbnailUrl?: string }>>
 ): Promise<{ iconValue?: string; thumbnailUrl?: string }> {
   for (const c of candidates) {
     if (c.kind === "fixed") return { iconValue: c.fixedValue };
+    if (c.lookupFieldLogicalName) {
+      // The related record's id lives on THIS record, under the lookup's own `_<field>_value` key
+      // (see buildSelectColumns) - not the target column's value, which is never on this entity at
+      // all. A blank lookup on this particular record is simply "this candidate is empty here",
+      // same as a blank text/choice column would be - fall through to the next candidate.
+      const targetId = record[`_${c.lookupFieldLogicalName}_value`] as string | undefined;
+      if (!targetId) continue;
+      const cacheKey = `${c.lookupTargetEntityLogicalName}::${targetId}::${c.column}::${c.kind}`;
+      let pending = dotNotationCache?.get(cacheKey);
+      if (!pending) {
+        pending = resolveDotNotationIconValue(c, targetId);
+        dotNotationCache?.set(cacheKey, pending);
+      }
+      const result = await pending;
+      if (result.iconValue !== undefined || result.thumbnailUrl !== undefined) return result;
+      continue;
+    }
     if (c.kind === "text" && c.column) {
       const v = record[c.column] as string | undefined;
       if (v) return { iconValue: v };
@@ -503,6 +665,10 @@ export const AdvancedLookUpControl: React.FC<IAdvancedLookUpProps> = (props) => 
   // by design, only its caret button does that. focus(true) is the documented way to force it
   // open; it's called explicitly from the wrapper's onClick (see handleFieldClick).
   const comboBoxRef = React.useRef<IComboBox>(null);
+  // Backs the native document-level "click outside" listener below (see that effect's own
+  // comment) - a real DOM node reference to fieldContent's own wrapper, independent of React's
+  // synthetic event system.
+  const rootRef = React.useRef<HTMLDivElement | null>(null);
   // Menu open/closed, tracked as a ref rather than state: it's only ever read from an event
   // handler, and making it state would re-render the whole control on every open/close.
   const menuOpenRef = React.useRef(false);
@@ -541,6 +707,26 @@ export const AdvancedLookUpControl: React.FC<IAdvancedLookUpProps> = (props) => 
   const [entityMeta, setEntityMeta] = React.useState<IEntityMeta | undefined>();
   // Resolved Icon Column fallback chain, in configured priority order - see IconCandidate.
   const [iconCandidates, setIconCandidates] = React.useState<IconCandidate[]>([]);
+  // "<lookupField>.<column>" dot-notation validation surfaces - see IIconColumnRef/parseIconColumnRef
+  // and configErrors' Icon Column check below. lookupFieldTargetEntity maps a lowercased lookup
+  // field logical name (referenced by at least one dot-notation Icon Column entry) to the entity it
+  // resolves to; lookupTargetAttributeNames maps that resolved entity's own logical name to its
+  // attribute list (mirrors knownColumnNames, just for a related table instead of this one). Both
+  // populated by the same resolveMetadata effect that builds iconCandidates, resolved once per
+  // DISTINCT lookup field / target entity even when several dot-notation entries share one.
+  const [lookupFieldTargetEntity, setLookupFieldTargetEntity] = React.useState<Record<string, string>>({});
+  const [lookupTargetAttributeNames, setLookupTargetAttributeNames] = React.useState<Record<string, Map<string, string>>>({});
+  // Additional Search Column's Lookup/Owner/Customer support - see runSearch's own comment and
+  // resolveLookupNavigationPropertyName. Keyed by lowercased search-column logical name; populated
+  // by the same resolveMetadata effect, only for entries that actually resolve to a Lookup-like
+  // AttributeType on this entity.
+  const [lookupSearchColumnInfo, setLookupSearchColumnInfo] = React.useState<
+    Record<string, { navigationProperty: string; relatedPrimaryNameAttribute: string }>
+  >({});
+  // Per-mount memoization cache for dot-notation Icon Column candidates - see resolveIconForRecord's
+  // own comment for why. Reset whenever iconCandidates changes so a reconfigured Icon Column can't
+  // ever serve a value cached under the previous configuration.
+  const dotNotationIconCacheRef = React.useRef<Map<string, Promise<{ iconValue?: string; thumbnailUrl?: string }>>>(new Map());
   // The target table's full set of attribute logical names, lowercased - undefined until resolved
   // (real mode: after one EntityDefinitions Attributes call; test mode: set synchronously to
   // TEST_MODE_KNOWN_COLUMNS). validateConfig() deliberately skips its column-existence checks
@@ -564,6 +750,21 @@ export const AdvancedLookUpControl: React.FC<IAdvancedLookUpProps> = (props) => 
   const [userNavigated, setUserNavigated] = React.useState(false);
   const [recordDataById, setRecordDataById] = React.useState<Record<string, ITargetRecordData>>({});
   const [thumbnailUrls, setThumbnailUrls] = React.useState<Record<string, string>>({});
+  // Reset both whenever iconCandidates changes (Icon Column reconfigured - discovered live while
+  // testing dot notation, but not specific to it: switching Icon Column from an Image-kind column
+  // to a text/choice one for the SAME already-rendered record id previously left that record's OLD
+  // thumbnailUrls entry behind forever, since runSearch/loadSelected only ever ADD to thumbnailUrls
+  // (`setThumbnailUrls(prev => ({...prev, ...newThumbnailUrls}))`), never remove a now-stale entry -
+  // so a record with no thumbnail under the NEW config kept rendering its OLD image anyway, since
+  // onRenderOption/selectedIconElement both check `thumb` before `iconValue`. Only matters when
+  // iconCandidates itself changes for an already-populated instance (in practice: the maker
+  // live-editing Icon Column in the form/table designer's own preview, not a normal deployed form,
+  // where it's fixed at design time) - dotNotationIconCacheRef needs the identical reset for the
+  // same reason, just for the async dot-notation fetch cache instead of the rendered thumbnail map.
+  React.useEffect(() => {
+    dotNotationIconCacheRef.current = new Map();
+    setThumbnailUrls({});
+  }, [iconCandidates]);
 
   const [selectedId, setSelectedId] = React.useState<string | undefined>();
   // The last actually-committed selection's display name - distinct from searchText, which is
@@ -585,6 +786,18 @@ export const AdvancedLookUpControl: React.FC<IAdvancedLookUpProps> = (props) => 
   // delimiter does NOT mean "fallback chain, first wins" for this particular property, unlike every
   // other caller of parseColumnList.
   const additionalDisplayColumnNames = React.useMemo(() => parseColumnList(additionalDisplayColumns), [additionalDisplayColumns]);
+  // Comma-separated, NOT parseColumnList's semicolon split - see searchColumns' own comment on
+  // IAdvancedLookUpProps. Memoized once here (was previously re-split inline at each of
+  // configErrors/runSearch's own call sites) so resolveMetadata's Lookup-column-search resolution
+  // below, configErrors, and runSearch all agree on the exact same parsed list.
+  const additionalSearchColumnNames = React.useMemo(
+    () =>
+      (searchColumns || "")
+        .split(",")
+        .map((c) => c.trim())
+        .filter((c) => c.length > 0),
+    [searchColumns]
+  );
 
   // Surfaces WHY column-name validation (knownColumnNames) never resolved, instead of the
   // previous behavior of silently skipping those checks forever with no visible signal at all.
@@ -598,6 +811,19 @@ export const AdvancedLookUpControl: React.FC<IAdvancedLookUpProps> = (props) => 
   // validation should be affected, exactly mirroring how "metadata hasn't loaded yet" already
   // doesn't block anything either.
   const [metadataDiagnostic, setMetadataDiagnostic] = React.useState<string | undefined>();
+
+  // Same non-blocking-note treatment as metadataDiagnostic above, for the OTHER thing that can
+  // silently make the results callout vanish with no visible cause: runSearch's own query
+  // failing. Fluent's ComboBox does not render a callout at all when its options list is empty
+  // (confirmed live), and BEFORE this diagnostic existed, a failed search's catch block just did
+  // `setOptions([])` with only a console.error behind it - so a genuinely misconfigured search
+  // (e.g. an Additional Search Column that predates the new text-type config-error check above, or
+  // any other query-time failure this hasn't anticipated) looked EXACTLY like "typed a query, got
+  // zero real matches" from the maker's side: the whole panel just disappears the instant you
+  // start typing, with nothing on screen to explain why. Cleared on every new search attempt (both
+  // the empty-string default search and a real query) so a fixed config's next search immediately
+  // clears a stale diagnostic instead of leaving it lingering after the underlying problem is gone.
+  const [searchDiagnostic, setSearchDiagnostic] = React.useState<string | undefined>();
 
   // Resolve target entity + icon column type(s) once (and whenever the maker changes the Icon
   // Column property). tooltipColumnName/labelColumnName need no type resolution - their values
@@ -640,10 +866,15 @@ export const AdvancedLookUpControl: React.FC<IAdvancedLookUpProps> = (props) => 
       // LookupProperty missing that method entirely, so `targetEntity` was never resolving to
       // begin with; see resolveTargetEntityType's own comment above. Left concurrent anyway since
       // it's a strict improvement with no downside now that targetEntity actually resolves.)
-      resolveAttributeLogicalNames(targetEntity)
+      // ownAttrNames is captured (not just pushed into state) so it can also drive the
+      // Lookup-search-column resolution further down, without a second, redundant fetch of the
+      // exact same attribute list.
+      let ownAttrNames: Map<string, string> | undefined;
+      const ownAttrNamesPromise = resolveAttributeLogicalNames(targetEntity)
         .then((names) => {
           if (!cancelled) setKnownColumnNames(names);
-          return undefined;
+          ownAttrNames = names;
+          return names;
         })
         .catch((err) => {
           console.error("AdvancedLookUp: failed to resolve attribute list for validation", err);
@@ -651,6 +882,7 @@ export const AdvancedLookUpControl: React.FC<IAdvancedLookUpProps> = (props) => 
             const message = err instanceof Error ? err.message : String(err);
             setMetadataDiagnostic(`Could not verify column names against table "${targetEntity}": ${message}`);
           }
+          return undefined;
         });
 
       try {
@@ -670,16 +902,79 @@ export const AdvancedLookUpControl: React.FC<IAdvancedLookUpProps> = (props) => 
         // (`!m`) produces no candidate at all here - it's now a genuine config error instead (see
         // configErrors' Icon Column check below), not an implicit fixed-icon-name fallback; see
         // IconCandidateKind's comment for why that changed.
+        //
+        // Each entry is first parsed for "<lookupField>.<column>" dot notation (parseIconColumnRef -
+        // see IIconColumnRef). A plain entry classifies against THIS entity exactly as before; a
+        // dot-notation entry classifies `column` against the RELATED entity `lookupField` resolves
+        // to instead - resolved in two passes so a lookup field or target entity referenced by
+        // several dot-notation entries is only ever resolved once, not once per entry:
+        //   1. Every DISTINCT lookupFieldLogicalName -> its target entity (resolveLookupTargetEntityLogicalName).
+        //   2. Every DISTINCT target entity found in step 1 -> its own attribute list
+        //      (resolveAttributeLogicalNames, purely for configErrors' target-column-existence
+        //      check below - resolveIconColumnMeta still does the actual image/text/choice
+        //      classification per column, same as the plain case, since the attribute list alone
+        //      can't distinguish an Image column from a plain text one - see resolveIconColumnMeta's
+        //      own AttributeTypeName comment).
+        // $expand was deliberately NOT used to pull the related value inline in the same query -
+        // Dataverse's single-valued-navigation-property name for a Lookup field is not reliably the
+        // same as its logical name (it can be customized independently in advanced find), so there
+        // is no safe way to build that $expand clause from just the logical name without an extra
+        // metadata call anyway - at which point a plain second fetch (resolveDotNotationIconValue,
+        // deduped per related record via dotNotationIconCacheRef) is no more expensive and far less
+        // fragile. Mirrors RelationshipView's identical thumbnailColumnName dot-notation feature,
+        // which made the same call for the same reason.
+        const iconRefs = iconColumnNames.map(parseIconColumnRef);
+        const distinctLookupFields = Array.from(new Set(iconRefs.filter((r) => r.lookupFieldLogicalName).map((r) => r.lookupFieldLogicalName!)));
+        const newLookupFieldTargetEntity: Record<string, string> = {};
+        await Promise.all(
+          distinctLookupFields.map(async (field) => {
+            try {
+              const target = await resolveLookupTargetEntityLogicalName(targetEntity, field);
+              if (target) newLookupFieldTargetEntity[field.toLowerCase()] = target;
+            } catch (err) {
+              console.error(`AdvancedLookUp: failed to resolve lookup field "${field}" for Icon Column dot notation`, err);
+            }
+          })
+        );
+        if (cancelled) return;
+        setLookupFieldTargetEntity(newLookupFieldTargetEntity);
+
+        const distinctTargetEntities = Array.from(new Set(Object.values(newLookupFieldTargetEntity)));
+        const newLookupTargetAttributeNames: Record<string, Map<string, string>> = {};
+        const entitySetNameByEntity: Record<string, string> = {};
+        await Promise.all(
+          distinctTargetEntities.map(async (entity) => {
+            try {
+              const [attrNames, meta] = await Promise.all([resolveAttributeLogicalNames(entity), resolveEntityMetadata(entity)]);
+              newLookupTargetAttributeNames[entity] = attrNames;
+              entitySetNameByEntity[entity] = meta.entitySetName;
+            } catch (err) {
+              console.error(`AdvancedLookUp: failed to resolve metadata for Icon Column's related table "${entity}"`, err);
+            }
+          })
+        );
+        if (cancelled) return;
+        setLookupTargetAttributeNames(newLookupTargetAttributeNames);
+
         let candidates: IconCandidate[] = [];
-        if (iconColumnNames.length > 0) {
-          const metas = await Promise.all(iconColumnNames.map((n) => resolveIconColumnMeta(targetEntity, n)));
+        if (iconRefs.length > 0) {
+          const metas = await Promise.all(
+            iconRefs.map((ref) => {
+              const sourceEntity = ref.lookupFieldLogicalName ? newLookupFieldTargetEntity[ref.lookupFieldLogicalName.toLowerCase()] : targetEntity;
+              return sourceEntity ? resolveIconColumnMeta(sourceEntity, ref.columnLogicalName) : Promise.resolve(undefined);
+            })
+          );
           if (cancelled) return;
-          candidates = iconColumnNames.reduce<IconCandidate[]>((acc, n, i) => {
+          candidates = iconRefs.reduce<IconCandidate[]>((acc, ref, i) => {
             const m = metas[i];
-            if (!m) return acc;
-            if (m.attributeTypeName === "ImageType") acc.push({ kind: "image", column: n });
-            else if (m.attributeType === "Picklist") acc.push({ kind: "choice", column: n });
-            else acc.push({ kind: "text", column: n });
+            if (!m) return acc; // lookup field didn't resolve, or the column doesn't exist there
+            const lookupField = ref.lookupFieldLogicalName;
+            const lookupTargetEntityLogicalName = lookupField ? newLookupFieldTargetEntity[lookupField.toLowerCase()] : undefined;
+            const lookupTargetEntitySetName = lookupTargetEntityLogicalName ? entitySetNameByEntity[lookupTargetEntityLogicalName] : undefined;
+            const base = { column: ref.columnLogicalName, lookupFieldLogicalName: lookupField, lookupTargetEntityLogicalName, lookupTargetEntitySetName };
+            if (m.attributeTypeName === "ImageType") acc.push({ ...base, kind: "image" });
+            else if (m.attributeType === "Picklist") acc.push({ ...base, kind: "choice" });
+            else acc.push({ ...base, kind: "text" });
             return acc;
           }, []);
         }
@@ -690,6 +985,36 @@ export const AdvancedLookUpControl: React.FC<IAdvancedLookUpProps> = (props) => 
           candidates.push({ kind: "fixed", fixedValue: iconFixedName.trim() });
         }
         setIconCandidates(candidates);
+
+        // Additional Search Column's Lookup/Owner/Customer support - see
+        // resolveLookupNavigationPropertyName's own comment for why this can't be approximated the
+        // way Icon Column's dot notation sidesteps the same uncertainty. `ownAttrNames` (this
+        // entity's own attribute list, resolved above for knownColumnNames) is what identifies
+        // WHICH configured search columns are actually Lookup-like in the first place - awaited
+        // here rather than re-fetched, since it was already kicked off concurrently above.
+        await ownAttrNamesPromise;
+        if (cancelled) return;
+        const lookupSearchFields = ownAttrNames
+          ? additionalSearchColumnNames.filter((c) => isLookupLikeAttributeType(ownAttrNames!.get(c.toLowerCase())))
+          : [];
+        const newLookupSearchColumnInfo: Record<string, { navigationProperty: string; relatedPrimaryNameAttribute: string }> = {};
+        await Promise.all(
+          lookupSearchFields.map(async (field) => {
+            try {
+              const [navigationProperty, fieldTargetEntity] = await Promise.all([
+                resolveLookupNavigationPropertyName(targetEntity, field),
+                resolveLookupTargetEntityLogicalName(targetEntity, field),
+              ]);
+              if (!navigationProperty || !fieldTargetEntity) return;
+              const relatedMeta = await resolveEntityMetadata(fieldTargetEntity);
+              newLookupSearchColumnInfo[field.toLowerCase()] = { navigationProperty, relatedPrimaryNameAttribute: relatedMeta.primaryNameAttribute };
+            } catch (err) {
+              console.error(`AdvancedLookUp: failed to resolve navigation property for Additional Search Column "${field}"`, err);
+            }
+          })
+        );
+        if (cancelled) return;
+        setLookupSearchColumnInfo(newLookupSearchColumnInfo);
       } catch (err) {
         if (cancelled) return;
         console.error("AdvancedLookUp: failed to resolve entity metadata", err);
@@ -702,7 +1027,7 @@ export const AdvancedLookUpControl: React.FC<IAdvancedLookUpProps> = (props) => 
     return () => {
       cancelled = true;
     };
-  }, [isTestMode, iconColumnNames, iconFixedName]);
+  }, [isTestMode, iconColumnNames, iconFixedName, additionalSearchColumnNames]);
 
   // Configuration validator, mirroring QuickActionButtons' validateActionsJson/buttonErrors
   // pattern - a red panel replaces the whole control rather than rendering a silently-broken
@@ -743,14 +1068,58 @@ export const AdvancedLookUpControl: React.FC<IAdvancedLookUpProps> = (props) => 
       // Every entry in a fallback chain must be a real column - a typo'd second choice would
       // otherwise silently never trigger (it's only reached when the first choice is blank on a
       // given record), which is exactly the kind of quiet failure this validator exists to catch.
-      iconColumnNames.forEach((c) => checkColumn("Icon Column", c));
+      // A "<lookupField>.<column>" dot-notation entry (see IIconColumnRef/parseIconColumnRef) needs
+      // a different check than a plain one - checkColumn against knownColumnNames (THIS table's own
+      // attributes) would always report a false "not found", since the full dotted string is never
+      // itself a real column name here. Instead: the lookup field portion must be a real Lookup/
+      // Owner/Customer column on THIS table (reusing the same isLookupLikeAttributeType check
+      // Additional Display Columns already relies on), and the column portion is checked against
+      // the RELATED table's own attribute list once resolveMetadata has resolved which table that
+      // lookup points to - deferred exactly like every other knownColumnNames check while metadata
+      // is still in flight (lookupFieldTargetEntity/lookupTargetAttributeNames simply won't have an
+      // entry yet, so that inner check is silently skipped rather than misreported as an error).
+      iconColumnNames.forEach((c) => {
+        const ref = parseIconColumnRef(c);
+        if (!ref.lookupFieldLogicalName) {
+          checkColumn("Icon Column", c);
+          return;
+        }
+        const fieldLower = ref.lookupFieldLogicalName.toLowerCase();
+        if (!knownColumnNames.has(fieldLower)) {
+          errors.push(`Icon Column "${c}" refers to lookup field "${ref.lookupFieldLogicalName}", which was not found on table "${targetEntityLogicalName}".`);
+          return;
+        }
+        if (!isLookupLikeAttributeType(knownColumnNames.get(fieldLower))) {
+          errors.push(`Icon Column "${c}" uses "." notation on "${ref.lookupFieldLogicalName}", but that column is not a lookup field.`);
+          return;
+        }
+        const targetEntity = lookupFieldTargetEntity[fieldLower];
+        const targetColumns = targetEntity ? lookupTargetAttributeNames[targetEntity] : undefined;
+        if (targetColumns && !targetColumns.has(ref.columnLogicalName.toLowerCase())) {
+          errors.push(`Icon Column "${c}" - column "${ref.columnLogicalName}" was not found on table "${targetEntity}" (the table "${ref.lookupFieldLogicalName}" points to).`);
+        }
+      });
       labelColumnNames.forEach((c) => checkColumn("Label Column", c));
       tooltipColumnNames.forEach((c) => checkColumn("Tooltip Column", c));
-      (searchColumns || "")
-        .split(",")
-        .map((c) => c.trim())
-        .filter((c) => c.length > 0)
-        .forEach((c) => checkColumn("Additional Search Column", c));
+      // Additional Search Column is explicitly search-only (unlike Label Column, which is
+      // display-first and only opportunistically folded into search when it happens to be
+      // text-shaped - see runSearch's own comment), so a non-text, non-lookup entry here is an
+      // outright maker mistake worth flagging the same way every other column property's typos
+      // already are - Dataverse's contains() 400s the WHOLE query for the whole configured search
+      // text if even one configured column isn't searchable, which otherwise silently manifested as
+      // "the results callout just vanishes the moment you start typing" with no visible cause. A
+      // Lookup/Owner/Customer-typed entry is NOT an error - see runSearch's own comment: it's
+      // resolved (by the same resolveMetadata effect that resolves everything else here) into a
+      // navigation-property search against the related record's own primary name instead of a plain
+      // contains() on the (non-text) GUID value, so only a genuinely unsupported type - Choice,
+      // Boolean, DateTime, Money, whole/decimal number - is flagged here.
+      additionalSearchColumnNames.forEach((c) => {
+        checkColumn("Additional Search Column", c);
+        const attrType = knownColumnNames.get(c.toLowerCase());
+        if (attrType !== undefined && !isTextSearchableAttributeType(attrType) && !isLookupLikeAttributeType(attrType)) {
+          errors.push(`Additional Search Column "${c}" is a ${attrType} column - only text (String/Memo) or lookup columns can be searched.`);
+        }
+      });
       // Blank is valid (falls back to the primary name column - see runSearch's
       // effectiveSortColumn), so only a non-empty value gets checked here.
       if (sortColumnLogicalName) checkColumn("Sort Column", sortColumnLogicalName);
@@ -771,10 +1140,12 @@ export const AdvancedLookUpControl: React.FC<IAdvancedLookUpProps> = (props) => 
     iconColumnNames,
     labelColumnNames,
     tooltipColumnNames,
-    searchColumns,
+    additionalSearchColumnNames,
     sortColumnLogicalName,
     additionalDisplayColumnNames,
     targetEntityLogicalName,
+    lookupFieldTargetEntity,
+    lookupTargetAttributeNames,
   ]);
 
   const runSearch = React.useCallback(
@@ -814,12 +1185,42 @@ export const AdvancedLookUpControl: React.FC<IAdvancedLookUpProps> = (props) => 
           const trimmed = text.trim();
           if (trimmed) {
             const escaped = trimmed.replace(/'/g, "''");
-            const extraCols = (searchColumns || "")
-              .split(",")
-              .map((c) => c.trim())
-              .filter((c) => c.length > 0);
-            const cols = Array.from(new Set([entityMeta.primaryNameAttribute, ...extraCols]));
-            const searchOr = cols.map((c) => `contains(${c},'${escaped}')`).join(" or ");
+            // labelColumnNames is included here too, not just Additional Search Columns/
+            // primaryNameAttribute - a real, reported bug: when Label Column overrides what's
+            // actually DISPLAYED to the user (e.g. showing "Afghanistan" while the target table's
+            // true primary name attribute holds something else entirely), typing text that matches
+            // what's on screen but not the true primary name matched ZERO records - options became
+            // [], and Fluent's ComboBox simply does not render a callout at all when its options
+            // list is empty, so the whole results panel silently vanished the instant a search
+            // narrowed to nothing, with no visible cause. Searching whatever is actually shown as
+            // the option's label is the correct default - a maker configuring Label Column
+            // shouldn't ALSO have to separately duplicate that same column into Additional Search
+            // Columns for "type what you see" to work. Filtered to knownColumnNames' text-compatible
+            // types (isTextSearchableAttributeType) before inclusion - Dataverse's contains() only
+            // works on String/Memo, and folding in a Choice/Lookup/number-typed Label Column here
+            // would 400 the WHOLE query the same way an unfiltered non-text Additional Search Column
+            // already could - deferred (skipped, not misreported) until knownColumnNames resolves,
+            // same as every other knownColumnNames-gated behavior in this file.
+            const searchableLabelCols = labelColumnNames.filter((c) => isTextSearchableAttributeType(knownColumnNames?.get(c.toLowerCase())));
+            // Additional Search Columns splits into two shapes, not one - see
+            // resolveLookupNavigationPropertyName's own comment for why a Lookup/Owner/Customer
+            // entry can't just be folded into the plain `cols` list the way every text column is: a
+            // Lookup attribute's own bound value is a GUID (`_col_value`), not text, so contains()
+            // on the bare logical name either 400s or matches nothing - what a maker configuring it
+            // almost always actually wants is "does the RELATED record's own name contain this
+            // text", which needs the navigation-property form instead
+            // (contains(<navProp>/<relatedPrimaryNameAttribute>,'text')). Both branches are
+            // deferred (silently contribute nothing to this particular search, not misreported)
+            // until knownColumnNames/lookupSearchColumnInfo actually resolve - a genuinely
+            // unsupported type is a configErrors entry already, not something to guess around here.
+            const textSearchCols = additionalSearchColumnNames.filter((c) => isTextSearchableAttributeType(knownColumnNames?.get(c.toLowerCase())));
+            const lookupSearchClauses = additionalSearchColumnNames
+              .filter((c) => isLookupLikeAttributeType(knownColumnNames?.get(c.toLowerCase())))
+              .map((c) => lookupSearchColumnInfo[c.toLowerCase()])
+              .filter((info): info is { navigationProperty: string; relatedPrimaryNameAttribute: string } => !!info)
+              .map((info) => `contains(${info.navigationProperty}/${info.relatedPrimaryNameAttribute},'${escaped}')`);
+            const cols = Array.from(new Set([entityMeta.primaryNameAttribute, ...searchableLabelCols, ...textSearchCols]));
+            const searchOr = [...cols.map((c) => `contains(${c},'${escaped}')`), ...lookupSearchClauses].join(" or ");
             filterParts.push(`(${searchOr})`);
           }
           if (!showInactiveRecords) filterParts.push("statecode eq 0");
@@ -833,12 +1234,14 @@ export const AdvancedLookUpControl: React.FC<IAdvancedLookUpProps> = (props) => 
           const query = `?$select=${selectCols.join(",")}${filterClause}&$orderby=${effectiveSortColumn} asc&$top=${resultLimit}`;
           const response = await webAPI.retrieveMultipleRecords(targetEntityLogicalName, query);
           if (searchRequestIdRef.current !== requestId) return; // a newer search has since started
+          setSearchDiagnostic(undefined);
 
-          // Fast path when no candidate in the chain needs a /$value fetch: resolve icon values
+          // Fast path when no candidate in the chain needs a fetch: resolve icon values
           // synchronously, in the same setState batch as everything else - see
-          // resolveIconValueSync's comment. Only when a fetch is genuinely unavoidable does icon
-          // resolution become a second, async wave after this batch.
-          const hasImageCandidate = iconCandidates.some((c) => c.kind === "image");
+          // resolveIconValueSync's comment. An image candidate OR any dot-notation
+          // ("<lookupField>.<column>") entry, anywhere in the chain, forces the slower async wave
+          // below instead - neither can be read straight out of this row's own $select response.
+          const needsAsyncIconResolution = iconCandidates.some((c) => c.kind === "image" || c.lookupFieldLogicalName);
 
           const newOptions: IComboBoxOption[] = [];
           const newRecordData: Record<string, ITargetRecordData> = {};
@@ -852,7 +1255,7 @@ export const AdvancedLookUpControl: React.FC<IAdvancedLookUpProps> = (props) => 
             const name = (record[entityMeta.primaryNameAttribute] as string) || "(no name)";
             const displayName = resolveDisplayName(record, name, labelColumnNames);
             newOptions.push({ key: `${text}::${id}`, text: displayName });
-            const iconResult = hasImageCandidate ? {} : resolveIconValueSync(iconCandidates, record);
+            const iconResult = needsAsyncIconResolution ? {} : resolveIconValueSync(iconCandidates, record);
             if (iconResult.thumbnailUrl) newThumbnailUrls[id] = iconResult.thumbnailUrl;
             newRecordData[id] = {
               id,
@@ -867,10 +1270,10 @@ export const AdvancedLookUpControl: React.FC<IAdvancedLookUpProps> = (props) => 
           setRecordDataById((prev) => ({ ...prev, ...newRecordData }));
           if (Object.keys(newThumbnailUrls).length > 0) setThumbnailUrls((prev) => ({ ...prev, ...newThumbnailUrls }));
 
-          if (hasImageCandidate) {
+          if (needsAsyncIconResolution) {
             response.entities.forEach((record) => {
               const id = record[entityMeta.primaryIdAttribute] as string;
-              resolveIconForRecord(iconCandidates, record, entityMeta.entitySetName, id)
+              resolveIconForRecord(iconCandidates, record, entityMeta.entitySetName, id, dotNotationIconCacheRef.current)
                 .then(({ iconValue, thumbnailUrl }) => {
                   if (iconValue !== undefined) {
                     setRecordDataById((prev) => (prev[id] ? { ...prev, [id]: { ...prev[id], iconValue } } : prev));
@@ -885,7 +1288,15 @@ export const AdvancedLookUpControl: React.FC<IAdvancedLookUpProps> = (props) => 
           }
         } catch (err) {
           console.error("AdvancedLookUp: search failed", err);
-          if (searchRequestIdRef.current === requestId) setOptions([]);
+          if (searchRequestIdRef.current === requestId) {
+            setOptions([]);
+            // See searchDiagnostic's own comment - without this, a genuinely failed query (e.g. a
+            // misconfigured column somewhere the config validator doesn't yet catch) looked
+            // identical to "the query legitimately found zero matches": the results callout just
+            // silently disappears, since Fluent renders nothing at all for an empty options list.
+            const message = err instanceof Error ? err.message : String(err);
+            setSearchDiagnostic(`Search failed: ${message}`);
+          }
         }
       })();
     },
@@ -898,7 +1309,8 @@ export const AdvancedLookUpControl: React.FC<IAdvancedLookUpProps> = (props) => 
       iconFixedName,
       tooltipColumnNames,
       labelColumnNames,
-      searchColumns,
+      additionalSearchColumnNames,
+      lookupSearchColumnInfo,
       sortColumnLogicalName,
       additionalDisplayColumnNames,
       knownColumnNames,
@@ -956,13 +1368,19 @@ export const AdvancedLookUpControl: React.FC<IAdvancedLookUpProps> = (props) => 
         setSelectedName(resolveDisplayName(record, name, labelColumnNames));
         setSelectedTooltip(readTooltipValue(record, tooltipColumnNames));
 
-        const hasImageCandidate = iconCandidates.some((c) => c.kind === "image");
-        if (!hasImageCandidate) {
+        const needsAsyncIconResolution = iconCandidates.some((c) => c.kind === "image" || c.lookupFieldLogicalName);
+        if (!needsAsyncIconResolution) {
           const { iconValue, thumbnailUrl } = resolveIconValueSync(iconCandidates, record);
           setSelectedIconValue(iconValue);
           setSelectedThumbnailUrl(thumbnailUrl);
         } else {
-          const { iconValue, thumbnailUrl } = await resolveIconForRecord(iconCandidates, record, entityMeta.entitySetName, currentLookupId);
+          const { iconValue, thumbnailUrl } = await resolveIconForRecord(
+            iconCandidates,
+            record,
+            entityMeta.entitySetName,
+            currentLookupId,
+            dotNotationIconCacheRef.current
+          );
           if (cancelled) return;
           setSelectedIconValue(iconValue);
           setSelectedThumbnailUrl(thumbnailUrl);
@@ -1004,6 +1422,7 @@ export const AdvancedLookUpControl: React.FC<IAdvancedLookUpProps> = (props) => 
   // over `value` in _notifyPendingValueChanged - so `value` would never arrive.
   const handlePendingValueChanged = React.useCallback(
     (_option?: IComboBoxOption, _index?: number, value?: string) => {
+      if (isDisabled) return;
       if (value === undefined) return;
       setSearchText(value);
       // A fresh query means a fresh result list, so the top match is pre-highlighted again even
@@ -1021,7 +1440,7 @@ export const AdvancedLookUpControl: React.FC<IAdvancedLookUpProps> = (props) => 
       if (debounceRef.current) window.clearTimeout(debounceRef.current);
       debounceRef.current = window.setTimeout(() => runSearch(value), 300);
     },
-    [runSearch, isTestMode]
+    [isDisabled, runSearch, isTestMode]
   );
 
   const handleMenuOpen = React.useCallback(() => {
@@ -1037,12 +1456,24 @@ export const AdvancedLookUpControl: React.FC<IAdvancedLookUpProps> = (props) => 
   // A plain click into the field doesn't open the panel on its own either (only the caret button
   // does, by design) - forcing it open here gives the same "click in, see a default list, keep
   // typing to narrow it" feel as the native lookup control.
+  //
+  // isDisabled MUST be checked here, same as handlePillClick already does - this is an imperative
+  // ComboBox.focus(true) call, not a real DOM focus event, so it bypasses Fluent's own `disabled`
+  // prop entirely (that prop only stops the *user* from focusing/typing into the input; it has no
+  // effect on a component ref's own focus() method being called from our own code). Without this
+  // guard, a read-only field still opened its results callout and accepted a selection - the field
+  // rendered visually disabled but was fully interactive. See commitOption/handleClear/
+  // handlePendingValueChanged below for the matching defense-in-depth guards on the other paths
+  // that could still commit a change if the menu were ever open some other way (e.g. mid-session
+  // isDisabled flip while already editing).
   const handleFieldClick = React.useCallback(() => {
+    if (isDisabled) return;
     comboBoxRef.current?.focus(true);
-  }, []);
+  }, [isDisabled]);
 
   const commitOption = React.useCallback(
     (option: IComboBoxOption) => {
+      if (isDisabled) return;
       const keyStr = String(option.key);
       const separatorIndex = keyStr.lastIndexOf('::');
       const id = separatorIndex !== -1 ? keyStr.slice(separatorIndex + 2) : keyStr;
@@ -1064,11 +1495,12 @@ export const AdvancedLookUpControl: React.FC<IAdvancedLookUpProps> = (props) => 
       // result in the native lookup's own search callout does.
       setIsEditing(false);
     },
-    [recordDataById, thumbnailUrls, onSelect, isTestMode, targetEntityLogicalName]
+    [isDisabled, recordDataById, thumbnailUrls, onSelect, isTestMode, targetEntityLogicalName]
   );
 
   const handleChange = React.useCallback(
     (_event: React.FormEvent<IComboBox>, option?: IComboBoxOption, _index?: number, value?: string) => {
+      if (isDisabled) return;
       if (option) {
         commitOption(option);
         return;
@@ -1095,11 +1527,15 @@ export const AdvancedLookUpControl: React.FC<IAdvancedLookUpProps> = (props) => 
         runSearch("");
       }
     },
-    [commitOption, onSelect, runSearch]
+    [isDisabled, commitOption, onSelect, runSearch]
   );
 
   const handleClear = React.useCallback(
     (e: React.MouseEvent) => {
+      // Defense-in-depth, matching commitOption/handleChange above - the clear "x" is already not
+      // rendered when disabled (see hasClear), but guard the handler itself too rather than relying
+      // solely on the render gate.
+      if (isDisabled) return;
       e.stopPropagation();
       e.preventDefault();
       setSelectedId(undefined);
@@ -1113,7 +1549,7 @@ export const AdvancedLookUpControl: React.FC<IAdvancedLookUpProps> = (props) => 
       // after clicking the "x" still shows results filtered by whatever was last typed.
       runSearch("");
     },
-    [onSelect, runSearch]
+    [isDisabled, onSelect, runSearch]
   );
 
   // Opens the selected record's own form, same as clicking the native lookup's link-styled value.
@@ -1161,8 +1597,76 @@ export const AdvancedLookUpControl: React.FC<IAdvancedLookUpProps> = (props) => 
   // again as the previous selection, instead of leaving the ComboBox's own text-reverts-to-`text`
   // behavior as the only visible cue.
   const handleComboBoxBlur = React.useCallback(() => {
+    // Cancels any pending debounced search (handlePendingValueChanged) before resetting below -
+    // otherwise a debounce timer still live from the last keystroke could fire AFTER this reset
+    // dispatches its own runSearch(""), and since a request's requestId is assigned at DISPATCH
+    // time (not resolution time), the debounce firing later would carry a HIGHER requestId - making
+    // its stale, abandoned-query response the one that wins once both resolve, silently
+    // overwriting the correct empty-query reset.
+    if (debounceRef.current) {
+      window.clearTimeout(debounceRef.current);
+      debounceRef.current = undefined;
+    }
     if (selectedId !== undefined) setIsEditing(false);
-  }, [selectedId]);
+    // Abandoned edit (typed a search, then clicked/tabbed away without picking a result) -
+    // regardless of whether a selection already existed before the edit. Both cases need this
+    // reset: handleChange's own empty-value clear branch only fires when Fluent calls onChange
+    // with an empty pending value, which does NOT happen here (the pending value is the abandoned
+    // NON-empty query text). Left alone, reopening the field later doesn't self-correct either -
+    // handleMenuOpen only ever runs a fresh empty search the FIRST time ever (hasSearchedOnceRef),
+    // so it would just re-show the same stale narrowed options from the abandoned query. Mirrors
+    // the explicit runSearch("") reset handleChange's/handleClear's own clear branches already do
+    // for the analogous "actually cleared" cases.
+    if (searchText) {
+      setSearchText("");
+      runSearch("");
+    }
+  }, [selectedId, searchText, runSearch]);
+
+  // Confirmed via live testing on a real Dataverse form (not assumed): React's own synthetic
+  // `onBlur` on fieldContent's wrapper div (above) does not reliably fire there when the user
+  // clicks away - Fluent's own internal blur handling on the <input> still visibly runs (the text
+  // reverts, as always), but handleComboBoxBlur itself was not being invoked, so its reset never
+  // ran. This control shares its React instance/tree with the whole model-driven app shell (see
+  // the file-level Layer/Customizations notes above), and something in that much larger host tree
+  // most likely intercepts or stops the synthetic focusout bubble before it reaches this
+  // component's own handler - the exact ancestor/mechanism wasn't tracked down further, since the
+  // fix below sidesteps it entirely rather than depending on it.
+  //
+  // Fix: a native, capture-phase `document` `mousedown` listener, entirely outside React's own
+  // synthetic event system - immune to whatever is interfering with synthetic bubbling, since it
+  // listens directly on the real DOM via addEventListener, not through React's delegated dispatch.
+  // Capture phase (the `true` third argument) specifically so this sees every mousedown before any
+  // other handler anywhere in the tree gets a chance to call stopPropagation on it.
+  //
+  // "Outside" has to account for BOTH real DOM subtrees this control owns: rootRef.current (the
+  // wrapper itself) AND the dedicated Layer host (`#lops-alu-layerhost-N`, appended straight to
+  // document.body - see nextLayerHostId's own comment) that the results callout actually renders
+  // into. Only checking rootRef would incorrectly treat clicking a SEARCH RESULT as "clicking
+  // away", since the callout's DOM lives outside rootRef's own subtree entirely (that's the whole
+  // point of the dedicated host - escaping ordinary DOM/overflow ancestry) even though it's
+  // logically part of this control. Reuses handleComboBoxBlur's own reset logic verbatim (calling
+  // it directly) rather than duplicating it - this is an ADDITIONAL trigger for the exact same
+  // reset, not a different behavior; the original onBlur prop is deliberately left in place too
+  // (cheap, harmless insurance if it turns out to fire in some OTHER hosting context this control
+  // also runs in, e.g. a Quick Create dialog or a different form type not yet tested).
+  React.useEffect(() => {
+    function handleDocumentMouseDown(e: MouseEvent) {
+      // Nothing to do while the pill (not the editable ComboBox) is showing - rootRef is only
+      // attached to fieldContent's own wrapper, so a null ref here means fieldContent isn't even
+      // mounted right now.
+      if (!rootRef.current) return;
+      const target = e.target as Node | null;
+      if (!target) return;
+      const insideRoot = rootRef.current.contains(target);
+      const layerHost = layerHostIdRef.current ? document.getElementById(layerHostIdRef.current) : null;
+      const insideCallout = layerHost?.contains(target) ?? false;
+      if (insideRoot || insideCallout) return;
+      handleComboBoxBlur();
+    }
+    document.addEventListener("mousedown", handleDocumentMouseDown, true);
+    return () => document.removeEventListener("mousedown", handleDocumentMouseDown, true);
+  }, [handleComboBoxBlur]);
 
   // "Top match is pre-highlighted, Enter takes it" affordance.
   //
@@ -1405,6 +1909,7 @@ export const AdvancedLookUpControl: React.FC<IAdvancedLookUpProps> = (props) => 
 
   const fieldContent = (
     <div
+      ref={rootRef}
       className="lops-alu-root"
       style={{ minHeight: rootMinHeight }}
       onClick={handleFieldClick}
@@ -1483,16 +1988,17 @@ export const AdvancedLookUpControl: React.FC<IAdvancedLookUpProps> = (props) => 
       activeContent
     );
 
-  // Non-blocking - see metadataDiagnostic's own comment above for why this stays separate from
-  // the hard-block configErrors panel. Only ever visible when knownColumnNames genuinely failed to
-  // resolve (not just "hasn't resolved yet"), so a maker (or, when this is being screenshotted back
-  // to me, whoever's debugging it) sees the real reason directly instead of a validator that just
-  // quietly never reports anything.
-  if (metadataDiagnostic) {
+  // Non-blocking - see metadataDiagnostic's/searchDiagnostic's own comments above for why both
+  // stay separate from the hard-block configErrors panel. Only ever visible when something
+  // genuinely failed (not just "hasn't resolved yet" / "found zero matches"), so a maker (or,
+  // when this is being screenshotted back to me, whoever's debugging it) sees the real reason
+  // directly instead of a results panel that just quietly, unexplainably disappears.
+  if (metadataDiagnostic || searchDiagnostic) {
     return (
       <div>
         {field}
-        <div className="lops-alu-metadata-diagnostic">Advanced LookUp: {metadataDiagnostic}</div>
+        {metadataDiagnostic && <div className="lops-alu-metadata-diagnostic">Advanced LookUp: {metadataDiagnostic}</div>}
+        {searchDiagnostic && <div className="lops-alu-metadata-diagnostic">Advanced LookUp: {searchDiagnostic}</div>}
       </div>
     );
   }
