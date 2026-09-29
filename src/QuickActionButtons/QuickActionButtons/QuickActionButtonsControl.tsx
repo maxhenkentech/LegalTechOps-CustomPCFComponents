@@ -310,7 +310,7 @@ export const QuickActionButtonsControl = ({ buttons, isDisabled, config, formAva
             backgroundColor: '#FDE7E9',
             color: '#A4262C',
             fontSize: '13px',
-            fontFamily: "'Segoe UI', -apple-system, BlinkMacSystemFont, 'Roboto', 'Helvetica Neue', sans-serif"
+            fontFamily: "inherit" // the app theme font - see ThemeFont.tsx
           }}
         >
           <div style={{ fontWeight: 600, marginBottom: '6px' }}>Quick Action Buttons: configuration error</div>
@@ -412,7 +412,7 @@ export const QuickActionButtonsControl = ({ buttons, isDisabled, config, formAva
                 cursor: controlsDisabled ? 'default' : 'pointer',
                 opacity: controlsDisabled ? 0.6 : 1,
                 transition: 'background-color 0.15s ease-in-out, border-color 0.15s ease-in-out',
-                fontFamily: "'Segoe UI', 'Segoe UI Web (West European)', -apple-system, BlinkMacSystemFont, 'Roboto', 'Helvetica Neue', sans-serif"
+                fontFamily: "inherit" // the app theme font - see ThemeFont.tsx
               }}
             >
               {iconValidation.isValid && (() => {

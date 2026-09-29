@@ -22,6 +22,7 @@ A field control that renders Markdown as formatted, visually polished help text 
 - **Scales With Form Text Size**: every element is sized in `em` relative to the control's own inherited font size, so it automatically matches whatever text size the form (or an individual field's text-size setting) applies - no manual scale property to tune
 - **Safe by Default**: raw HTML embedded in the Markdown source is sanitized against an allowlist before rendering - only `<span style="color:...">`/`<span style="background-color:...">` (for [Font Coloring](#font-coloring)) survive; every other tag, attribute, and event handler (`<script>`, `onerror`, `onclick`, `url()`/`expression()` smuggled through `style`, etc.) is stripped, so there is no way to inject markup or scripts through help text sourced from an editable column
 - **Read-Only**: a pure display control, like a styled label - edit the Markdown through the normal Dataverse column editor or the static design-time property, not through the control itself
+- **Follows your app theme font**: uses the font of the app's modern [custom theme](https://learn.microsoft.com/power-apps/maker/model-driven-apps/modern-theme-overrides) (the `font` of its Custom theme definition), falling back to Segoe UI when no custom theme is set or the font can't be displayed
 
 ## Example
 

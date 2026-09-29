@@ -1,9 +1,12 @@
 import { IInputs, IOutputs } from "./generated/ManifestTypes";
-import { IDropdownOption } from "@fluentui/react/lib/Dropdown";
+import { ThemeFontScope, buildFontStack, readThemeFont } from "./ThemeFont";
 import * as React from 'react';
-import * as ReactDOM from 'react-dom';
-import { AdvancedOptionsControl, IConfig, ISetupSchema } from "./AdvancedOptionsControl";
+import { AdvancedOptionsControl, IConfig, ISetupSchema, setWebResourceUrlOverrides } from "./AdvancedOptionsControl";
+import { TEST_MODE_OPTIONS, TEST_MODE_WEB_RESOURCES } from "./TestModeData";
+
 import { initializeIcons } from '@fluentui/react/lib/Icons';
+
+const CONTROL_VERSION = "3.8.0";
 
 // Initialize icons for both test harness and production
 const initializeIconsForEnvironment = () => {
@@ -35,144 +38,81 @@ initializeIconsForEnvironment();
 
 
 
-const DEFAULT_OPTIONS: ComponentFramework.PropertyHelper.OptionMetadata[] = [{
-	Value: 1,
-	Label: "Accounting",
-	Color: "#ff0000"
-},
-{
-	Value: 2,
-	Label: "Development, this is a pretty long line",
-	Color: "#00ff00"
-},
-{
-	Value: 3,
-	Label: "Management, and this is an even longer line",
-	Color: "#e4ff18ff"
-},
-{
-	Value: 4,
-	Label: "Option 4",
-	Color: "#00ffee"
-},
-{
-	Value: 5,
-	Label: "Option 5",
-	Color: "#2a005bff"
-}
-];
-
-// Enhanced test options with colors and descriptions for testing
-const TEST_MODE_OPTIONS = [{
-	Value: 125980999,
-	Label: "0 - No Impact",
-	Color: "#9bff82",
-	Description: "This option represents no business impact"
-} as ComponentFramework.PropertyHelper.OptionMetadata & { Description: string },
-{
-	Value: 125980001,
-	Label: "2 - Low to Medium",
-	Color: "#ffe100",
-	Description: "Low to medium business impact with some operational effects"
-} as ComponentFramework.PropertyHelper.OptionMetadata & { Description: string },
-{
-	Value: 125980002,
-	Label: "3 - High",
-	Color: "#ff9100",
-	Description: "High business impact affecting multiple departments",
-	ExternalValue: "Warning"
-} as ComponentFramework.PropertyHelper.OptionMetadata & { Description: string, ExternalValue: string },
-{
-	Value: 125980003,
-	Label: "4 - Very High",
-	Color: "#ff1414",
-	Description: "Critical business impact requiring immediate attention",
-	ExternalValue: "WarningSolid"
-} as ComponentFramework.PropertyHelper.OptionMetadata & { Description: string, ExternalValue: string },
-{
-	Value: 125980000,
-	Label: "1 - Undetermined yet (Hidden)",
-	Color: "#dbdbdb",
-	Description: "This option should be hidden in normal mode",
-	IsHidden: true
-} as ComponentFramework.PropertyHelper.OptionMetadata & { Description: string, IsHidden: boolean }
-];
-
-
-
 export class AdvancedDropDown implements ComponentFramework.ReactControl<IInputs, IOutputs> {
 
-	private allOptions: ComponentFramework.PropertyHelper.OptionMetadata[];
-	private dropdownOptions: IDropdownOption[];
 	private defaultValue: number | undefined;
-	private isDisabled: boolean;
-
-	private container: HTMLDivElement;
 	private currentValue: number | null;
 	private notifyOutputChanged: () => void;
-
-	private config: IConfig | undefined;
-
 
 	constructor() {
 		// Constructor intentionally empty
 	}
 
 	private isTestMode(): boolean {
-		// Detect if running in test/development mode
-		// This can be detected by checking if we're in a test harness environment
-		// or if the options are the default test data from the test harness
 		const hostname = typeof window !== 'undefined' ? window.location?.hostname : '';
 		const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1' || hostname.includes('localhost');
-
-		// Also check for typical test harness indicators
 		const isTestHarness = typeof window !== 'undefined' &&
 			(window.location?.port === '8181' || // Default PCF test harness port
 				window.location?.href?.includes('_pkg/') || // Test harness URL pattern
 				document.title?.includes('Test harness')); // Test harness title
-
 		return isLocalhost || isTestHarness;
 	}
 
-
-	private parseIconConfig(defaultIcon: string, iconConfig?: string, sortBy?: "Text" | "Value", hideHiddenOptions?: boolean, showColorIcon?: boolean, showColorBorder?: boolean, showColorBackground?: "No" | "Lighter" | "Full", makeFontBold?: boolean, componentHeight?: "Tall" | "Short", iconColorOverride?: string, useExternalValueForIcon?: boolean, placeholderText?: string): IConfig {
-		const isJSON = iconConfig && iconConfig.includes("{");
-
-		// Normalize hex color (ensure it starts with #)
-		let normalizedIconColor: string | undefined;
-		if (iconColorOverride) {
-			normalizedIconColor = iconColorOverride.startsWith('#') ? iconColorOverride : `#${iconColorOverride}`;
-		}
-
-		this.config = {
-			jsonConfig: isJSON === true ? JSON.parse(iconConfig as string) as ISetupSchema : undefined,
-			defaultIconName: (!isJSON ? iconConfig : defaultIcon) ?? defaultIcon,
-			sortBy: sortBy ?? "Value",
-			hideHiddenOptions: hideHiddenOptions ?? true,
-			showColorIcon: showColorIcon ?? false,
-			showColorBorder: showColorBorder ?? false,
-			showColorBackground: showColorBackground ?? "No",
-			makeFontBold: makeFontBold ?? false,
-			componentHeight: componentHeight ?? "Tall",
-			iconColorOverride: normalizedIconColor,
-			useExternalValueForIcon: useExternalValueForIcon ?? false,
-			placeholderText: placeholderText || "---"
-		}
-		return this.config;
+	// Read-only whenever the form says so (field set Read Only, inactive record, business rule or
+	// script - all surface as isControlDisabled) OR column-level security denies update on this
+	// column, which PCF reports separately via security.editable. In the harness, ?readonly in the
+	// URL forces it on, since the harness has no disabled toggle.
+	private isReadOnly(context: ComponentFramework.Context<IInputs>, testMode: boolean): boolean {
+		if (context.mode.isControlDisabled) return true;
+		if (context.parameters.optionsInput.security?.editable === false) return true;
+		if (testMode && typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('readonly')) return true;
+		return false;
 	}
 
-	/**
-	 * Used to initialize the control instance. Controls can kick off remote server calls and other initialization actions here.
-	 * Data-set values are not initialized here, use updateView.
-	 * @param context The entire property bag available to control via Context Object; It contains values as set up by the customizer mapped to property names defined in the manifest, as well as utility functions.
-	 * @param notifyOutputChanged A callback method to alert the framework that the control has new outputs ready to be retrieved asynchronously.
-	 * @param state A piece of data that persists in one session for a single user. Can be set at any point in a controls life cycle by calling 'setControlState' in the Mode interface.
-	 * @param container If a control is marked control-type='standard', it will receive an empty div element within which it can render its content.
-	 */
-	public init(context: ComponentFramework.Context<IInputs>, notifyOutputChanged: () => void, state: ComponentFramework.Dictionary, container: HTMLDivElement) {
-		console.log("🚀 AdvancedDropDown: Version 3.5.0.0 Loaded");
+	// Every fallback here matches the manifest default-value. Every property name and meaning is
+	// unchanged from earlier versions (backward compatible); v3.8.0 only added selectionShape,
+	// selectionColor, hoverColor and listSelectedColor.
+	private parseConfig(p: IInputs): IConfig {
+		const normalizeHex = (value: string | null | undefined): string | undefined => {
+			if (!value || value.trim() === "") return undefined;
+			const trimmed = value.trim();
+			return trimmed.startsWith('#') ? trimmed : `#${trimmed}`;
+		};
+		// The Form Editor preview has been observed handing TwoOptions back as the string "false"
+		// (ModernChoiceButtons v1.8.x), which `??` would treat as truthy.
+		const toBool = (value: boolean | string | null | undefined, fallback: boolean): boolean => {
+			if (value === undefined || value === null) return fallback;
+			if (typeof value === 'string') return value.trim().toLowerCase() === 'true';
+			return value;
+		};
 
-		// Ensure icons are initialized in Power Platform environment
+		const iconConfig = p.icon?.raw ?? undefined;
+		const isJSON = !!iconConfig && iconConfig.includes("{");
+		const defaultIcon = "FullCircleMask";
+
+		return {
+			jsonConfig: isJSON ? JSON.parse(iconConfig as string) as ISetupSchema : undefined,
+			defaultIconName: (!isJSON ? iconConfig : defaultIcon) ?? defaultIcon,
+			sortBy: p.sortBy?.raw ?? "Value",
+			hideHiddenOptions: toBool(p.hideHiddenOptions?.raw, true),
+			showColorIcon: toBool(p.showColorIcon?.raw, true),
+			showColorBorder: toBool(p.showColorBorder?.raw, false),
+			showColorBackground: p.showColorBackground?.raw ?? "No",
+			makeFontBold: toBool(p.makeFontBold?.raw, false),
+			componentHeight: p.componentHeight?.raw ?? "Short",
+			iconColorOverride: normalizeHex(p.iconColorOverride?.raw),
+			useExternalValueForIcon: toBool(p.useExternalValueForIcon?.raw, false),
+			placeholderText: p.placeholderText?.raw || "---",
+			selectionShape: p.selectionShape?.raw ?? "Rounded",
+			selectionColor: normalizeHex(p.selectionColor?.raw) ?? "#EDF3FB",
+			hoverColor: normalizeHex(p.hoverColor?.raw) ?? "#F3F2F1",
+			listSelectedColor: normalizeHex(p.listSelectedColor?.raw) ?? "#EDF3FB"
+		};
+	}
+
+	public init(context: ComponentFramework.Context<IInputs>, notifyOutputChanged: () => void): void {
+		console.log(`🚀 AdvancedDropDown: Version ${CONTROL_VERSION} Loaded`);
+
 		try {
 			initializeIconsForEnvironment();
 		} catch (error) {
@@ -180,10 +120,7 @@ export class AdvancedDropDown implements ComponentFramework.ReactControl<IInputs
 		}
 
 		this.defaultValue = context.parameters.optionsInput.attributes?.DefaultValue;
-
-		this.container = container;
 		this.notifyOutputChanged = notifyOutputChanged;
-
 	}
 
 	private onChange = (newValue: number | null) => {
@@ -191,97 +128,56 @@ export class AdvancedDropDown implements ComponentFramework.ReactControl<IInputs
 		this.notifyOutputChanged();
 	};
 
-	private renderControl(context: ComponentFramework.Context<IInputs>): React.ReactElement {
-		this.isDisabled = context.mode.isControlDisabled;
-		this.currentValue = context.parameters.optionsInput.raw;
+	// The app's custom theme font (model-driven modern theme `font`), falling back to the previous
+	// Segoe UI stack - see ThemeFont.tsx. display:contents: the font inherits through the wrapper
+	// without it creating a box, so layout is unchanged.
+	private withThemeFont(context: ComponentFramework.Context<IInputs>, element: React.ReactElement): React.ReactElement {
+		const fontFamily = buildFontStack(readThemeFont(context, this.isTestMode()));
+		return React.createElement(ThemeFontScope, { fontFamily },
+			React.createElement("div", { className: "lops-theme-font", style: { fontFamily, display: "contents" } }, element));
+	}
 
-		// Get configuration options
-		const hideHiddenOptions = context.parameters.hideHiddenOptions?.raw ?? true;
-		const showColorIcon = context.parameters.showColorIcon?.raw ?? false;
-		const componentHeight = context.parameters.componentHeight?.raw ?? "Tall";
-		const iconColorOverride = context.parameters.iconColorOverride?.raw || undefined;
-		const showColorBorder = context.parameters.showColorBorder?.raw ?? false;
-		const showColorBackground = context.parameters.showColorBackground?.raw ?? "No";
-		const makeFontBold = context.parameters.makeFontBold?.raw ?? false;
-		const useExternalValueForIcon = context.parameters.useExternalValueForIcon?.raw ?? false;
-		const placeholderText = context.parameters.placeholderText?.raw || "---";
-
-		// Determine which options to use - test mode or actual data
-		let sourceOptions: ComponentFramework.PropertyHelper.OptionMetadata[];
+	public updateView(context: ComponentFramework.Context<IInputs>): React.ReactElement {
 		const testMode = this.isTestMode();
+		const raw: unknown = context.parameters.optionsInput.raw;
+		// The harness can hand the bound property a non-number placeholder; only trust integers.
+		this.currentValue = typeof raw === 'number' && Number.isInteger(raw) ? raw : null;
 
+		const config = this.parseConfig(context.parameters);
+
+		let sourceOptions: ComponentFramework.PropertyHelper.OptionMetadata[];
 		if (testMode) {
-			sourceOptions = TEST_MODE_OPTIONS as ComponentFramework.PropertyHelper.OptionMetadata[];
+			sourceOptions = TEST_MODE_OPTIONS;
+			setWebResourceUrlOverrides(TEST_MODE_WEB_RESOURCES);
 		} else {
 			sourceOptions = context.parameters.optionsInput.attributes?.Options || [];
 		}
 
-		// Filter options based on hideHiddenOptions setting
-		let filteredOptions = sourceOptions;
-		if (hideHiddenOptions) {
-			filteredOptions = filteredOptions.filter(opt => {
-				const optAny = opt as unknown as Record<string, unknown>;
-				return optAny.IsHidden !== true;
-			});
-		}
+		const filteredOptions = config.hideHiddenOptions
+			? sourceOptions.filter(opt => (opt as unknown as Record<string, unknown>).IsHidden !== true)
+			: sourceOptions;
 
-		// Get the color of the currently selected option for border styling
-		const selectedOption = filteredOptions.find(opt => opt.Value === this.currentValue);
-		const selectedColor = selectedOption?.Color;
-
-		const params = {
+		return this.withThemeFont(context, React.createElement(AdvancedOptionsControl, {
 			rawOptions: filteredOptions,
 			selectedKey: this.currentValue,
 			onChange: this.onChange,
-			isDisabled: this.isDisabled,
+			isDisabled: this.isReadOnly(context, testMode),
 			defaultValue: this.defaultValue,
-			config: this.parseIconConfig( // Always regenerate config for real-time updates
-				"FullCircleMask",
-				context.parameters.icon?.raw ?? undefined,
-				context.parameters.sortBy.raw,
-				hideHiddenOptions,
-				showColorIcon,
-				showColorBorder,
-				showColorBackground,
-				makeFontBold,
-				componentHeight,
-				iconColorOverride,
-				useExternalValueForIcon,
-				placeholderText
-			),
-			selectedColor: selectedColor,
+			config,
 			contextUtils: context.utils,
 			contextParameters: context.parameters,
-			contextMode: context.mode
-		};
-		return React.createElement(AdvancedOptionsControl, params);
-
+			contextMode: context.mode,
+			fontFamily: buildFontStack(readThemeFont(context, testMode))
+		}));
 	}
 
-
-	/**
-	 * Called when any value in the property bag has changed. This includes field values, data-sets, global values such as container height and width, offline status, control metadata values such as label, visible, etc.
-	 * @param context The entire property bag available to control via Context Object; It contains values as set up by the customizer mapped to names defined in the manifest, as well as utility functions
-	 */
-	public updateView(context: ComponentFramework.Context<IInputs>): React.ReactElement {
-		return this.renderControl(context);
-	}
-
-	/** 
-	 * It is called by the framework prior to a control receiving new data. 
-	 * @returns an object based on nomenclature defined in manifest, expecting object[s] for property marked as "bound" or "output"
-	 */
 	public getOutputs(): IOutputs {
 		return {
 			optionsInput: this.currentValue == null ? undefined : this.currentValue
 		};
 	}
 
-	/** 
-	 * Called when the control is to be removed from the DOM tree. Controls should use this call for cleanup.
-	 * i.e. cancelling any pending remote calls, removing listeners, etc.
-	 */
 	public destroy(): void {
-		// Cleanup code would go here if needed
+		// Nothing to clean up - React unmounting is handled by the framework for virtual controls
 	}
 }

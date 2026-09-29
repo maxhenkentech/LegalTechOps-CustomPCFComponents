@@ -1,0 +1,562 @@
+/* Family geometry (main CLAUDE.md "Component family conventions"): field #f5f5f5 / hover #ececec /
+   focus #ffffff + 1px #a9a9a9, Short 34px / Tall 40px overall, chip 26px inset 4px (3px padding +
+   the 1px transparent border). Every color that depends on config is inline. */
+.lops-ayn-root {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  /* Never wider than the form column, even with Fixed widths that don't fit (they shrink). */
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  min-height: 34px;
+  color: #323130;
+  font-size: 14px;
+  /* font-family is inline: the app's custom theme font, then Segoe UI (ThemeFont.tsx). */
+  -webkit-font-smoothing: antialiased;
+}
+
+.lops-ayn-root.is-tall {
+  min-height: 40px;
+}
+
+.lops-ayn-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+  line-height: 20px;
+}
+
+.lops-ayn-empty {
+  color: #a19f9d;
+}
+
+.lops-ayn-icon {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+/* Icon + label pair; flex-direction (icon side) is inline. 5px gap = the family chip icon gap. */
+.lops-ayn-iconlabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.lops-ayn-iconlabel.is-column {
+  gap: 2px;
+}
+
+/* ---- Checkbox / Toggle / Icon: control + label, the whole row clickable ---------------------- */
+
+.lops-ayn-switchrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 100%;
+  min-width: 0;
+  padding: 2px 0;
+  cursor: pointer;
+  user-select: none;
+  outline: none;
+  border-radius: 4px;
+}
+
+.lops-ayn-switchrow.is-label-left {
+  flex-direction: row-reverse;
+}
+
+.lops-ayn-switchrow.is-disabled {
+  cursor: default;
+}
+
+.lops-ayn-switchrow:focus-visible,
+.lops-ayn-button:focus-visible,
+.lops-ayn-segment:focus-visible {
+  outline: 1px solid #605e5c;
+  outline-offset: 2px;
+}
+
+/* Same box as AdvancedMultiChoice's list checkbox (.lops-amc-checkbox). */
+.lops-ayn-checkbox {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  width: 16px;
+  height: 16px;
+  border: 1px solid #605e5c;
+  background-color: #ffffff;
+  font-size: 11px;
+  transition: background-color 0.1s ease-in-out, border-color 0.1s ease-in-out;
+}
+
+.lops-ayn-switchrow:not(.is-disabled):hover .lops-ayn-checkbox {
+  border-color: #323130;
+}
+
+/* Fluent v9 Switch geometry: 40x20 track, 14px thumb. */
+.lops-ayn-toggle {
+  position: relative;
+  flex-shrink: 0;
+  box-sizing: border-box;
+  width: 40px;
+  height: 20px;
+  border: 1px solid #605e5c;
+  border-radius: 999px;
+  background-color: #ffffff;
+  transition: background-color 0.15s ease-in-out, border-color 0.15s ease-in-out;
+}
+
+.lops-ayn-thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background-color: #605e5c;
+  transition: left 0.15s ease-in-out, background-color 0.15s ease-in-out;
+}
+
+.lops-ayn-toggle.is-on .lops-ayn-thumb {
+  left: 22px;
+  background-color: #ffffff;
+}
+
+.lops-ayn-switchrow:not(.is-disabled):hover .lops-ayn-toggle:not(.is-on) {
+  border-color: #323130;
+}
+
+.lops-ayn-switchrow:not(.is-disabled):hover .lops-ayn-toggle:not(.is-on) .lops-ayn-thumb {
+  background-color: #323130;
+}
+
+.lops-ayn-switchrow:not(.is-disabled):hover .lops-ayn-toggle.is-on,
+.lops-ayn-switchrow:not(.is-disabled):hover .lops-ayn-checkbox.is-checked {
+  filter: brightness(0.92);
+}
+
+/* 3px hover padding around the 20px (Tall 24px) glyph + a 3px row gap = 6px glyph-to-label,
+   the family icon gap. Was 30px box + 8px gap = 13px (user: "too wide"). */
+.lops-ayn-iconbutton {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  transition: background-color 0.15s ease-in-out;
+}
+
+.lops-ayn-root.is-tall .lops-ayn-iconbutton {
+  width: 30px;
+  height: 30px;
+}
+
+.lops-ayn-root.is-icon .lops-ayn-switchrow {
+  gap: 3px;
+}
+
+.lops-ayn-switchrow:not(.is-disabled):hover .lops-ayn-iconbutton {
+  background-color: #f5f5f5;
+}
+
+/* ---- Buttons: two separate field-height buttons --------------------------------------------- */
+
+.lops-ayn-buttons {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+}
+
+.lops-ayn-button {
+  flex: 1 1 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  min-width: 0;
+  min-height: 34px;
+  padding: 0 12px;
+  background-color: #f5f5f5;
+  border: 1px solid transparent;
+  cursor: pointer;
+  user-select: none;
+  outline: none;
+  transition: background-color 0.15s ease-in-out, border-color 0.15s ease-in-out;
+}
+
+.lops-ayn-buttons.is-tall .lops-ayn-button {
+  min-height: 40px;
+}
+
+.lops-ayn-button.is-column {
+  padding: 6px 12px;
+}
+
+.lops-ayn-buttons.is-icon-only {
+  width: auto;
+}
+
+.lops-ayn-buttons.is-icon-only .lops-ayn-button {
+  flex: 0 0 auto;
+  min-width: 48px;
+}
+
+.lops-ayn-buttons:not(.is-disabled) .lops-ayn-button:not(.is-selected):hover {
+  background-color: #ececec;
+}
+
+.lops-ayn-buttons.is-disabled .lops-ayn-button {
+  cursor: default;
+}
+
+/* ---- Segmented: both options in one family field, a sliding chip under the selected one ---- */
+
+.lops-ayn-segmented {
+  position: relative;
+  display: flex;
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  padding: 3px;
+  background-color: #f5f5f5;
+  border: 1px solid transparent;
+  transition: background-color 0.15s ease-in-out, border-color 0.15s ease-in-out;
+}
+
+.lops-ayn-segmented.is-icon-only {
+  width: auto;
+}
+
+.lops-ayn-segmented:not(.is-disabled):hover {
+  background-color: #ececec;
+}
+
+.lops-ayn-segmented:not(.is-disabled):focus-within {
+  background-color: #ffffff;
+  border-color: #a9a9a9;
+}
+
+/* Positioned inside the padding box: 3px + the 1px border = the family 4px inset. */
+.lops-ayn-segment-thumb {
+  position: absolute;
+  top: 3px;
+  bottom: 3px;
+  left: 3px;
+  width: calc(50% - 3px);
+  box-sizing: border-box;
+  border: 1px solid transparent;
+  transition: transform 0.18s ease-in-out, background-color 0.18s ease-in-out, border-color 0.18s ease-in-out;
+}
+
+.lops-ayn-segment {
+  position: relative;
+  z-index: 1;
+  flex: 1 1 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  min-width: 0;
+  height: 26px;
+  padding: 0 10px;
+  cursor: pointer;
+  user-select: none;
+  outline: none;
+}
+
+.lops-ayn-segmented.is-tall .lops-ayn-segment {
+  height: 32px;
+}
+
+.lops-ayn-segmented.is-icon-only .lops-ayn-segment {
+  flex: 0 0 40px;
+  padding: 0;
+}
+
+.lops-ayn-segmented.is-disabled .lops-ayn-segment {
+  cursor: default;
+}
+
+/* ---- Status chip: AdvancedLookUp's chip inside the family field ------------------------------ */
+
+.lops-ayn-chipfield {
+  position: relative;
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  min-height: 34px;
+  padding: 3px 34px 3px 3px;
+  background-color: #f5f5f5;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  cursor: pointer;
+  user-select: none;
+  outline: none;
+  transition: background-color 0.15s ease-in-out, border-color 0.15s ease-in-out;
+}
+
+.lops-ayn-chipfield.is-tall {
+  min-height: 40px;
+}
+
+.lops-ayn-chipfield:hover {
+  background-color: #ececec;
+}
+
+.lops-ayn-chipfield:focus-visible,
+.lops-ayn-chipfield:focus {
+  background-color: #ffffff;
+  border-color: #a9a9a9;
+}
+
+.lops-ayn-chipfield.is-disabled,
+.lops-ayn-chipfield.is-disabled:hover,
+.lops-ayn-chipfield.is-disabled:focus {
+  background-color: #f5f5f5;
+  border-color: transparent;
+  cursor: default;
+  padding-right: 3px;
+}
+
+.lops-ayn-chipfield .lops-ayn-empty {
+  padding: 0 4px;
+}
+
+/* AdvancedLookUp's .lops-alu-pill-chip: 26px, padding 3px 8px (minus the 1px border). */
+.lops-ayn-chip {
+  display: inline-flex;
+  align-items: center;
+  box-sizing: border-box;
+  max-width: 100%;
+  min-width: 0;
+  height: 26px;
+  padding: 2px 7px;
+  border: 1px solid transparent;
+  transition: background-color 0.15s ease-in-out;
+}
+
+/* Where the family's chevron sits: 14px from the right, #605e5c. */
+.lops-ayn-chip-glyph {
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 12px;
+  color: #605e5c;
+  pointer-events: none;
+}
+
+/* ---- Width: Fixed ------------------------------------------------------------------------- */
+
+.lops-ayn-buttons.is-fixed,
+.lops-ayn-segmented.is-fixed {
+  width: auto;
+  max-width: 100%;
+}
+
+/* ---- Radio buttons ---------------------------------------------------------------------------- */
+
+.lops-ayn-radios {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  /* 12px between one option's label and the next circle (was 20px, user: "too great"). */
+  gap: 4px 12px;
+  min-width: 0;
+}
+
+.lops-ayn-radio {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  max-width: 100%;
+  padding: 2px 0;
+  border-radius: 4px;
+  cursor: pointer;
+  user-select: none;
+  outline: none;
+}
+
+.lops-ayn-radios.is-disabled .lops-ayn-radio {
+  cursor: default;
+}
+
+.lops-ayn-radio:focus-visible {
+  outline: 1px solid #605e5c;
+  outline-offset: 2px;
+}
+
+.lops-ayn-radio-circle {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  width: 16px;
+  height: 16px;
+  border: 1px solid #605e5c;
+  border-radius: 50%;
+  background-color: #ffffff;
+  transition: border-color 0.1s ease-in-out;
+}
+
+.lops-ayn-radios:not(.is-disabled) .lops-ayn-radio:not(.is-selected):hover .lops-ayn-radio-circle {
+  border-color: #323130;
+}
+
+.lops-ayn-radio-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+/* ---- Toggle button ---------------------------------------------------------------------------- */
+
+.lops-ayn-togglebutton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  max-width: 100%;
+  min-width: 0;
+  min-height: 34px;
+  padding: 0 12px;
+  background-color: #f5f5f5;
+  border: 1px solid transparent;
+  cursor: pointer;
+  user-select: none;
+  outline: none;
+  transition: background-color 0.15s ease-in-out, border-color 0.15s ease-in-out;
+}
+
+.lops-ayn-togglebutton.is-fill {
+  width: 100%;
+}
+
+.lops-ayn-togglebutton.is-tall {
+  min-height: 40px;
+}
+
+.lops-ayn-togglebutton.is-column {
+  padding: 6px 12px;
+}
+
+.lops-ayn-togglebutton:not(.is-disabled):not(.is-selected):hover {
+  background-color: #ececec;
+}
+
+.lops-ayn-togglebutton.is-disabled {
+  cursor: default;
+}
+
+.lops-ayn-togglebutton:focus-visible {
+  outline: 1px solid #605e5c;
+  outline-offset: 2px;
+}
+
+/* ---- Labeled switch: label inside the track, the icon inside the white thumb. Size tuned live with
+   the user: 58x24 "too wide" -> 46x20 "a bit too narrow" -> 51x20 "kinda small, increase in
+   height" -> 24px high (Tall 28px), 20px (24px) thumb, 12px text, 9px beside the label and 26px
+   (30px) on the thumb side. Never Fixed width. ---- */
+
+.lops-ayn-lswitch {
+  position: relative;
+  flex-shrink: 1;
+  display: inline-flex;
+  align-items: center;
+  box-sizing: border-box;
+  max-width: 100%;
+  min-width: 52px;
+  height: 24px;
+  padding: 0 9px 0 26px;
+  border: 1px solid #8a8886;
+  border-radius: 999px;
+  background-color: #f5f5f5;
+  transition: background-color 0.15s ease-in-out, border-color 0.15s ease-in-out, padding 0.15s ease-in-out;
+}
+
+.lops-ayn-lswitch.is-on {
+  padding: 0 26px 0 9px;
+}
+
+.lops-ayn-lswitch.is-tall {
+  height: 28px;
+  padding-left: 30px;
+}
+
+.lops-ayn-lswitch.is-tall.is-on {
+  padding-left: 9px;
+  padding-right: 30px;
+}
+
+.lops-ayn-lswitch.is-no-label {
+  width: 44px;
+  min-width: 44px;
+}
+
+.lops-ayn-lswitch.is-tall.is-no-label {
+  width: 52px;
+  min-width: 52px;
+}
+
+.lops-ayn-lswitch-text {
+  display: grid;
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 12px;
+}
+
+.lops-ayn-lswitch-text > .lops-ayn-label {
+  grid-area: 1 / 1;
+  line-height: 16px;
+}
+
+.lops-ayn-lswitch-thumb {
+  position: absolute;
+  top: 1px;
+  left: 1px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background-color: #ffffff;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.18);
+  transition: left 0.15s ease-in-out;
+}
+
+.lops-ayn-lswitch.is-tall .lops-ayn-lswitch-thumb {
+  width: 24px;
+  height: 24px;
+}
+
+.lops-ayn-lswitch.is-on .lops-ayn-lswitch-thumb {
+  left: calc(100% - 21px);
+}
+
+.lops-ayn-lswitch.is-tall.is-on .lops-ayn-lswitch-thumb {
+  left: calc(100% - 25px);
+}
+
+.lops-ayn-switchrow:not(.is-disabled):hover .lops-ayn-lswitch:not(.is-on) {
+  border-color: #323130;
+}
+
+.lops-ayn-switchrow:not(.is-disabled):hover .lops-ayn-lswitch.is-on {
+  filter: brightness(0.92);
+}

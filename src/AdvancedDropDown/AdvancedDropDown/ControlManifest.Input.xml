@@ -1,30 +1,38 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <manifest>
-  <control namespace="lops" constructor="AdvancedDropDown" version="3.7.7" display-name-key="lops.AdvancedDropDown" description-key="AdvancedDropDown description" control-type="virtual">
-    <property name="optionsInput" display-name-key="OptionSet" description-key="OptionSet" of-type="OptionSet" usage="bound" required="true" />  
+  <control namespace="lops" constructor="AdvancedDropDown" version="3.8.0" display-name-key="lops.AdvancedDropDown" description-key="AdvancedDropDown description" control-type="virtual">
+    <property name="optionsInput" display-name-key="OptionSet" description-key="OptionSet" of-type="OptionSet" usage="bound" required="true" />
+    <property name="hideHiddenOptions" display-name-key="Hide hidden choice options" description-key="Hide options marked as hidden in the option set" of-type="TwoOptions" usage="input" required="false" default-value="true" />
+    <property name="sortBy" display-name-key="Sort by" description-key="Sort by" of-type="Enum" usage="input" required="false" default-value="Value">
+      <value name="Value" display-name-key="Value" description-key="Sort by the value of the options" default="true">Value</value>
+      <value name="Text" display-name-key="Text" description-key="Sort by the text of the options, corresponding to the user language">Text</value>
+    </property>
+    <property name="placeholderText" display-name-key="Placeholder Text" description-key="Placeholder text shown when no option is selected. A read-only empty field always shows ---." of-type="SingleLine.Text" usage="input" required="false" default-value="---" />
     <property name="componentHeight" display-name-key="Component Height" description-key="Set the height of the dropdown component" of-type="Enum" usage="input" required="false" default-value="Short">
       <value name="Tall" display-name-key="Tall" description-key="Standard height dropdown">Tall</value>
       <value name="Short" display-name-key="Short" description-key="Compact height dropdown (75% of standard)">Short</value>
     </property>
-    <property name="icon" display-name-key="Icon" description-key="The Fluent UI MDL2 icon to display (browse and copy names at https://www.flicon.io), or the name of a square image web resource in this environment, e.g. hek_MyLogo.png" of-type="SingleLine.Text" usage="input" required="false" />
-    <property name="sortBy" display-name-key="Sort by" description-key="Sort by" of-type="Enum" usage="input" required="false" default-value="Value">      
-      <value name="Value" display-name-key="Value" description-key="Sort by the value of the options" default="true">Value</value>
-      <value name="Text" display-name-key="Text" description-key="Sort by the text of the options, corresponding to the user language">Text</value>
+    <property name="selectionShape" display-name-key="Selection shape" description-key="Corner shape of the selected value chip" of-type="Enum" usage="input" required="false" default-value="Rounded">
+      <value name="Square" display-name-key="Square" description-key="Sharp corners">Square</value>
+      <value name="Rounded" display-name-key="Rounded" description-key="Slightly rounded corners (default)" default="true">Rounded</value>
+      <value name="Round" display-name-key="Round" description-key="Fully rounded ends">Round</value>
     </property>
-    <property name="hideHiddenOptions" display-name-key="Hide hidden choice options" description-key="Hide options marked as hidden in the option set" of-type="TwoOptions" usage="input" required="false" default-value="true" />
-    <property name="showColorIcon" display-name-key="Show option color icon" description-key="Display color icon on the left of each option. When off, MDL2 icons render black and image web resources render in greyscale" of-type="TwoOptions" usage="input" required="false" default-value="true" />
-    <property name="iconColorOverride" display-name-key="Color Override" description-key="Override colors with custom hex color (e.g. #FF0000 or FF0000)" of-type="SingleLine.Text" usage="input" required="false" />
-    <property name="showColorBorder" display-name-key="Show option color border" description-key="Display colored border around the dropdown control" of-type="TwoOptions" usage="input" required="false" default-value="false" />
-    <property name="showColorBackground" display-name-key="Show option color background" description-key="Display selected option color as background" of-type="Enum" usage="input" required="false" default-value="No">
-      <value name="No" display-name-key="No" description-key="No color background">No</value>
+    <property name="makeFontBold" display-name-key="Make font bold" description-key="Display the selected value in bold font weight" of-type="TwoOptions" usage="input" required="false" default-value="false" />
+    <property name="useExternalValueForIcon" display-name-key="Use external value for icon" description-key="When enabled, the External Value of the choice will be used as the icon name for that choice option. Accepts an MDL2 icon name or the name of a square image web resource, e.g. hek_MyLogo.png. Semicolon-separate several values (hek_Logo.png;Tag) to try them in order - the first one that renders wins, then the Icon property." of-type="TwoOptions" usage="input" required="false" default-value="false" />
+    <property name="icon" display-name-key="Icon" description-key="The Fluent UI MDL2 icon to display (browse and copy names at https://www.flicon.io), or the name of a square image web resource in this environment, e.g. hek_MyLogo.png. Semicolon-separate several values to try them in order. When nothing resolves, a dot in the icon color is shown." of-type="SingleLine.Text" usage="input" required="false" />
+    <property name="showColorIcon" display-name-key="Show option color icon" description-key="Color each icon with its option color (#255BA4 for options without one). When off, MDL2 icons render in the text color and image web resources render in greyscale" of-type="TwoOptions" usage="input" required="false" default-value="true" />
+    <property name="showColorBackground" display-name-key="Show option color background" description-key="Background of the selected value chip: No uses Selection color, Lighter a faded option color, Full the option color. Options without a color use Selection color" of-type="Enum" usage="input" required="false" default-value="No">
+      <value name="No" display-name-key="No" description-key="Selection color background">No</value>
       <value name="Lighter" display-name-key="Lighter color" description-key="Lighter version of the option color">Lighter</value>
       <value name="Full" display-name-key="Full color" description-key="Full option color">Full</value>
     </property>
-    <property name="makeFontBold" display-name-key="Make font bold" description-key="Display dropdown text in bold font weight" of-type="TwoOptions" usage="input" required="false" default-value="false" />
-    <property name="useExternalValueForIcon" display-name-key="Use external value for icon" description-key="When enabled, the External Value of the choice will be used as the icon name for that choice option. Accepts an MDL2 icon name or the name of a square image web resource, e.g. hek_MyLogo.png" of-type="TwoOptions" usage="input" required="false" default-value="false" />
-    <property name="placeholderText" display-name-key="Placeholder Text" description-key="Placeholder text shown when no option is selected." of-type="SingleLine.Text" usage="input" required="false" default-value="---" />
-    <resources>      
-      <code path="index.ts" order="1"/>      
+    <property name="selectionColor" display-name-key="Selection color" description-key="Background of the selected value chip when Show option color background is No, and for options without a color (hex, e.g. #EDF3FB)" of-type="SingleLine.Text" usage="input" required="false" default-value="#EDF3FB" />
+    <property name="showColorBorder" display-name-key="Show option color border" description-key="Show a border in the option color around the selected value chip (#255BA4 for options without a color)" of-type="TwoOptions" usage="input" required="false" default-value="false" />
+    <property name="iconColorOverride" display-name-key="Color Override" description-key="Override the option colors (icon, chip background and border) with a custom hex color (e.g. #FF0000 or FF0000)" of-type="SingleLine.Text" usage="input" required="false" />
+    <property name="hoverColor" display-name-key="List hover color" description-key="Background of an option in the drop-down list while hovered or keyboard-highlighted (hex, e.g. #F3F2F1)" of-type="SingleLine.Text" usage="input" required="false" default-value="#F3F2F1" />
+    <property name="listSelectedColor" display-name-key="List selected color" description-key="Background of the selected option in the drop-down list (hex, e.g. #EDF3FB)" of-type="SingleLine.Text" usage="input" required="false" default-value="#EDF3FB" />
+    <resources>
+      <code path="index.ts" order="1"/>
       <css path="CSS/AdvancedDropDown.css" order="1" />
       <platform-library name="React" version="16.8.6" />
       <platform-library name="Fluent" version="8.29.0" />

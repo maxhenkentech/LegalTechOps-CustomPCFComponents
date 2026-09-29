@@ -68,3 +68,8 @@ PCF Gallery Descriptions
 # (including new components added later) is ignored automatically too.
 CLAUDE.md
 PDFGallery-PLAN.md
+# Local test-solution tooling (see CLAUDE.md)
+tools/testsolution/
+
+# Test-solution screenshots (local reference only)
+Screenshots/*/TestSolution/

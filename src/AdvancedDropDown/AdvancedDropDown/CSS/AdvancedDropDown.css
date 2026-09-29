@@ -79,3 +79,68 @@
     border: 1px solid #ccc;
     flex-shrink: 0;
 }
+/* ---------------------------------------------------------------------------------------------
+   Family look (v3.8.0) - geometry copied from AdvancedMultiChoice's .lops-amc-text-item, which is
+   itself AdvancedLookUp's .lops-alu-pill-chip. Every color is inline (config-driven).
+   --------------------------------------------------------------------------------------------- */
+.lops-add-root {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* TooltipHost wraps the chip in its own div - it has to be allowed to shrink, or a long label
+   would force the chip wider than the field instead of truncating. */
+.lops-add-chip-host {
+  display: inline-flex;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.lops-add-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  box-sizing: border-box;
+  max-width: 100%;
+  min-width: 0;
+  height: 26px;
+  padding: 3px 8px;
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.lops-add-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.lops-add-icon {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.lops-add-dot {
+  flex-shrink: 0;
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  margin: 0 3px;
+  border-radius: 50%;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.lops-add-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+  text-align: left;
+}

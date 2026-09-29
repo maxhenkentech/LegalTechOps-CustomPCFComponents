@@ -1,4 +1,5 @@
 import { IInputs, IOutputs } from "./generated/ManifestTypes";
+import { ThemeFontScope, buildFontStack, readThemeFont } from "./ThemeFont";
 import * as React from 'react';
 import { QuickActionButtonsControl, IButtonConfig, IConfig } from "./QuickActionButtonsControl";
 import { createLiveFieldAccessor } from "./XrmFieldAccess";
@@ -100,7 +101,7 @@ export class QuickActionButtons implements ComponentFramework.ReactControl<IInpu
 	}
 
 	public init(context: ComponentFramework.Context<IInputs>): void {
-		console.log("🚀 QuickActionButtons: Version 1.3.3 Loaded");
+		console.log("🚀 QuickActionButtons: Version 1.4.0 Loaded");
 
 		try {
 			initializeIconsForEnvironment();
@@ -109,13 +110,23 @@ export class QuickActionButtons implements ComponentFramework.ReactControl<IInpu
 		}
 	}
 
+	// The app's custom theme font (model-driven modern theme `font`), falling back to the previous
+	// Segoe UI stack - see ThemeFont.tsx. display:contents: the font inherits through the wrapper
+	// without it creating a box, so layout is unchanged.
+	private withThemeFont(context: ComponentFramework.Context<IInputs>, element: React.ReactElement): React.ReactElement {
+		const fontFamily = buildFontStack(readThemeFont(context, this.isTestMode()));
+		return React.createElement(ThemeFontScope, { fontFamily },
+			React.createElement("div", { className: "lops-theme-font", style: { fontFamily, display: "contents" } }, element));
+	}
+
 	public updateView(context: ComponentFramework.Context<IInputs>): React.ReactElement {
 		const testMode = this.isTestMode();
 		const accessor = testMode ? createTestFieldAccessor() : createLiveFieldAccessor();
 
 		const params = {
 			buttons: this.buildButtons(context),
-			isDisabled: context.mode.isControlDisabled,
+			// ?readonly in the harness URL simulates a read-only form (the harness has no toggle).
+			isDisabled: context.mode.isControlDisabled || (testMode && new URLSearchParams(window.location.search).has('readonly')),
 			config: this.parseConfig(context),
 			formAvailable: accessor.formAvailable,
 			readField: accessor.readField,
@@ -126,7 +137,7 @@ export class QuickActionButtons implements ComponentFramework.ReactControl<IInpu
 			testMode,
 		};
 
-		return React.createElement(QuickActionButtonsControl, params);
+		return this.withThemeFont(context, React.createElement(QuickActionButtonsControl, params));
 	}
 
 	public getOutputs(): IOutputs {

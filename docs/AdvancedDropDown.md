@@ -4,38 +4,56 @@
 
 An enhanced dropdown control that extends the standard Power Platform choice field with advanced visual customization options, including color coding, custom icons, and flexible sizing.
 
-<img src="../Screenshots/AdvancedDropDown/AdvancedDropDown.png" alt="Advanced Dropdown Overview" width="60%">
+<img src="../Screenshots/AdvancedDropDown/Overview.png" alt="Advanced Dropdown Overview" width="50%">
 
-*Modern, customizable dropdown with color coding and Fluent UI icons.*
+*The selected option as a chip in each style, with colorful web resource icons, and the open options list - captured on a real model-driven form.*
 
 ## Features
+- **Family look**: the selected option is shown as a tinted chip inside the grey field - the same chip, colors, spacing, and tooltip as the Advanced LookUp, Advanced Multi Choice and Advanced Yes/No components, so they all look like one family on a form
 - **Custom Icon Support**: choose from 1,801 Fluent UI MDL2 icons for option indicators - see the [complete icon reference](../FLUENT_ICONS.md) for the authoritative list of names
 - **Image Web Resources as Icons**: give a prefixed web resource name (e.g. `hek_MyLogo.png`) anywhere an icon name is accepted, and the control renders that image - a logo or custom mark - beside the option instead of a font glyph
-- **Color Customization**: independently color each option's icon, the dropdown's border, and its background (No/Lighter/Full intensity), sourced from the choice field's own configured colors
+- **Icon fallbacks**: separate several icon values with semicolons (e.g. `hek_Logo.png;Tag`) to try them in order - the first one that renders wins. An option's External Value falls back to the `icon` property, and if nothing renders a small dot in the icon color is shown
+- **Color Customization**: color each option's icon, the chip's border, and the chip's background (No/Lighter/Full intensity), sourced from the choice field's own configured colors. Options without a color use the family blues (`#EDF3FB` background, `#255BA4` icon and border)
+- **Color Override**: apply a single custom hex color to every option, overriding the choice field's own colors
+- **Description tooltips**: hovering the selected option, or an option in the list, shows the option's description
 - **Flexible Sizing**: Tall (standard) or Short (compact) component heights
 - **Smart Sorting**: sort options by numeric Value or alphabetical Text
 - **Hidden Options Control**: show or hide options marked as hidden in the choice field definition
 - **Typography Options**: bold font weight for better visibility
-- **Color Override**: apply a single custom hex color to every option, overriding the choice field's own colors
+- **Respects read-only**: when the field is read-only (set on the form, locked by a business rule, an inactive record, or column-level security) the list can't be opened, the chevron is hidden, and an empty field shows `---`
+- **Follows your app theme font**: uses the font of the app's modern [custom theme](https://learn.microsoft.com/power-apps/maker/model-driven-apps/modern-theme-overrides), falling back to Segoe UI when no custom theme is set or the font can't be displayed
 - **Responsive Design**: optimized for both desktop and mobile Power Apps
-- **Fallback System**: graceful degradation when icons fail to load in different environments
+
+![Advanced Dropdown - selected-value chip styles](../Screenshots/AdvancedDropDown/ChipStyles.png)
+
+*The selected-value chip, top to bottom: default (neutral `#EDF3FB` chip), `Lighter` background with `Show option color border` and bold, `Full` background, `Color Override` with `Selection shape` = Round, and `Component Height` = Tall with `Selection shape` = Square. The icons are image web resources from each option's External Value.*
+
+![Advanced Dropdown - the options list](../Screenshots/AdvancedDropDown/DropDownList.png)
+
+*The options list: the selected option in bold on `listSelectedColor`, the hovered one on `hoverColor`, each option's icon from its External Value (web resources, MDL2 icons and semicolon fallbacks), and its description as a tooltip.*
 
 ## Properties
+
+Properties are listed in the order they appear in the form editor. Every property from earlier versions is unchanged - existing forms keep their configuration; only how it is drawn has changed (see [Color Customization Guide](#color-customization-guide)).
 
 | Property | Type | Options | Description | Default |
 |----------|------|---------|-------------|---------|
 | `optionsInput` | OptionSet | - | **Required.** The choice field to display as an advanced dropdown | - |
-| `componentHeight` | Choice | Tall/Short | Component height: Tall (standard) or Short (compact 75% height) | Tall |
-| `icon` | Text | [Fluent UI MDL2 icon name](../FLUENT_ICONS.md) or [web resource name](#using-an-image-web-resource-as-an-icon) | Icon to display for each option (e.g., "FullCircleMask", "Circle", "StatusCircleOuter") | FullCircleMask |
-| `sortBy` | Choice | Value/Text | Sort options by numeric Value or alphabetical Text | Value |
 | `hideHiddenOptions` | Yes/No | - | Hide options marked as hidden in the choice field definition | Yes |
-| `showColorIcon` | Yes/No | - | Display colored circular icon on the left of each option. When off, MDL2 icons render black and [image web resources](#using-an-image-web-resource-as-an-icon) render in greyscale | No |
-| `iconColorOverride` | Text | Hex Color | Override all option colors with custom hex color (e.g., #FF0000 or FF0000) | - |
-| `showColorBorder` | Yes/No | - | Display colored border around the dropdown using the selected option's color | No |
-| `showColorBackground` | Choice | No/Lighter/Full | Background color intensity: No color, Lighter (80% opacity), or Full color | No |
-| `makeFontBold` | Yes/No | - | Display dropdown text in bold font weight for better readability | No |
-| `useExternalValueForIcon` | Yes/No | - | Toggle to use the "External Value" field of a choice as the icon name (or [web resource name](#using-an-image-web-resource-as-an-icon)) | No |
-| `placeholderText` | Text | - | Placeholder text shown when no option is selected | "---" |
+| `sortBy` | Choice | Value/Text | Sort options by numeric Value or alphabetical Text | Value |
+| `placeholderText` | Text | - | Placeholder text shown when no option is selected. A read-only empty field always shows `---` | "---" |
+| `componentHeight` | Choice | Tall/Short | Component height: Tall (standard) or Short (compact) | Short |
+| `selectionShape` | Choice | Square/Rounded/Round | Corner shape of the selected-value chip | Rounded |
+| `makeFontBold` | Yes/No | - | Display the selected value in bold | No |
+| `useExternalValueForIcon` | Yes/No | - | Use the "External Value" field of each choice option as its icon name (or [web resource name](#using-an-image-web-resource-as-an-icon)); semicolon-separated fallbacks allowed | No |
+| `icon` | Text | [Fluent UI MDL2 icon name](../FLUENT_ICONS.md) or [web resource name](#using-an-image-web-resource-as-an-icon), semicolon-separated | Icon for each option, and the fallback when an External Value produced no icon | FullCircleMask |
+| `showColorIcon` | Yes/No | - | Color each icon with its option color (`#255BA4` for options without one). When off, MDL2 icons use the text color and [image web resources](#using-an-image-web-resource-as-an-icon) render in greyscale | Yes |
+| `showColorBackground` | Choice | No/Lighter/Full | Background of the selected-value chip: No = `selectionColor`, Lighter = faded option color, Full = option color | No |
+| `selectionColor` | Text | Hex Color | Chip background when `showColorBackground` is No, and for options without a color | `#EDF3FB` |
+| `showColorBorder` | Yes/No | - | Border around the selected-value chip in the option's color | No |
+| `iconColorOverride` | Text | Hex Color | Override all option colors (icon, chip background and border) with one custom hex color (e.g., #FF0000 or FF0000) | - |
+| `hoverColor` | Text | Hex Color | Background of the hovered option in the drop-down list | `#F3F2F1` |
+| `listSelectedColor` | Text | Hex Color | Background of the selected option in the drop-down list | `#EDF3FB` |
 
 ## Icon Reference
 The component renders icons from the **Fluent UI MDL2 web icon font** (`@fluentui/font-icons-mdl2`), which provides 1,801 named icons.
@@ -44,7 +62,7 @@ The component renders icons from the **Fluent UI MDL2 web icon font** (`@fluentu
 
 **🔍 [flicon.io](https://www.flicon.io/)** - a searchable visual browser for this exact icon set; click an icon to copy its name
 
-> ⚠️ Do **not** pick names from Microsoft's [Segoe Fluent Icons](https://learn.microsoft.com/en-us/windows/apps/design/style/segoe-fluent-icons-font) or [Segoe UI Symbol](https://learn.microsoft.com/en-us/windows/apps/design/style/segoe-ui-symbol-font) pages. Those document Windows *desktop system fonts*, not the MDL2 *web* font this control loads - only about a third of the names on the Segoe Fluent Icons page exist here, and the rest render as nothing. An unrecognised name falls back to the color indicator and logs a console warning.
+> ⚠️ Do **not** pick names from Microsoft's [Segoe Fluent Icons](https://learn.microsoft.com/en-us/windows/apps/design/style/segoe-fluent-icons-font) or [Segoe UI Symbol](https://learn.microsoft.com/en-us/windows/apps/design/style/segoe-ui-symbol-font) pages. Those document Windows *desktop system fonts*, not the MDL2 *web* font this control loads - only about a third of the names on the Segoe Fluent Icons page exist here, and the rest render as nothing. An unrecognised name falls back to the next semicolon-separated value (or the color dot) and logs a console warning.
 
 Popular icon options for dropdowns include:
 
@@ -62,7 +80,7 @@ Popular icon options for dropdowns include:
 - Use simple, recognizable shapes for best results
 - Circular icons work particularly well with color customization
 - Test icons in both development and production environments
-- Fallback to color indicators if icons don't load
+- Add a semicolon-separated fallback (e.g. `hek_Logo.png;Tag`) for icons that might not load
 
 ## Using an Image Web Resource as an Icon
 
@@ -96,7 +114,7 @@ The extension isn't what makes it work - detection is based on the publisher pre
 
 WEBP and AVIF are not Dataverse web resource types, so they can't be uploaded as web resources at all.
 
-> ⚠️ **Prefer a transparent background (PNG or SVG).** The option's background color varies with your `showColorBackground` setting and the selected option's own color. A JPG carries an opaque rectangle, so it will show as a visible box that clashes with whatever sits behind it. PNG and SVG let the background show through.
+> ⚠️ **Prefer a transparent background (PNG or SVG).** The chip's background color varies with your `showColorBackground` setting and the selected option's own color. A JPG carries an opaque rectangle, so it will show as a visible box that clashes with whatever sits behind it. PNG and SVG let the background show through.
 
 Note that scripts and external references inside an SVG are inert when loaded this way - irrelevant for icon artwork, but worth knowing if your file was exported with embedded interactivity.
 
@@ -114,26 +132,28 @@ The one setting that *does* affect it is **Show option color icon** (`showColorI
 
 ### If the image cannot be loaded
 
-If a web resource name doesn't resolve - misspelled, wrong prefix, not published, or not an image type - the option falls back to the standard **color indicator** circle and logs a console warning naming the URL it tried. The option is never left without an indicator.
+If a web resource name doesn't resolve - misspelled, wrong prefix, not published, or not an image type - the control tries the next semicolon-separated value, then the `icon` property, and finally shows a small **dot** in the icon color, logging a console warning naming the URL it tried. The option is never left without an indicator.
 
 ## Color Customization Guide
 
-**Color Sources:**
-1. **Choice Field Colors**: Colors defined in the Power Platform choice field
-2. **Color Override**: Single hex color applied to all options (overrides choice field colors)
+The selected option is drawn as a **chip** inside the neutral grey field (the field itself no longer takes the option's color). The color settings apply to that chip:
 
-**Color Applications:**
-- **Icons**: Color the icon itself
-- **Borders**: Apply color to the dropdown border
-- **Backgrounds**: Use color as background with three intensity levels:
-  - **No**: No background color (default)
-  - **Lighter**: 80% opacity background for subtle effect
-  - **Full**: Full color background for maximum impact
+| Setting | Effect on the chip |
+|---|---|
+| `showColorBackground` = **No** (default) | `selectionColor` background (`#EDF3FB`), label in a darker shade of it - the Advanced LookUp look |
+| `showColorBackground` = **Lighter** | A faded version of the option's color; label in a darker shade of it |
+| `showColorBackground` = **Full** | The option's color, with a white label on dark colors |
+| `showColorBorder` = **Yes** | A 1px border in the option's color |
+| `showColorIcon` = **Yes** (default) | Icons in the option's color |
+| `iconColorOverride` | Replaces the option's color in all of the above |
+
+**Options without a color** (and without an override) always use the family defaults: the `selectionColor` background, and `#255BA4` for the icon and border.
+
+The drop-down list uses `hoverColor` for the hovered option and `listSelectedColor` (bold) for the selected one.
 
 **Best Practices:**
-- Use **Lighter** backgrounds for better text readability
-- Combine **Color Icons** with **Color Borders** for professional appearance
-- **Color Override** useful for maintaining brand consistency
+- **Lighter** keeps each option's color recognisable while the label stays readable
+- **Color Override** is useful for maintaining brand consistency
 - Test color combinations for accessibility compliance
 
 ## Advanced Icon Features
@@ -160,9 +180,9 @@ When **Use external value for icon** is enabled, the component will attempt to l
 2. Add the control to a form or canvas app
 3. Bind the `optionsInput` property to your choice field
 4. Configure visual options:
-   - Set `showColorIcon` to Yes to display colored icons
+   - `showColorIcon` (on by default) colors each icon with its option color
    - Choose an icon name from the [Fluent UI MDL2 icon reference](../FLUENT_ICONS.md) (or browse visually at [flicon.io](https://www.flicon.io/)), or give the name of an [image web resource](#using-an-image-web-resource-as-an-icon) to use your own artwork instead
-   - Enable color borders or backgrounds as needed
+   - Enable a colored chip background (`showColorBackground`) or border as needed
    - Adjust component height (Tall/Short) based on your form layout
 5. **(Optional) Per-Option Icons**:
    - Enable `Use external value for icon`.

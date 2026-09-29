@@ -150,6 +150,18 @@ export const FIELD_BG_FOCUS = "#ffffff";
 export const FIELD_BORDER_FOCUS = "#a9a9a9";
 export const FIELD_BORDER_RADIUS = "4px";
 
+// The family accent: darkenHexColor(#EDF3FB), i.e. this control's own chip link/clear color.
+// AdvancedMultiChoice and AdvancedDropDown use it for every icon/border default, so a glyph with no
+// configured Icon Color takes it here too (v1.11.0 - it rendered in plain black before).
+export const SERIES_ACCENT = "#255BA4";
+
+// "Selection shape" - AdvancedMultiChoice's SELECTION_RADIUS. Rounded is the chip's original 4px.
+export const SELECTION_RADIUS: Record<"Square" | "Rounded" | "Round", string> = {
+  Square: "2px",
+  Rounded: "4px",
+  Round: "999px",
+};
+
 // Calibrated against the OOTB lookup's own chip: its clear "x" glyph is not a fixed grey, it's
 // the SAME hue as the chip background, just much darker - pixel-sampled at chip #EDF3FB (HSL
 // lightness ~95.7%) vs. glyph #2B5D9E (~39.4%), a ratio of ~0.41 with hue held constant (214.3°
@@ -286,9 +298,11 @@ export const comboBoxStyles = (
           ":hover": {
             backgroundColor: isDisabled ? FIELD_BG : FIELD_BG_HOVER,
           },
+          // Read-only: the (non-typeable) input can still take focus, but the field must stay the
+          // flat read-only grey - no white focus fill (family read-only look).
           ":focus-within": {
-            backgroundColor: FIELD_BG_FOCUS,
-            borderColor: FIELD_BORDER_FOCUS,
+            backgroundColor: isDisabled ? FIELD_BG : FIELD_BG_FOCUS,
+            borderColor: isDisabled ? "transparent" : FIELD_BORDER_FOCUS,
           },
         },
       },
@@ -297,7 +311,9 @@ export const comboBoxStyles = (
       {
         fontSize: "14px",
         lineHeight: heightValues.lineHeight,
-        fontFamily: "'Segoe UI', 'Segoe UI Web (West European)', 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Roboto', 'Helvetica Neue', sans-serif",
+        // Inherited from the control's wrapper (index.ts withThemeFont): the app's custom theme
+        // font, then Segoe UI - see ThemeFont.tsx.
+        fontFamily: "inherit",
         backgroundColor: "transparent",
         // The freeform input is a real <input>, so its placeholder is styled through the
         // standard pseudo-element rather than any Fluent prop. neutralTertiary is the same
@@ -309,6 +325,22 @@ export const comboBoxStyles = (
         },
       },
     ],
+    // Fluent's disabled slots paint the root AND the input #f3f2f1 (its disabledBackground), a
+    // second grey band inside the family's #f5f5f5 field. Read-only must be one flat FIELD_BG.
+    rootDisabled: {
+      backgroundColor: FIELD_BG,
+      borderColor: "transparent",
+    },
+    inputDisabled: {
+      backgroundColor: "transparent",
+      // "---" in the same muted placeholder grey as the editable state (Fluent darkens it to
+      // #595959 when disabled).
+      selectors: {
+        "::placeholder": {
+          color: "#a19f9d",
+        },
+      },
+    },
     optionsContainerWrapper: {
       maxHeight: "260px",
     },
@@ -342,17 +374,40 @@ export const TOP_MATCH_MARKER = "lops-alu-top-match";
 // here overrides Fluent's default on the one style object it actually reads for this row.
 // Colors are Fluent's own standard hover/pressed neutrals (theme.palette.neutralLighter /
 // neutralLight) rather than a custom-picked grey, per request for "the MS modern Fluent UI grey".
-export const topMatchOptionStyles: Partial<IComboBoxOptionStyles> = {
+export const topMatchOptionStyles = (hoverColor: string): Partial<IComboBoxOptionStyles> => ({
   root: {
-    backgroundColor: "#f3f2f1",
+    backgroundColor: hoverColor,
     boxShadow: "inset 3px 0 0 0 #c8c6c4",
     borderRadius: 0,
   },
   rootHovered: {
-    backgroundColor: "#edebe9",
+    backgroundColor: hoverColor,
     borderRadius: 0,
   },
-};
+});
+
+// Every list row, in the family's list colors (AdvancedMultiChoice's List hover color). NOTE: in
+// 8.29.0 "checked" is NOT "the current record" - _isOptionSelected follows the pending (hovered /
+// arrowed-to) index, so rootChecked is effectively the highlight. It gets the hover color, never
+// bold; the real current record is marked separately via currentRecordOptionStyles.
+export const listOptionStyles = (hoverColor: string): Partial<IComboBoxOptionStyles> => ({
+  root: { borderRadius: 0 },
+  rootHovered: { backgroundColor: hoverColor, borderRadius: 0 },
+  rootPressed: { backgroundColor: hoverColor, borderRadius: 0 },
+  rootChecked: { backgroundColor: hoverColor, borderRadius: 0 },
+  rootCheckedHovered: { backgroundColor: hoverColor, borderRadius: 0 },
+  rootCheckedPressed: { backgroundColor: hoverColor, borderRadius: 0 },
+});
+
+// The currently selected record's row: List selected color + bold (AdvancedMultiChoice's selected
+// row), hover still wins. Applied per option like topMatchOptionStyles, and needs the same memo
+// busting via option.data (see displayOptions).
+export const currentRecordOptionStyles = (hoverColor: string, listSelectedColor: string): Partial<IComboBoxOptionStyles> => ({
+  root: { backgroundColor: listSelectedColor, fontWeight: 600, borderRadius: 0 },
+  rootChecked: { backgroundColor: listSelectedColor, fontWeight: 600, borderRadius: 0 },
+  rootHovered: { backgroundColor: hoverColor, fontWeight: 600, borderRadius: 0 },
+  rootCheckedHovered: { backgroundColor: hoverColor, fontWeight: 600, borderRadius: 0 },
+});
 
 export const comboBoxOptionRowStyle: React.CSSProperties = {
   display: "flex",

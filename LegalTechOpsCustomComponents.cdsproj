@@ -38,6 +38,8 @@
     <ExcludeDirectories Include="$(MSBuildThisFileDirectory)\*.cdsproj.user" />
     <ExcludeDirectories Include="$(MSBuildThisFileDirectory)\*.sln" />
     <ExcludeDirectories Include="$(MSBuildThisFileDirectory)\src\**\node_modules\**" />
+    <!-- Local Claude Code notes (gitignored) must not ship inside the solution zips -->
+    <ExcludeDirectories Include="$(MSBuildThisFileDirectory)\src\**\CLAUDE.md" />
   </ItemGroup>
 
   <ItemGroup>
@@ -53,6 +55,8 @@
     <ProjectReference Include="src/ModernChoiceButtons/ModernChoiceButtons.pcfproj" />
     <ProjectReference Include="src/AdvancedLookUp/AdvancedLookUp.pcfproj" />
     <ProjectReference Include="src/QuickActionButtons/QuickActionButtons.pcfproj" />
+    <ProjectReference Include="src/AdvancedMultiChoice/AdvancedMultiChoice.pcfproj" />
+    <ProjectReference Include="src/AdvancedYesNo/AdvancedYesNo.pcfproj" />
   </ItemGroup>
 
   <Import Project="$(MSBuildToolsPath)\Microsoft.Common.targets" />

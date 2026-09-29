@@ -1,4 +1,5 @@
 import { IInputs, IOutputs } from "./generated/ManifestTypes";
+import { ThemeFontScope, buildFontStack, readThemeFont } from "./ThemeFont";
 import * as React from "react";
 import { initializeIcons } from "@fluentui/react/lib/Icons";
 import { RelationshipViewControl } from "./RelationshipViewControl";
@@ -28,6 +29,15 @@ export class RelationshipView implements ComponentFramework.ReactControl<IInputs
     // No initialization needed - all state is owned by RelationshipViewControl.
   }
 
+  // The app's custom theme font (model-driven modern theme `font`), falling back to the previous
+  // Segoe UI stack - see ThemeFont.tsx. display:contents: the font inherits through the wrapper
+  // without it creating a box, so layout is unchanged.
+  private withThemeFont(context: ComponentFramework.Context<IInputs>, element: React.ReactElement): React.ReactElement {
+    const fontFamily = buildFontStack(readThemeFont(context, this.isTestMode()));
+    return React.createElement(ThemeFontScope, { fontFamily },
+      React.createElement("div", { className: "lops-theme-font", style: { fontFamily, display: "contents" } }, element));
+  }
+
   public updateView(context: ComponentFramework.Context<IInputs>): React.ReactElement {
     const parentLookupProperty = context.parameters.parentLookup;
     const showState = context.parameters.showState?.raw ?? true;
@@ -49,7 +59,7 @@ export class RelationshipView implements ComponentFramework.ReactControl<IInputs
     const currentRecordHighlightColor = context.parameters.currentRecordHighlightColor?.raw || "#F3F2F1";
     const indentation = context.parameters.indentation?.raw ?? "Medium";
 
-    return React.createElement(RelationshipViewControl, {
+    return this.withThemeFont(context, React.createElement(RelationshipViewControl, {
       parentLookupProperty,
       showState,
       showInactiveRecords,
@@ -74,7 +84,7 @@ export class RelationshipView implements ComponentFramework.ReactControl<IInputs
       mode: context.mode,
       utils: context.utils,
       isTestMode: this.isTestMode(),
-    });
+    }));
   }
 
   public getOutputs(): IOutputs {

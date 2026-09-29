@@ -16,6 +16,8 @@ A collection of custom Power Platform Component Framework (PCF) components creat
   - [🔘 Modern Choice Buttons Component](#-modern-choice-buttons-component)
   - [🔍 Advanced LookUp Component](#-advanced-lookup-component)
   - [⚡ Quick Action Buttons Component](#-quick-action-buttons-component)
+  - [🔖 Advanced Multi Choice Component](#-advanced-multi-choice-component)
+  - [✅ Advanced Yes/No Component](#-advanced-yesno-component)
 - [Author](#author)
 - [Installation](#installation)
 - [Development](#development)
@@ -31,15 +33,15 @@ These components are designed to solve common business challenges through innova
 
 ## Components
 
-This solution currently contains the following custom components. Each has its own full documentation page under [`docs/`](docs/) covering features, properties, configuration steps, and use cases - the summaries below keep just a short description and the main screenshot for each.
+This solution currently contains the following custom components. All of them follow your model-driven app's modern [custom theme](https://learn.microsoft.com/power-apps/maker/model-driven-apps/modern-theme-overrides) font and respect read-only fields. Each has its own full documentation page under [`docs/`](docs/) covering features, properties, configuration steps, and use cases - the summaries below keep just a short description and the main screenshot for each.
 
 ### 🔽 Advanced Dropdown Component
 
-An enhanced dropdown control that extends the standard Power Platform choice field with advanced visual customization options, including color coding, custom icons, and flexible sizing.
+An enhanced dropdown control that extends the standard Power Platform choice field with advanced visual customization options, including color coding, custom icons, and flexible sizing. The selected option is shown as the same tinted chip Advanced LookUp, Advanced Multi Choice and Advanced Yes/No use, so they look like one family on a form.
 
-<img src="Screenshots/AdvancedDropDown/AdvancedDropDown.png" alt="Advanced Dropdown Overview" width="50%">
+<img src="Screenshots/AdvancedDropDown/Hero.png" alt="Advanced Dropdown Overview" width="50%">
 
-*Modern, customizable dropdown with color coding and Fluent UI icons.*
+*The selected option as a tinted chip, with the options list open and an icon from each option's External Value.*
 
 📖 **[Full documentation](docs/AdvancedDropDown.md)** - features, properties, the External Value icon system, using your own image web resources as icons, and the [complete 1,800+ icon reference](FLUENT_ICONS.md).
 
@@ -49,9 +51,9 @@ An enhanced dropdown control that extends the standard Power Platform choice fie
 
 An interactive risk assessment matrix that allows users to plot and visualize risk items based on Impact and Probability ratings.
 
-<img src="Screenshots/RiskMatrix/4x4-Default.png" alt="Risk Matrix with Labels" height="234px"> <img src="Screenshots/RiskMatrix/2x2-NoLabels.png" alt="Risk Matrix without Labels" height="234px">
+<img src="Screenshots/RiskMatrix/Hero.png" alt="Risk Matrix Overview" width="50%">
 
-*Risk Matrix component showing standard configuration with labels (left) and clean presentation without category labels (right)*
+*A 5x5 grid in the Huge size with custom axis labels (Severity, Likelihood) and the risk level shown above the grid.*
 
 📖 **[Full documentation](docs/RiskMatrix.md)** - grid sizes, labels, colors, and properties.
 
@@ -61,9 +63,9 @@ An interactive risk assessment matrix that allows users to plot and visualize ri
 
 A dataset control that replaces a standard subgrid with a tabbed (or sidebar) PDF viewer - one tab per related record, rendered using the browser's own native PDF viewer (scroll, search, zoom, print) inside a responsive, A4-proportioned preview pane.
 
-<img src="Screenshots/PDFGallery/Horizontal-Overview.png" alt="PDF Gallery - Horizontal style" height="416px"> <img src="Screenshots/PDFGallery/Vertical-Overview.png" alt="PDF Gallery - Vertical style" height="416px">
+<img src="Screenshots/PDFGallery/Hero.png" alt="PDF Gallery Overview" width="50%">
 
-*Horizontal style with tabs above the preview (left) and Vertical style with a scrollable document list beside the preview (right).*
+*Horizontal style: one tab per related document above the browser's own PDF viewer, with open and download buttons.*
 
 📖 **[Full documentation](docs/PDFGallery.md)** - layout styles, action buttons, the File Column fallback chain, previewing web-location links, and how to configure the underlying subgrid relationship.
 
@@ -73,8 +75,9 @@ A dataset control that replaces a standard subgrid with a tabbed (or sidebar) PD
 
 A field control, bound directly to a self-referential lookup (e.g. "Parent Contract"), that replaces the field with the record's full ancestor/descendant hierarchy - one continuous tree, rendered inline on the form, with each row expandable into a live Quick View panel.
 
-![Relationship View - Full Tree with Quick View](Screenshots/RelationshipView/Tree-FullDetail.png)
-*The complete ancestor chain and descendant tree in a single view, including sister records (other Order Forms sitting alongside the same Statement of Work) and an expanded Quick View panel for the selected row.*
+<img src="Screenshots/RelationshipView/Hero.png" alt="Relationship View Overview" width="50%">
+
+*A contract hierarchy from the Master Services Agreement down to a Change Order, with picture thumbnails, reference and status lines and state pills.*
 
 📖 **[Full documentation](docs/RelationshipView.md)** - tree depth, sister records, Quick View panel, thumbnails, and properties.
 
@@ -84,9 +87,9 @@ A field control, bound directly to a self-referential lookup (e.g. "Parent Contr
 
 A field control that renders Markdown as formatted, visually polished help text on a form - point it at a Single Line or Multiple Lines of Text column, or type static Markdown directly into a design-time property when no backing column is wanted.
 
-<img src="Screenshots/MarkdownHelpText/ExampleRendering.png" alt="Example rendering" width="75%">
+<img src="Screenshots/MarkdownHelpText/Hero.png" alt="Example rendering" width="50%">
 
-*Alert callouts, Dynamic Field Tags, Font Coloring, tables, and images, all rendered together.*
+*Headings, alert callouts, a table, a numbered list and colored text rendered from a Multiple Lines of Text column.*
 
 📖 **[Full documentation](docs/MarkdownHelpText.md)** - full Markdown syntax gallery, Dynamic Field Tags, Font Coloring, and properties.
 
@@ -96,9 +99,9 @@ A field control that renders Markdown as formatted, visually polished help text 
 
 A field control that replaces a standard choice field with a horizontal row of clickable tiles - one per option, each showing an MDL2 icon above the option's own label - instead of a dropdown list.
 
-<img src="Screenshots/ModernChoiceButtons/PCF%20Gallery%20Screenshot.png" alt="Modern Choice Buttons Overview" width="75%">
+<img src="Screenshots/ModernChoiceButtons/Hero.png" alt="Modern Choice Buttons Overview" width="50%">
 
-*Icon + label tiles across circled-number, symbol, and full-color selected styles - the official PCF Gallery listing screenshot.*
+*Four layouts of the same choice column: faded choice colors, large tiles in full choice color, small tiles with the icon on the left, and icons only.*
 
 📖 **[Full documentation](docs/ModernChoiceButtons.md)** - tile size/shape, color modes, icon format reference, using your own image web resources as icons, and properties.
 
@@ -108,9 +111,9 @@ A field control that replaces a standard choice field with a horizontal row of c
 
 A field control that replaces a standard lookup field with a searchable, type-to-filter dropdown - type to search live Dataverse records, with a per-record icon (from a picture column, an MDL2 icon-name column, or a fixed icon) and a hover tooltip on the selected value.
 
-<img src="Screenshots/AdvancedLookUp/DropDown.png" alt="Advanced LookUp Overview" width="75%">
+<img src="Screenshots/AdvancedLookUp/Hero.png" alt="Advanced LookUp Overview" width="50%">
 
-*Live, server-side search with per-record icons and a smaller context line (`Additional Display Columns`) under each name.*
+*Live, server-side search with per-record icons from an image column and a smaller context line (`Additional Display Columns`) under each name.*
 
 📖 **[Full documentation](docs/AdvancedLookUp.md)** - icon column modes, search/sort/display columns, and properties.
 
@@ -120,11 +123,35 @@ A field control that replaces a standard lookup field with a searchable, type-to
 
 A field control that is not bound to any single field's value - it renders up to 5 configurable icon+label buttons, and clicking one writes a maker-configured set of field values onto the current form (field values only by default; an opt-in setting can save the record afterward), with support for Power Automate-style expressions (string/math/date functions, `coalesce`, `me()`) alongside plain literal values, including lookup and multi-select choice targets.
 
-<img src="Screenshots/QuickActionButtons/Overview.png" alt="Quick Action Buttons Overview" width="75%">
+<img src="Screenshots/QuickActionButtons/Hero.png" alt="Quick Action Buttons Overview" width="50%">
 
-*Text, relative-date, lookup, and multi-select choice buttons, each writing a different kind of target field.*
+*Four layouts of the same five buttons: white, per-button background color, small with the icon on the left, and icons only.*
 
 📖 **[Full documentation](docs/QuickActionButtons.md)** - Actions JSON format, the expression function reference, color modes, and properties.
+
+---
+
+### 🔖 Advanced Multi Choice Component
+
+A field control that replaces a standard multi-select choice field with a searchable checkbox list, showing the selected options as colored, removable pills or chips - each with an icon from the option's External Value (an MDL2 icon or an image web resource, with semicolon-separated fallbacks) and its description as a tooltip. Search matches option descriptions as well as labels, and an Autofit sort arranges the selected options into as few lines as possible.
+
+<img src="Screenshots/AdvancedMultiChoice/Hero.png" alt="Advanced Multi Choice Overview" width="50%">
+
+*Selected options as pills in their faded choice colors, with the checkbox list open - each option with its multi-color web resource or MDL2 icon.*
+
+📖 **[Full documentation](docs/AdvancedMultiChoice.md)** - icon fallback chains, pills vs text display, color modes, Autofit sorting, and properties.
+
+---
+
+### ✅ Advanced Yes/No Component
+
+A field control that replaces a standard Yes/No field with one of nine modern styles - a checkbox, a toggle, a labeled switch, radio buttons, two buttons, a segmented field, a toggle button, a status chip or an icon button. The icons for Yes and No are set on the control (Yes/No columns have no External Values), with optional Yes and No colors, fill or fixed widths, and the same field look as the other Advanced controls.
+
+<img src="Screenshots/AdvancedYesNo/Hero.png" alt="Advanced Yes/No Overview" width="50%">
+
+*The nine display styles, with check and cancel badges, custom icons (a star, a flag, a lock, colorful web resources) and per-control Yes and No colors.*
+
+📖 **[Full documentation](docs/AdvancedYesNo.md)** - display styles, icons, colors, fixed width, and properties.
 
 ---
 
@@ -309,6 +336,24 @@ Step-by-step configuration for each component (binding, properties, and any comp
 │   │   │   └── CSS/           # Component stylesheets
 │   │   ├── package.json
 │   │   └── pcfconfig.json
+│   ├── AdvancedMultiChoice/    # Advanced Multi Choice PCF component
+│   │   ├── AdvancedMultiChoice/
+│   │   │   ├── index.ts       # Main component logic
+│   │   │   ├── AdvancedMultiChoiceControl.tsx # React component
+│   │   │   ├── TestModeData.ts # Test-harness fake options + multi-color web resource icons
+│   │   │   ├── ControlManifest.Input.xml
+│   │   │   └── CSS/           # Component stylesheets
+│   │   ├── package.json
+│   │   └── pcfconfig.json
+│   ├── AdvancedYesNo/          # Advanced Yes/No PCF component
+│   │   ├── AdvancedYesNo/
+│   │   │   ├── index.ts       # Main component logic
+│   │   │   ├── AdvancedYesNoControl.tsx # React component (all display styles)
+│   │   │   ├── TestModeData.ts # Test-harness labels, sample icons and colors
+│   │   │   ├── ControlManifest.Input.xml
+│   │   │   └── CSS/           # Component stylesheets
+│   │   ├── package.json
+│   │   └── pcfconfig.json
 │   └── Other/                 # Solution metadata
 ├── bin/Release/               # Packaged solution output
 └── README.md
@@ -370,10 +415,32 @@ If you encounter any issues or have suggestions for improvements, please open an
 
 Full version history lives in [CHANGELOG.md](CHANGELOG.md).
 
-### Version 7.2.2.0 (Current)
+### Version 8.0.0.0 (Current)
+Major release with everything since the last GitHub release (v7.2.2): two new components, Advanced Multi Choice and Advanced Yes/No.
+
+#### 🎨 All Components
+- **NEW**: Every component follows the app's modern custom theme font, falling back to Segoe UI when no theme is set or the font can't be displayed.
+- **IMPROVED**: Advanced Dropdown, Advanced LookUp, Advanced Multi Choice and Advanced Yes/No share one look (field, chip, colors, list, tooltips); read-only is enforced consistently, including column-level security.
+
+#### ✅ Advanced Yes/No Component (NEW)
+- **NEW**: Field control for Yes/No fields with nine display styles: Checkbox, Toggle, Labeled switch, Radio buttons, Buttons, Segmented, Toggle button, Status chip and Icon.
+- **NEW**: Yes and No icons set on the control (MDL2 icon or image web resource), optional Yes and No colors with automatically readable text, fill or fixed width, and the family field look.
+
+#### 🔖 Advanced Multi Choice Component (NEW)
+- **NEW**: Field control for multi-select choice fields - a searchable checkbox list, with the selected options shown as colored, removable pills or text chips that wrap onto new lines.
+- **NEW**: Icons from each option's External Value or a Fixed Icon Name (MDL2 icon or image web resource, semicolon-separated fallbacks), description tooltips and description search, choice-color/faded/custom color modes, and Value / Text / Autofit sorting.
+
+#### 🔽 Advanced Dropdown Component
+- **IMPROVED**: The selected option is shown as a tinted chip; existing properties keep their meaning. New `Selection shape`, `Selection color` and list color properties, and semicolon icon fallbacks.
+
 #### 🔍 Advanced LookUp Component
-- **NEW**: `Icon Column` now accepts `<lookup field>.<column>` dot notation to pull the icon from a related record instead of only the target table itself; `Additional Search Columns` now supports lookup columns too, matched against the primary name of the record they point to.
-- **FIX**: The field no longer accepted searches or selections while set to Read Only, the results dropdown no longer silently fails to appear when `Label Column` differs from the true primary name, and a stale search filter no longer survives clicking away from the field without picking a result.
+- **NEW**: `Selection shape` and list color properties; icons default to the family accent; read-only and icon-gap fixes.
+
+#### 🔘 Modern Choice Buttons Component
+- **NEW**: Semicolon-separated icon fallbacks (e.g. `hek_Logo.svg;CheckMark`); respects column-level security.
+
+#### ⚡ Quick Action Buttons Component
+- **IMPROVED**: Target fields the user can't update (column-level security) are skipped and reported instead of failing at save.
 
 See [CHANGELOG.md](CHANGELOG.md) for full details.
 

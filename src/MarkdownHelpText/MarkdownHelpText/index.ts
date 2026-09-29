@@ -1,4 +1,5 @@
 import { IInputs, IOutputs } from "./generated/ManifestTypes";
+import { ThemeFontScope, buildFontStack, readThemeFont } from "./ThemeFont";
 import * as React from "react";
 import { initializeIcons } from "@fluentui/react/lib/Icons";
 import { MarkdownHelpTextControl } from "./MarkdownHelpTextControl";
@@ -53,6 +54,15 @@ export class MarkdownHelpText implements ComponentFramework.ReactControl<IInputs
     // No initialization needed - all state is owned by MarkdownHelpTextControl.
   }
 
+  // The app's custom theme font (model-driven modern theme `font`), falling back to the previous
+  // Segoe UI stack - see ThemeFont.tsx. display:contents: the font inherits through the wrapper
+  // without it creating a box, so layout is unchanged.
+  private withThemeFont(context: ComponentFramework.Context<IInputs>, element: React.ReactElement): React.ReactElement {
+    const fontFamily = buildFontStack(readThemeFont(context, this.isTestMode()));
+    return React.createElement(ThemeFontScope, { fontFamily },
+      React.createElement("div", { className: "lops-theme-font", style: { fontFamily, display: "contents" } }, element));
+  }
+
   public updateView(context: ComponentFramework.Context<IInputs>): React.ReactElement {
     const isTestMode = this.isTestMode();
     const boundText = context.parameters.boundText?.raw || undefined;
@@ -62,7 +72,7 @@ export class MarkdownHelpText implements ComponentFramework.ReactControl<IInputs
     const lineSpacing = context.parameters.lineSpacing?.raw ?? 1.55;
     const { entityTypeName, entityId } = resolveCurrentRecordContext(context.mode, context.utils);
 
-    return React.createElement(MarkdownHelpTextControl, {
+    return this.withThemeFont(context, React.createElement(MarkdownHelpTextControl, {
       markdown,
       navigation: context.navigation,
       isTestMode,
@@ -71,7 +81,7 @@ export class MarkdownHelpText implements ComponentFramework.ReactControl<IInputs
       webAPI: context.webAPI,
       entityLogicalName: entityTypeName,
       entityId,
-    });
+    }));
   }
 
   public getOutputs(): IOutputs {

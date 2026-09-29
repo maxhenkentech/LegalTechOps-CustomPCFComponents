@@ -54,6 +54,14 @@
 
 .lops-alu-root:focus-within .ms-ComboBox::after {
   border-color: #a9a9a9 !important;
+  /* Fluent's focus ring is 2px with a 2px radius; the family focus state (AdvancedDropDown,
+     AdvancedMultiChoice) is a 1px #a9a9a9 border on the field's own 4px radius. */
+  border-width: 1px !important;
+  border-radius: 4px !important;
+}
+
+.lops-alu-root.is-disabled:focus-within .ms-ComboBox::after {
+  border-color: transparent !important;
 }
 
 .lops-alu-search-icon {
@@ -103,9 +111,8 @@
    rounded default background - the "pill with black corners" look. The Fluent-level background
    (topMatchOptionStyles, now borderRadius: 0) is the sole source of truth for the button's own
    padding area; this only needs to match it exactly across the row's own content box. */
-.lops-alu-option-row-top-match {
-  background-color: #f3f2f1;
-}
+/* (The former .lops-alu-option-row-top-match rule is now an inline background driven by the
+   List hover color property - see onRenderOption.) */
 
 .lops-alu-option-icon {
   /* width/height/border-radius/background-color come from LookUpStyles.ts's
@@ -168,6 +175,16 @@
   background-color: #ececec;
 }
 
+/* Read-only: no hover shade and no "click to search" cursor (the record link itself still opens
+   the record, like the OOTB read-only lookup). */
+.lops-alu-pill.is-disabled {
+  cursor: default;
+}
+
+.lops-alu-pill.is-disabled:hover {
+  background-color: #f5f5f5;
+}
+
 /* The tinted chip around icon+name+clear - pixel-matched against the native lookup's own
    selected-value chip (see recordBackdropColor's comment in AdvancedLookUpControl.tsx): it hugs
    its content rather than stretching to fill the row, and sits inset within the field rather than
@@ -225,7 +242,7 @@
   background-color: #fde7e9;
   color: #a4262c;
   font-size: 13px;
-  font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, "Roboto", "Helvetica Neue", sans-serif;
+  font-family: inherit; /* the app theme font - see ThemeFont.tsx */
   width: 100%;
   box-sizing: border-box;
 }
@@ -252,5 +269,5 @@
   margin-top: 4px;
   font-size: 11px;
   color: #8a6d1a;
-  font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, "Roboto", "Helvetica Neue", sans-serif;
+  font-family: inherit; /* the app theme font - see ThemeFont.tsx */
 }

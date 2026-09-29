@@ -46,282 +46,159 @@ const FIELD_BORDER_FOCUS = "#a9a9a9";
 // selector below for where this is actually applied.
 const FIELD_PLACEHOLDER_COLOR = "#a19f9d";
 
-// Helper function to lighten a hex color
-const lightenColor = (color: string, amount = 0.7): string => {
-  if (!color || !color.startsWith('#')) return color;
-  
-  // Convert hex to RGB
-  const hex = color.replace('#', '');
-  const r = parseInt(hex.substr(0, 2), 16);
-  const g = parseInt(hex.substr(2, 2), 16);
-  const b = parseInt(hex.substr(4, 2), 16);
-  
-  // Lighten by blending with white
-  const newR = Math.round(r + (255 - r) * amount);
-  const newG = Math.round(g + (255 - g) * amount);
-  const newB = Math.round(b + (255 - b) * amount);
-  
-  // Convert back to hex
-  const toHex = (n: number) => n.toString(16).padStart(2, '0');
-  return `#${toHex(newR)}${toHex(newG)}${toHex(newB)}`;
-};
-
-// Helper function to darken a hex color
-const darkenColor = (color: string, amount = 0.3): string => {
-  if (!color || !color.startsWith('#')) return color;
-  
-  // Convert hex to RGB
-  const hex = color.replace('#', '');
-  const r = parseInt(hex.substr(0, 2), 16);
-  const g = parseInt(hex.substr(2, 2), 16);
-  const b = parseInt(hex.substr(4, 2), 16);
-  
-  // Darken by reducing the RGB values
-  const newR = Math.round(r * (1 - amount));
-  const newG = Math.round(g * (1 - amount));
-  const newB = Math.round(b * (1 - amount));
-  
-  // Convert back to hex
-  const toHex = (n: number) => n.toString(16).padStart(2, '0');
-  return `#${toHex(newR)}${toHex(newG)}${toHex(newB)}`;
-};
-
-// Helper function to determine if a color is dark
 const isColorDark = (color: string): boolean => {
-  if (!color || !color.startsWith('#')) return false;
-  
+  if (!/^#[0-9a-f]{6}/i.test(color)) return false;
   const hex = color.replace('#', '');
   const r = parseInt(hex.substr(0, 2), 16);
   const g = parseInt(hex.substr(2, 2), 16);
   const b = parseInt(hex.substr(4, 2), 16);
-  
-  // Calculate relative luminance
-  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-  return luminance < 0.5; // Dark if luminance is less than 50%
+  return (0.299 * r + 0.587 * g + 0.114 * b) / 255 < 0.55;
 };
 
-export const dropdownStyles = (props: IDropdownStyleProps, selectedColor?: string, showColorBackground?: "No" | "Lighter" | "Full", showColorBorder?: boolean, makeFontBold?: boolean, componentHeight?: "Tall" | "Short", iconColorOverride?: string):Partial<IDropdownStyles> => {
-  const isShort = componentHeight === "Short";
-  console.log("🎨 DropdownStyles - componentHeight:", componentHeight, "isShort:", isShort);
-  
-  // Use completely different values for tall vs short to force re-render
-  const heightValues = isShort
-    ? {
-        // Left inset pixel-matched against the native Dataverse choice field (28px, measured
-        // consistently across two separate reference screenshots at ~400px field width) - see
-        // caretDownWrapper's own comment for the equivalent right-side calibration.
-        padding: "4px 11px",
-        paddingRight: "30px", // More space for caret - see caretDownWrapper's own comment below
-        minHeight: "24px", // Slightly taller
-        maxHeight: "32px", // Slightly taller
-        height: "32px", // Slightly taller
-        lineHeight: "1.3" // Better line height for readability
+const FIELD_TEXT_COLOR = "#323130";
+// Inherited from the control's wrapper (index.ts withThemeFont): the app's custom theme font,
+// then Segoe UI - see ThemeFont.tsx.
+const FONT_FAMILY = "inherit";
+
+export interface IDropdownStyleOptions {
+  hasValue: boolean;
+  makeFontBold: boolean;
+  componentHeight: "Tall" | "Short";
+  hoverColor: string;
+  listSelectedColor: string;
+}
+
+// The field itself is always the neutral OOTB grey box (FIELD_BG / FIELD_BG_HOVER / white +
+// FIELD_BORDER_FOCUS when focused) - the same three tones AdvancedLookUp and AdvancedMultiChoice
+// use. All option-color treatment lives on the selected-value chip (AdvancedOptionsControl's
+// _onRenderTitle), no longer on the field: that is the family look.
+export const dropdownStyles = (props: IDropdownStyleProps, o: IDropdownStyleOptions): Partial<IDropdownStyles> => {
+  // Title height excludes the 1px transparent focus border on each side (`dropdown` below), so the
+  // field is 34px / 40px overall - the same as AdvancedLookUp's chip state and AdvancedMultiChoice.
+  const height = o.componentHeight === "Short" ? 32 : 38;
+  const listItemText = (bg: string) => (isColorDark(bg) ? "#ffffff" : FIELD_TEXT_COLOR);
+
+  return ({
+    title: [{
+      color: FIELD_TEXT_COLOR,
+      display: "flex",
+      alignItems: "center",
+      fontWeight: o.makeFontBold ? "600" : "400",
+      fontSize: "14px",
+      lineHeight: "20px",
+      fontFamily: FONT_FAMILY,
+      border: "none",
+      borderRadius: "4px",
+      backgroundColor: FIELD_BG,
+      // With a value the chip sits 4px in from the field edge, exactly like AdvancedLookUp's
+      // chip and AdvancedMultiChoice's values. The empty placeholder keeps the OOTB-calibrated
+      // 11px text inset (v3.7.7).
+      // 3px + the 1px border = AdvancedLookUp's measured 4px chip inset.
+      padding: o.hasValue ? "0 30px 0 3px" : "0 30px 0 11px",
+      height: `${height}px`,
+      minHeight: `${height}px`,
+      width: "100%",
+      boxSizing: "border-box",
+      transition: "background-color 0.15s ease-in-out",
+      outline: "none",
+      overflow: "hidden",
+      textOverflow: "ellipsis",
+      whiteSpace: "nowrap",
+      cursor: props.disabled ? "default" : "pointer",
+      selectors: {
+        // Fluent renders its own placeholder text node for the empty state (onRenderTitle is only
+        // called with a selection) - this narrows it to the muted placeholder grey.
+        '&.ms-Dropdown-titleIsPlaceHolder': {
+          color: FIELD_PLACEHOLDER_COLOR
+        },
+        ':hover': {
+          backgroundColor: props.disabled ? FIELD_BG : FIELD_BG_HOVER,
+          color: FIELD_TEXT_COLOR
+        }
       }
-    : {
-        padding: "8px 11px", // Left inset - see the Short branch's own comment above
-        paddingRight: "30px", // More space for caret - see caretDownWrapper's own comment below
-        minHeight: "32px", // Increased from 28px
-        maxHeight: "40px", // Increased from 36px
-        height: "40px", // Set explicit height
-        lineHeight: "1.4"
-      };
-
-  console.log("🎨 Applied height values:", heightValues);
-
-  // Determine the actual background color being used
-  const actualBackgroundColor = iconColorOverride && showColorBackground === "Full" ? iconColorOverride :
-                                iconColorOverride && showColorBackground === "Lighter" ? lightenColor(iconColorOverride, 0.8) :
-                                showColorBackground === "Full" && selectedColor ? selectedColor :
-                                showColorBackground === "Lighter" && selectedColor ? lightenColor(selectedColor, 0.8) :
-                                FIELD_BG;
-
-  // Determine text color based on background darkness
-  const textColor = (showColorBackground === "Full" && actualBackgroundColor && isColorDark(actualBackgroundColor)) ? 
-                    "#ffffff" : "#323130"; // White text on dark backgrounds, dark text otherwise
-
-  return ({    
-      title: [{
-        color: textColor, // Dynamic text color based on background
-        display: "flex",
-        alignItems: "center",
-        fontWeight: makeFontBold ? "600" : "400",
-        fontSize: "14px", // Keep font size constant
-        lineHeight: heightValues.lineHeight,
-        fontFamily: "'Segoe UI', 'Segoe UI Web (West European)', 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Roboto', 'Helvetica Neue', sans-serif",
-        borderWidth: "0px", // No actual border - using box-shadow instead
-        borderStyle: "none",
-        borderColor: "transparent",
-        borderRadius: "6px", // Match Power Platform's field border radius more closely
-        boxShadow: showColorBorder ? 
-          `inset 0 0 0 2px ${(showColorBorder && selectedColor) ? selectedColor : 
-                             (showColorBorder && iconColorOverride) ? iconColorOverride : 
-                             'transparent'}` : 
-          "none", // Use inset box-shadow to create border effect
-        backgroundColor: iconColorOverride && showColorBackground === "Full" ? iconColorOverride :
-                        iconColorOverride && showColorBackground === "Lighter" ? lightenColor(iconColorOverride, 0.8) :
-                        showColorBackground === "Full" && selectedColor ? selectedColor :
-                        showColorBackground === "Lighter" && selectedColor ? lightenColor(selectedColor, 0.8) :
-                        FIELD_BG,
-        padding: heightValues.padding,
-        paddingRight: heightValues.paddingRight,
-        minHeight: heightValues.minHeight,
-        maxHeight: heightValues.maxHeight,
-        height: heightValues.height,
-        width: "100%",
-        boxSizing: "border-box",
-        transition: "all 0.15s ease-in-out",
-        outline: "none",
-        overflow: "hidden",
-        textOverflow: "ellipsis",
-        whiteSpace: "nowrap",
-        selectors: {
-          // Fluent renders its OWN default placeholder text node (confirmed live: innerHTML is
-          // the literal placeholder string, not our custom onRenderTitle/option-content markup -
-          // Dropdown only invokes onRenderTitle once something is actually selected) - but it's
-          // still a plain-text child of THIS span, so `color` above already cascades to it via
-          // normal CSS inheritance without needing a selector at all. What needs a selector is
-          // narrowing that inherited color specifically for the placeholder state: with nothing
-          // else, the placeholder inherits the exact same full-strength `textColor` as a real
-          // selected value, confirmed live (computed color was #323130 for "---") - the native
-          // Dataverse field's own placeholder is a visibly lighter, muted grey. `&` targets this
-          // same title span again, refined by Fluent's own placeholder modifier class.
-          '&.ms-Dropdown-titleIsPlaceHolder': {
-            color: FIELD_PLACEHOLDER_COLOR
-          },
-          ':hover': {
-            boxShadow: showColorBorder ?
-              `inset 0 0 0 2px ${(showColorBorder && selectedColor) ? selectedColor :
-                                 (showColorBorder && iconColorOverride) ? iconColorOverride :
-                                 'transparent'}` :
-              "none", // Maintain box-shadow border on hover
-            backgroundColor: iconColorOverride && showColorBackground === "Full" ? iconColorOverride :
-                           iconColorOverride && showColorBackground === "Lighter" ? lightenColor(iconColorOverride, 0.8) :
-                           showColorBackground === "Full" && selectedColor ? selectedColor :
-                           showColorBackground === "Lighter" && selectedColor ? lightenColor(selectedColor, 0.8) :
-                           (props.disabled ? FIELD_BG : FIELD_BG_HOVER),
-            cursor: props.disabled ? "default" : "pointer"
-          },
-          ':focus': {
-            // backgroundColor deliberately NOT set here (unlike :hover above) - confirmed live
-            // that keyboard/programmatic focus actually lands on the OUTER `.ms-Dropdown` div
-            // (className "ms-Dropdown", the `dropdown` style key below), never on this `title`
-            // span itself, so a `:focus` rule here can never match and would be dead code. The
-            // focus-visible affordance (border color) is applied on `dropdown` below instead,
-            // where `:focus` genuinely fires - see FIELD_BORDER_FOCUS there.
-            boxShadow: showColorBorder ?
-              `inset 0 0 0 2px ${(showColorBorder && selectedColor) ? selectedColor :
-                                 (showColorBorder && iconColorOverride) ? iconColorOverride :
-                                 'transparent'}` :
-              "none", // Maintain box-shadow border on focus
-            outline: "none", // Let Power Platform handle focus
-            outlineOffset: "0px"
-          },
-          ':disabled': {
-            backgroundColor: FIELD_BG,
-            borderColor: "#d2d0ce",
-            color: "#a19f9d",
-            cursor: "default"
-          }
+    }],
+    root: {
+      width: "100%",
+      maxWidth: "100%",
+      boxSizing: "border-box",
+      fontFamily: FONT_FAMILY
+    },
+    // The closed-state box (className "ms-Dropdown" - the element that actually receives focus).
+    // Transparent 1px border so focus can color it without shifting the box.
+    dropdown: [{
+      borderRadius: "4px",
+      border: "1px solid transparent",
+      backgroundColor: "transparent",
+      selectors: {
+        ":focus": {
+          outline: "none",
+          borderColor: FIELD_BORDER_FOCUS
+        },
+        ":focus .ms-Dropdown-title": {
+          backgroundColor: FIELD_BG_FOCUS
+        },
+        ":focus::after": {
+          border: "none"
+        },
+        "::after": {
+          border: "none"
         }
-      }],
-      root: {
-        width: "100%",
-        maxWidth: "100%",
-        boxSizing: "border-box",
-        overflow: "visible", // Changed from hidden to visible
-        fontFamily: "'Segoe UI', 'Segoe UI Web (West European)', 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Roboto', 'Helvetica Neue', sans-serif",
-        minHeight: isShort ? "36px" : "44px", // Increased minimum height to match container
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "flex-start"  // Ensure left alignment
-      },
-      // Root closed-state box (className "ms-Dropdown", confirmed via live DOM inspection of the
-      // actual rendered control - NOT the open options list/panel, which is styled separately
-      // below via `callout`). This is where the field's real background/border live, one layer
-      // outside `title` above (a fill-only span nested inside it): `title`'s own backgroundColor
-      // was already correctly OOTB-matched, but this box had its OWN, separate, still-default
-      // Fluent white fill plus a hardcoded 1px grey border - both painted underneath/around
-      // `title`'s fill, which is exactly why a border was visible at all despite `title` itself
-      // having none. Pixel-measured against a maker-supplied screenshot of the native Dataverse
-      // choice field: no visible border at rest (border set to a transparent 1px rule, not
-      // omitted, so focus doesn't shift the box by 1px - same technique AdvancedLookUp's
-      // LookUpStyles.ts uses for its ComboBox border), and backgroundColor here matters far less
-      // than `title`'s now that both agree, but is kept transparent (not FIELD_BG) since `title`
-      // already has width:100% and fully covers this box's content area on its own.
-      dropdown: [{
-        borderRadius: "6px",
-        border: "1px solid transparent",
-        backgroundColor: "transparent",
-        maxHeight: "200px",
-        overflowY: "auto",
-        selectors: {
-          ":focus": {
-            outline: "none",
-            borderColor: FIELD_BORDER_FOCUS
-          }
-        }
-      }],
-      dropdownItem: [{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "flex-start",  // Ensure left alignment
-        padding: "6px 12px",
-        minHeight: "30px",
-        fontSize: "14px",
-        color: "#323130",
-        backgroundColor: "transparent",
-        cursor: "pointer",
-        textAlign: "left",  // Explicit text alignment
-        selectors: {
-          ":hover": {
-            backgroundColor: "#f3f2f1",
-            color: "#323130"
-          },
-          ":focus": {
-            backgroundColor: "#deecf9",
-            color: "#323130",
-            outline: "none"
-          }
-        }
-      }],
-      dropdownItemSelected: [{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "flex-start",  // Ensure left alignment
-        padding: "6px 12px",
-        minHeight: "30px",
-        fontSize: "14px",
-        backgroundColor: "#deecf9",
-        color: "#323130",
-        fontWeight: "600",
-        textAlign: "left",  // Explicit text alignment
-        selectors: {
-          ":hover": {
-            backgroundColor: "#c7e0f4",
-            color: "#323130"
-          }
-        }
-      }],
-      caretDown: [{
-        color: showColorBackground !== "No" && selectedColor ? "#605e5c" : "#605e5c",
-        fontSize: "12px"
-      }],
-      // Pixel-measured against the same reference screenshot as FIELD_BG above: the native
-      // Dataverse choice field's chevron sits noticeably further inset from the field's right
-      // edge than Fluent's own default caretDownWrapper offset. `paddingRight` above (on `title`)
-      // is bumped in lockstep with this, keeping the same reserved-space relationship, so long
-      // option text still stops before running under the chevron rather than colliding with it.
-      caretDownWrapper: [{
-        right: "14px",
-        top: "50%",
-        transform: "translateY(-50%)"
-      }],
-      callout: {
-        border: "1px solid #d2d0ce",
-        borderRadius: "6px"
       }
-    });
-  };
-
-// Export the darkenColor function for use in other components
-export { darkenColor };
+    }],
+    // List rows: AdvancedMultiChoice's List hover / List selected colors (hover wins over selected,
+    // like its keyboard-active row), selected rows bold.
+    dropdownItem: [{
+      display: "flex",
+      alignItems: "center",
+      padding: "6px 12px",
+      minHeight: "32px",
+      fontSize: "14px",
+      color: FIELD_TEXT_COLOR,
+      backgroundColor: "transparent",
+      cursor: "pointer",
+      textAlign: "left",
+      selectors: {
+        ":hover": { backgroundColor: o.hoverColor, color: listItemText(o.hoverColor) },
+        ":focus": { backgroundColor: o.hoverColor, color: listItemText(o.hoverColor), outline: "none" },
+        ":active": { backgroundColor: o.hoverColor, color: listItemText(o.hoverColor) }
+      }
+    }],
+    dropdownItemSelected: [{
+      display: "flex",
+      alignItems: "center",
+      padding: "6px 12px",
+      minHeight: "32px",
+      fontSize: "14px",
+      backgroundColor: o.listSelectedColor,
+      color: listItemText(o.listSelectedColor),
+      fontWeight: "600",
+      textAlign: "left",
+      selectors: {
+        // No :focus override here: Fluent focuses the selected row when the list opens, and it
+        // should read as "selected" (List selected color) until the pointer actually moves.
+        ":hover": { backgroundColor: o.hoverColor, color: listItemText(o.hoverColor) },
+        ":focus": { backgroundColor: o.listSelectedColor, color: listItemText(o.listSelectedColor), outline: "none" },
+        ":active": { backgroundColor: o.hoverColor, color: listItemText(o.hoverColor) }
+      }
+    }],
+    caretDown: [{
+      color: "#605e5c",
+      fontSize: "12px"
+    }],
+    // Right-edge chevron position, calibrated against the OOTB field (v3.7.1). Hidden when
+    // read-only, like AdvancedMultiChoice - nothing to open.
+    caretDownWrapper: [{
+      right: "14px",
+      top: "50%",
+      transform: "translateY(-50%)",
+      // Line box = field height so the glyph centres vertically in both Short and Tall.
+      height: `${height}px`,
+      lineHeight: `${height}px`,
+      display: props.disabled ? "none" : undefined
+    }],
+    callout: {
+      border: "1px solid #d2d0ce",
+      borderRadius: "6px"
+    }
+  });
+};

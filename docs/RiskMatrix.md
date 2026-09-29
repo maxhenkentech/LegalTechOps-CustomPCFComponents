@@ -23,6 +23,7 @@ An interactive risk assessment matrix that allows users to plot and visualize ri
 - **Responsive Design**: precise positioning across all size and grid configurations
 - **Visual Feedback**: color coding and smooth hover effects make risk levels clear at a glance
 - **Professional Styling**: modern Fluent UI design system with smooth transitions
+- **Follows your app theme font**: uses the font of the app's modern [custom theme](https://learn.microsoft.com/power-apps/maker/model-driven-apps/modern-theme-overrides) (the `font` of its Custom theme definition), falling back to Segoe UI when no custom theme is set or the font can't be displayed
 
 ## Properties
 | Property | Type | Options | Description | Default |

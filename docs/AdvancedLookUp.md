@@ -21,16 +21,19 @@ A field control that replaces a standard lookup field with a searchable, type-to
 - **Fixed Icon Name**: an optional literal MDL2 icon name shown as a record's icon whenever `Icon Column` produced no value for it (every configured column was blank on that record, or there was no value to fall through to), or for every record when `Icon Column` is left blank entirely. Always the lowest-priority fallback - tried only after `Icon Column`'s own fallback chain has been tried and come up empty.
 - **Icon Shape**: the box drawn behind each record's icon/picture - `Full` (square, edge to edge - default), `Rounded Square`, `Circle`, or `None` (no shape at all; a picture renders at its own natural aspect ratio instead of being cropped to a square, and `Icon Background Color` is ignored)
 - **Icon Background Color**: an optional hex color (e.g. `#0078D4`) painted behind each icon/picture in the shape above. Blank by default - no background is drawn
-- **Icon Color**: an optional hex color (e.g. `#0078D4`) applied to MDL2 icon glyphs. Blank by default - icons render in their natural color. Has no effect on a picture or web-resource image, which keep their own colors
+- **Icon Color**: an optional hex color (e.g. `#0078D4`) applied to MDL2 icon glyphs. Blank by default - icons use the family accent: the chip's own link color on the selected record, `#255BA4` in the list (the same blue Advanced Dropdown and Advanced Multi Choice use). Has no effect on a picture or web-resource image, which keep their own colors. An icon name that isn't a real MDL2 icon shows no icon rather than an empty gap
 - **Hover Tooltip**: `Tooltip Column` shows a column's value as a tooltip when hovering over the currently selected value
 - **Label Column**: shows a different column's value as each record's label (in the dropdown and the selected value) instead of the target table's primary name column - purely a display override, the value actually saved is always the true primary name
 - **Fallback Columns**: `Icon Column`, `Tooltip Column`, and `Label Column` all accept a semicolon-separated list of column names (e.g. `lops_column1;lops_column2`) instead of a single one - tried in order per record, the first one with a value wins. Useful when different records populate different columns (e.g. a status icon that only some record types set). `Additional Search Columns` is a *different* delimiter/concept - comma-separated, and every listed column is searched at once rather than tried in priority order. `Additional Display Columns` also uses a semicolon, but means something different again - every listed column's value is shown together, not a fallback chain
-- **Configuration Validator**: `Icon Column`, `Label Column`, `Tooltip Column`, `Additional Search Columns`, `Additional Display Columns`, `Icon Background Color`, `Icon Color`, and `Record Backdrop Color` are checked for validity - a misspelled column name (one that doesn't exist on the target table, checked individually when a fallback list is used) or an invalid color value replaces the field with a red error panel naming exactly what's wrong, instead of silently doing nothing. `Fixed Icon Name` is exempt, since it's explicitly a literal icon name, not a column reference
+- **Configuration Validator**: `Icon Column`, `Label Column`, `Tooltip Column`, `Additional Search Columns`, `Additional Display Columns`, `Icon Background Color`, `Icon Color`, `Record Backdrop Color`, `List hover color`, and `List selected color` are checked for validity - a misspelled column name (one that doesn't exist on the target table, checked individually when a fallback list is used) or an invalid color value replaces the field with a red error panel naming exactly what's wrong, instead of silently doing nothing. `Fixed Icon Name` is exempt, since it's explicitly a literal icon name, not a column reference
 - **Active/Inactive Filtering**: `Show Inactive Records` controls whether inactive records are searchable (off by default, matching the native lookup control)
 - **Result Limit**: caps how many matching records are shown per search (10 by default) - every search, including the initial list shown when the dropdown first opens, re-queries the server fresh; this is not a client-side page size over an already-fetched larger set
 - **Additional Display Columns**: shows extra context underneath each record's name in the dropdown list (not the selected value), in smaller, muted text - e.g. `accountnumber;primarycontactid` might show "ACC-1042 · Jane Doe" under a company name. Every listed column's value is shown together (not a fallback chain - see the note on delimiters below), and every column type is supported: Choice/Status/State show their label, a Lookup/Owner/Customer column shows the referenced record's name, Currency shows the formatted amount (symbol and value together), and dates/numbers use their normal formatted display value
 - **Clear Affordance**: an "x" next to the selected value resets the lookup
 - **Component Height**: Tall or Short, matching Advanced Dropdown's sizing options
+- **Family look**: `Selection shape` (Square/Rounded/Round) sets the selected-record chip's corners, and the dropdown list uses the same row colors as Advanced Dropdown and Advanced Multi Choice - `List hover color` for the hovered row, `List selected color` (bold) for the current record
+- **Respects read-only**: when the field is read-only (set on the form, locked by a business rule, an inactive record, or column-level security) nothing can be searched or cleared, the search glyph is hidden, the field stays flat grey, and an empty field shows `---`. The selected record's link still opens it
+- **Follows your app theme font**: uses the font of the app's modern [custom theme](https://learn.microsoft.com/power-apps/maker/model-driven-apps/modern-theme-overrides), falling back to Segoe UI when no custom theme is set or the font can't be displayed
 
 ![Advanced LookUp - filtered search with highlighted match text](../Screenshots/AdvancedLookUp/FilteredSearch.png)
 
@@ -42,24 +45,29 @@ A field control that replaces a standard lookup field with a searchable, type-to
 
 ## Properties
 
+Properties are listed in the order they appear in the form editor, grouped as search → display → icons → colors.
+
 | Property | Type | Options | Description | Default |
 |----------|------|---------|-------------|---------|
 | `lookupValue` | Lookup | - | **Required.** The lookup field this control replaces. Place the control directly on that field | - |
+| `searchColumns` | Text | Comma-separated logical names | Additional columns to search against, besides the target table's primary name column (always searched) | - |
+| `sortColumnName` | Text | A single column logical name | Column to sort search results by, always ascending. Both text and number columns are supported. Falls back to the target table's primary name column when left blank | - |
+| `showInactiveRecords` | Yes/No | - | Include inactive records in search results | No |
+| `resultLimit` | Whole Number | - | Maximum number of matching records shown per search - re-queried from the server on every search | 10 |
+| `placeholderText` | Text | - | Placeholder shown when no record is selected. A read-only empty field always shows `---` | "Search records..." |
+| `labelColumnName` | Text | Column logical name(s), semicolon-separated | Column shown as each record's label instead of the target table's primary name column. Display-only - the saved value is always the true primary name. Multiple names tried in order, first with a value wins | - |
+| `additionalDisplayColumns` | Text | Column logical name(s), semicolon-separated | Columns shown as smaller context text underneath each record's name in the dropdown list. Every listed column's value is shown (not a fallback chain). Every column type is supported | - |
+| `tooltipColumnName` | Text | Column logical name(s), semicolon-separated | Column whose value is shown as a tooltip when hovering the selected value. Multiple names tried in order, first with a value wins | - |
+| `componentHeight` | Choice | Tall/Short | Field height | Short |
+| `selectionShape` | Choice | Square / Rounded / Round | Corner shape of the selected-record chip | Rounded |
 | `iconColumnName` | Text | Column logical name(s), semicolon-separated | Picture, MDL2 icon-name, or Choice column on the target table (see Features above). Every name must be a real column - use `iconFixedName` for a literal icon. Multiple names tried in order, first with a value wins. Use `lookupfield.column` to pull the icon from a related record instead (see Features above) | - |
 | `iconFixedName` | Text | A literal MDL2 icon name | Icon shown when `iconColumnName` produced no value (or is blank entirely) - always the lowest-priority fallback | - |
 | `iconShape` | Choice | Full / Rounded Square / Circle / None | Shape drawn behind each record's icon/picture (see Features above) | Full |
 | `iconBackgroundColor` | Text | Hex color, e.g. `#0078D4` | Background color painted behind each icon/picture, in the shape above. Ignored when Icon Shape is None | - |
-| `iconColor` | Text | Hex color, e.g. `#0078D4` | Color applied to MDL2 icon glyphs. Ignored for picture/web-resource images | - |
+| `iconColor` | Text | Hex color, e.g. `#0078D4` | Color applied to MDL2 icon glyphs. Blank uses the family accent (chip link color / `#255BA4`). Ignored for picture/web-resource images | - |
 | `recordBackdropColor` | Text | Hex color, e.g. `#EDF3FB` | Background color of the chip drawn behind the selected record's icon and name | `#EDF3FB` (matches the out-of-the-box lookup) |
-| `tooltipColumnName` | Text | Column logical name(s), semicolon-separated | Column whose value is shown as a tooltip when hovering the selected value. Multiple names tried in order, first with a value wins | - |
-| `labelColumnName` | Text | Column logical name(s), semicolon-separated | Column shown as each record's label instead of the target table's primary name column. Display-only - the saved value is always the true primary name. Multiple names tried in order, first with a value wins | - |
-| `searchColumns` | Text | Comma-separated logical names | Additional columns to search against, besides the target table's primary name column (always searched) | - |
-| `sortColumnName` | Text | A single column logical name | Column to sort search results by, always ascending. Both text and number columns are supported. Falls back to the target table's primary name column when left blank | - |
-| `additionalDisplayColumns` | Text | Column logical name(s), semicolon-separated | Columns shown as smaller context text underneath each record's name in the dropdown list. Every listed column's value is shown (not a fallback chain). Every column type is supported | - |
-| `showInactiveRecords` | Yes/No | - | Include inactive records in search results | No |
-| `resultLimit` | Whole Number | - | Maximum number of matching records shown per search - re-queried from the server on every search | 10 |
-| `componentHeight` | Choice | Tall/Short | Field height | Short |
-| `placeholderText` | Text | - | Placeholder shown when no record is selected | "Search records..." |
+| `hoverColor` | Text | Hex color | Background of the hovered record in the dropdown list | `#F3F2F1` |
+| `listSelectedColor` | Text | Hex color | Background of the currently selected record in the dropdown list | `#EDF3FB` |
 
 ## Configuring the Control
 
@@ -73,8 +81,8 @@ Advanced LookUp is a **field** control bound directly to a lookup field, the sam
 6. (Optional) Set `searchColumns` to widen what a typed search matches beyond the target table's primary name column.
 7. (Optional) Set `sortColumnName` to a column on the target table to sort results by (always ascending, text and number columns both supported) - leave blank to sort by the primary name column.
 8. (Optional) Set `additionalDisplayColumns` to one or more columns on the target table (semicolon-separated, e.g. `accountnumber;primarycontactid`) to show as smaller context text under each record's name in the dropdown list - every column type is supported (Choice, Lookup, Currency, dates, numbers, and more).
-9. Adjust `showInactiveRecords`, `resultLimit`, `componentHeight`, and `placeholderText` to match your form's needs.
-10. If `iconColumnName`, `labelColumnName`, `tooltipColumnName`, `searchColumns`, `sortColumnName`, `additionalDisplayColumns`, `iconBackgroundColor`, `iconColor`, or `recordBackdropColor` are misconfigured (a column name that doesn't exist on the target table, or an invalid color), the field is replaced by a red error panel naming exactly what's wrong - fix the offending property and it disappears. `iconFixedName` is never checked this way, since it's a literal icon name rather than a column reference.
+9. Adjust `showInactiveRecords`, `resultLimit`, `componentHeight`, `selectionShape`, `placeholderText`, and the list colors to match your form's needs.
+10. If `iconColumnName`, `labelColumnName`, `tooltipColumnName`, `searchColumns`, `sortColumnName`, `additionalDisplayColumns`, `iconBackgroundColor`, `iconColor`, `recordBackdropColor`, `hoverColor`, or `listSelectedColor` are misconfigured (a column name that doesn't exist on the target table, or an invalid color), the field is replaced by a red error panel naming exactly what's wrong - fix the offending property and it disappears. `iconFixedName` is never checked this way, since it's a literal icon name rather than a column reference.
 
 See [FLUENT_ICONS.md](../FLUENT_ICONS.md) for the full list of available MDL2 icon names for `iconColumnName`, or browse them visually at [flicon.io](https://www.flicon.io/). Names from Microsoft's [Segoe Fluent Icons](https://learn.microsoft.com/en-us/windows/apps/design/style/segoe-fluent-icons-font) page will mostly *not* work - that is a different (Windows desktop) font.
 

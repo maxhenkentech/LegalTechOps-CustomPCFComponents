@@ -1,6 +1,7 @@
 import * as React from "react";
 import { ComboBox, IComboBox, IComboBoxOption } from "@fluentui/react/lib/ComboBox";
 import { Icon } from "@fluentui/react/lib/Icon";
+import { getIcon } from "@fluentui/react/lib/Styling";
 import { TooltipHost } from "@fluentui/react/lib/Tooltip";
 import { DirectionalHint } from "@fluentui/react/lib/Callout";
 import {
@@ -17,7 +18,12 @@ import {
   IconShape,
   FIELD_BG,
   FIELD_BORDER_RADIUS,
+  SERIES_ACCENT,
+  SELECTION_RADIUS,
+  listOptionStyles,
+  currentRecordOptionStyles,
 } from "./LookUpStyles";
+import { themeWithFont } from "./ThemeFont";
 import {
   TEST_MODE_TARGET_ENTITY_LOGICAL_NAME,
   TEST_MODE_TARGET_RECORDS,
@@ -244,6 +250,14 @@ export interface IAdvancedLookUpProps {
   resultLimit: number;
   componentHeight: "Tall" | "Short";
   placeholderText: string;
+  // Family look (AdvancedMultiChoice): corner shape of the selected-record chip, and the list's
+  // hover / selected row colors. Added in v1.11.0; all three default to the previous look's
+  // family equivalents (Rounded = the chip's original 4px radius).
+  selectionShape: "Square" | "Rounded" | "Round";
+  hoverColor: string;
+  listSelectedColor: string;
+  // Resolved theme font stack (ThemeFont.tsx), for the results list, which renders in a Layer.
+  fontFamily: string;
   isDisabled: boolean;
   webAPI: ComponentFramework.WebApi;
   navigation: ComponentFramework.Navigation;
@@ -633,6 +647,25 @@ async function resolveIconForRecord(
   return {};
 }
 
+// Fluent's <Icon> renders an empty box for an unregistered MDL2 name, which left a blank 20px gap
+// before the record name (e.g. a text column holding "Balance", a Segoe Fluent-only name). The
+// family (AdvancedMultiChoice/AdvancedDropDown) checks the registry first and shows no icon
+// instead. Cached because getIcon console.warns on every miss.
+const registeredIconCache = new Map<string, boolean>();
+function isRegisteredMdl2Icon(name: string): boolean {
+  const key = name.toLowerCase();
+  const cached = registeredIconCache.get(key);
+  if (cached !== undefined) return cached;
+  let registered: boolean;
+  try {
+    registered = getIcon(name) !== undefined;
+  } catch {
+    registered = false;
+  }
+  registeredIconCache.set(key, registered);
+  return registered;
+}
+
 export const AdvancedLookUpControl: React.FC<IAdvancedLookUpProps> = (props) => {
   const {
     lookupValueProperty,
@@ -651,6 +684,10 @@ export const AdvancedLookUpControl: React.FC<IAdvancedLookUpProps> = (props) => 
     resultLimit,
     componentHeight,
     placeholderText,
+    selectionShape,
+    hoverColor,
+    listSelectedColor,
+    fontFamily,
     isDisabled,
     webAPI,
     navigation,
@@ -1055,6 +1092,14 @@ export const AdvancedLookUpControl: React.FC<IAdvancedLookUpProps> = (props) => 
       errors.push(`Record Backdrop Color "${recordBackdropColor}" is not a valid hex color - use a format like #EDF3FB or #FFF.`);
     }
 
+    if (hoverColor && !HEX_COLOR_PATTERN.test(hoverColor.trim())) {
+      errors.push(`List Hover Color "${hoverColor}" is not a valid hex color - use a format like #F3F2F1 or #FFF.`);
+    }
+
+    if (listSelectedColor && !HEX_COLOR_PATTERN.test(listSelectedColor.trim())) {
+      errors.push(`List Selected Color "${listSelectedColor}" is not a valid hex color - use a format like #EDF3FB or #FFF.`);
+    }
+
     if (!Number.isFinite(resultLimit) || resultLimit <= 0) {
       errors.push(`Result Limit must be a positive whole number (got "${resultLimit}").`);
     }
@@ -1135,6 +1180,8 @@ export const AdvancedLookUpControl: React.FC<IAdvancedLookUpProps> = (props) => 
     iconBackgroundColor,
     iconColor,
     recordBackdropColor,
+    hoverColor,
+    listSelectedColor,
     resultLimit,
     knownColumnNames,
     iconColumnNames,
@@ -1726,13 +1773,16 @@ export const AdvancedLookUpControl: React.FC<IAdvancedLookUpProps> = (props) => 
         // IconCandidate) - both go into the signature so a change to either busts the memo.
         const iconSignature = `${thumbnailUrls[id] || ""}#${recordDataById[id]?.iconValue || ""}`;
         const isTop = topMatchActive && i === 0;
+        // The committed record gets the family "selected row" look. It rides in `data` too, so a
+        // selection change busts the row memo the same way the top-match flag does.
+        const isCurrent = id === selectedId;
         return {
           ...o,
-          ...(isTop ? { styles: topMatchOptionStyles } : {}),
-          data: `${isTop ? TOP_MATCH_MARKER : ""}|${iconSignature}`,
+          ...(isTop ? { styles: topMatchOptionStyles(hoverColor) } : isCurrent ? { styles: currentRecordOptionStyles(hoverColor, listSelectedColor) } : {}),
+          data: `${isTop ? TOP_MATCH_MARKER : ""}|${iconSignature}|${isCurrent ? "current" : ""}`,
         };
       }),
-    [options, topMatchActive, recordDataById, thumbnailUrls]
+    [options, topMatchActive, recordDataById, thumbnailUrls, hoverColor, listSelectedColor, selectedId]
   );
 
   const handleKeyDownCapture = React.useCallback(
@@ -1794,14 +1844,14 @@ export const AdvancedLookUpControl: React.FC<IAdvancedLookUpProps> = (props) => 
       // an image for one record and a text/fixed glyph for another (see IconCandidate), so which
       // one to render is decided per row from whichever of thumb/data.iconValue actually landed.
       return (
-        <div className={isTopMatch ? "lops-alu-option-row lops-alu-option-row-top-match" : "lops-alu-option-row"}>
+        <div className="lops-alu-option-row" style={isTopMatch ? { backgroundColor: hoverColor } : undefined}>
           {thumb ? (
             <div className="lops-alu-option-icon" style={iconContainerStyle(iconShape, iconBackgroundColor)}>
               <img src={thumb} alt="" style={iconImageStyle(iconShape)} />
             </div>
-          ) : data?.iconValue ? (
+          ) : data?.iconValue && isRegisteredMdl2Icon(data.iconValue) ? (
             <div className="lops-alu-option-icon" style={iconContainerStyle(iconShape, iconBackgroundColor)}>
-              <Icon iconName={data.iconValue} style={iconColor ? { color: iconColor } : undefined} />
+              <Icon iconName={data.iconValue} style={{ color: iconColor || SERIES_ACCENT }} />
             </div>
           ) : null}
           <div className="lops-alu-option-text-col">
@@ -1813,22 +1863,9 @@ export const AdvancedLookUpControl: React.FC<IAdvancedLookUpProps> = (props) => 
         </div>
       );
     },
-    [recordDataById, thumbnailUrls, searchText, iconShape, iconBackgroundColor, iconColor]
+    [recordDataById, thumbnailUrls, searchText, iconShape, iconBackgroundColor, iconColor, hoverColor]
   );
 
-  // Same "purely data-driven" reasoning as onRenderOption above.
-  const selectedIconElement = React.useMemo(() => {
-    if (selectedThumbnailUrl) {
-      return <img src={selectedThumbnailUrl} alt="" style={iconImageStyle(iconShape)} />;
-    }
-    if (selectedIconValue) {
-      return <Icon iconName={selectedIconValue} style={iconColor ? { color: iconColor } : undefined} />;
-    }
-    return null;
-  }, [selectedIconValue, selectedThumbnailUrl, iconShape, iconColor]);
-
-  const hasIcon = selectedId !== undefined && selectedIconElement !== null;
-  const hasClear = selectedId !== undefined && !isDisabled;
   // Both the link text AND the clear "x" are a darkened shade of recordBackdropColor - not a
   // fixed blue/grey pair unrelated to it. Pixel-sampling the OOTB chip found its link text and
   // its clear glyph are the SAME color (not two different accents), which is also where
@@ -1844,7 +1881,25 @@ export const AdvancedLookUpControl: React.FC<IAdvancedLookUpProps> = (props) => 
   // configErrors mid-session, not by inspection - a reminder to actually exercise that
   // transition, not just each state in isolation, when adding a hook near an early return.
   const pillAccentColor = React.useMemo(() => darkenHexColor(recordBackdropColor), [recordBackdropColor]);
+  // Whether the selected-record chip (rather than the editable ComboBox) is showing - the icon's
+  // default color differs between the two (see selectedIconElement).
+  const chipShowing = !isEditing && selectedId !== undefined;
 
+  // Same "purely data-driven" reasoning as onRenderOption above.
+  const selectedIconElement = React.useMemo(() => {
+    if (selectedThumbnailUrl) {
+      return <img src={selectedThumbnailUrl} alt="" style={iconImageStyle(iconShape)} />;
+    }
+    if (selectedIconValue && isRegisteredMdl2Icon(selectedIconValue)) {
+      // Family default (AdvancedMultiChoice): a glyph without a configured Icon Color takes the
+      // accent - the chip's own link color on the chip, #255BA4 in the editable field.
+      return <Icon iconName={selectedIconValue} style={{ color: iconColor || (chipShowing ? pillAccentColor : SERIES_ACCENT) }} />;
+    }
+    return null;
+  }, [selectedIconValue, selectedThumbnailUrl, iconShape, iconColor, chipShowing, pillAccentColor]);
+
+  const hasIcon = selectedId !== undefined && selectedIconElement !== null;
+  const hasClear = selectedId !== undefined && !isDisabled;
   // Config errors replace the whole control with a red panel, same treatment as
   // QuickActionButtons' buttonErrors - see the configErrors comment above for what's checked.
   if (configErrors.length > 0) {
@@ -1869,7 +1924,7 @@ export const AdvancedLookUpControl: React.FC<IAdvancedLookUpProps> = (props) => 
 
   const pillContent = (
     <div
-      className="lops-alu-root lops-alu-pill"
+      className={isDisabled ? "lops-alu-root lops-alu-pill is-disabled" : "lops-alu-root lops-alu-pill"}
       style={{ minHeight: rootMinHeight, backgroundColor: FIELD_BG, borderRadius: FIELD_BORDER_RADIUS }}
       onClick={handlePillClick}
     >
@@ -1879,7 +1934,7 @@ export const AdvancedLookUpControl: React.FC<IAdvancedLookUpProps> = (props) => 
           margin on every side, not flush against the field's edges) and hugs its content rather
           than stretching to fill the row - see recordBackdropColor's comment above and
           .lops-alu-pill-chip in the CSS. */}
-      <div className="lops-alu-pill-chip" style={{ backgroundColor: recordBackdropColor }}>
+      <div className="lops-alu-pill-chip" style={{ backgroundColor: recordBackdropColor, borderRadius: SELECTION_RADIUS[selectionShape] ?? SELECTION_RADIUS.Rounded }}>
         {hasIcon && (
           // Deliberately .lops-alu-option-icon here, not .lops-alu-icon - the pill lays its icon
           // out as a plain flex item (see .lops-alu-pill-chip), and .lops-alu-icon's
@@ -1901,16 +1956,18 @@ export const AdvancedLookUpControl: React.FC<IAdvancedLookUpProps> = (props) => 
       {/* Same decorative search glyph as the editable field below - keeps the two render paths
           visually continuous, and clicking it (pointer-events: none, falls through) enters edit
           mode the same as clicking anywhere else in the pill's background. */}
-      <div className="lops-alu-search-icon" style={{ color: isDisabled ? "#c8c6c4" : "#605e5c" }}>
-        <Icon iconName="Search" style={{ fontSize: 14 }} />
-      </div>
+      {!isDisabled && (
+        <div className="lops-alu-search-icon" style={{ color: "#605e5c" }}>
+          <Icon iconName="Search" style={{ fontSize: 14 }} />
+        </div>
+      )}
     </div>
   );
 
   const fieldContent = (
     <div
       ref={rootRef}
-      className="lops-alu-root"
+      className={isDisabled ? "lops-alu-root is-disabled" : "lops-alu-root"}
       style={{ minHeight: rootMinHeight }}
       onClick={handleFieldClick}
       onKeyDownCapture={handleKeyDownCapture}
@@ -1937,7 +1994,8 @@ export const AdvancedLookUpControl: React.FC<IAdvancedLookUpProps> = (props) => 
         // bundle (pcf-start/lib/fluent_8_29_0.js), not just the mismatched npm types - see the
         // Fluent-version-skew note above handlePendingValueChanged.
         useComboBoxAsMenuWidth={true}
-        placeholder={placeholderText}
+        // Read-only and empty reads "---" (family convention), not an invitation to search.
+        placeholder={isDisabled ? "---" : placeholderText}
         disabled={isDisabled}
         onPendingValueChanged={handlePendingValueChanged}
         onChange={handleChange}
@@ -1945,6 +2003,9 @@ export const AdvancedLookUpControl: React.FC<IAdvancedLookUpProps> = (props) => 
         onMenuDismissed={handleMenuDismissed}
         onRenderOption={onRenderOption}
         styles={comboBoxStyles(componentHeight, hasIcon, hasClear, isDisabled)}
+        // List rows in the family colors (AdvancedMultiChoice/AdvancedDropDown): hover grey, the
+        // current record #EDF3FB and bold. comboBoxOptionStyles is read by 8.29.0 (runtime-checked).
+        comboBoxOptionStyles={listOptionStyles(hoverColor)}
         // Pins Fluent's caret button to the field's right edge - by default 8.29.0 gives it a width
         // but no `right`, leaving its position to fall out of static positioning. See LookUpStyles.
         caretDownButtonStyles={caretDownButtonStyles}
@@ -1955,7 +2016,8 @@ export const AdvancedLookUpControl: React.FC<IAdvancedLookUpProps> = (props) => 
         // ever being clipped by the boundaries of a Section/Tab container the field happens to sit
         // inside, regardless of where in the form the field is placed.
         calloutProps={{ layerProps: { hostId: layerHostIdRef.current } }}
-        theme={myTheme}
+        // Explicit theme prop beats the scoped one, so it carries the theme font itself.
+        theme={themeWithFont(fontFamily, myTheme)}
       />
       {hasClear && (
         <div className="lops-alu-clear" style={{ right: CLEAR_BUTTON_RIGHT_OFFSET }} onClick={handleClear} title="Clear">
@@ -1964,9 +2026,11 @@ export const AdvancedLookUpControl: React.FC<IAdvancedLookUpProps> = (props) => 
       )}
       {/* Decorative stand-in for Fluent's own caret button (hidden via CSS) - matches the
           out-of-the-box Dataverse lookup field's search-glyph affordance instead of a chevron. */}
-      <div className="lops-alu-search-icon" style={{ color: isDisabled ? "#c8c6c4" : "#605e5c" }}>
-        <Icon iconName="Search" style={{ fontSize: 14 }} />
-      </div>
+      {!isDisabled && (
+        <div className="lops-alu-search-icon" style={{ color: "#605e5c" }}>
+          <Icon iconName="Search" style={{ fontSize: 14 }} />
+        </div>
+      )}
     </div>
   );
 
@@ -1980,6 +2044,8 @@ export const AdvancedLookUpControl: React.FC<IAdvancedLookUpProps> = (props) => 
       <TooltipHost
         content={selectedTooltip}
         directionalHint={DirectionalHint.bottomLeftEdge}
+        // Same tooltip width/wrapping as AdvancedMultiChoice and AdvancedDropDown.
+        tooltipProps={{ styles: { content: { maxWidth: 280, whiteSpace: "normal" } } }}
         styles={{ root: { display: "block", width: "100%" } }}
       >
         {activeContent}

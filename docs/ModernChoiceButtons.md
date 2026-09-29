@@ -23,6 +23,8 @@ A field control that replaces a standard choice field with a horizontal row of c
 - **Automatic Contrast**: icon and label color switch between light and dark automatically based on the tile's current background
 - **Hidden Options & Sorting**: hide options marked hidden in the choice field, and sort tiles by Value or Text, same as Advanced Dropdown
 - **Show Selection Option Only**: collapse the row down to a single, non-interactive tile showing just the current value - useful for a read-only summary or a compact display where a full row of clickable tiles isn't wanted. The canvas shrinks to fit that one tile instead of stretching full width, and hovering/clicking is disabled. If no value is currently selected, a small "No value" placeholder is shown instead of an empty space
+- **Respects read-only**: when the field is read-only - set on the form, locked by a business rule, an inactive record, or restricted by column-level security - the tiles are shown dimmed and can't be clicked
+- **Follows your app theme font**: uses the font of the app's modern [custom theme](https://learn.microsoft.com/power-apps/maker/model-driven-apps/modern-theme-overrides) (the `font` of its Custom theme definition), falling back to Segoe UI when no custom theme is set or the font can't be displayed
 
 ### Tile Size
 
@@ -68,8 +70,8 @@ A field control that replaces a standard choice field with a horizontal row of c
 |----------|------|---------|-------------|---------|
 | `optionsInput` | OptionSet | - | **Required.** The choice field to display as a row of tiles | - |
 | `showSelectedOnly` | Yes/No | - | Show only the tile for the currently selected choice, sized to fit that one tile, with hovering and clicking disabled. All other tiles are hidden | No |
-| `icon` | Text | [Fluent UI MDL2 icon name](../FLUENT_ICONS.md), [web resource name](#using-an-image-web-resource-as-an-icon), or JSON | Default icon for every tile, or a JSON map of choice value to icon (e.g. `{"1":{"icon":"Accept"}}`) | RadioBtnOff |
-| `useExternalValueForIcon` | Yes/No | - | Use each option's `External Value` field as its icon name (or [web resource name](#using-an-image-web-resource-as-an-icon)) instead | No |
+| `icon` | Text | [Fluent UI MDL2 icon name](../FLUENT_ICONS.md), [web resource name](#using-an-image-web-resource-as-an-icon), or JSON | Default icon for every tile, or a JSON map of choice value to icon (e.g. `{"1":{"icon":"Accept"}}`). Separate several values with `;` to [try them in order](#using-an-image-web-resource-as-an-icon) | RadioBtnOff |
+| `useExternalValueForIcon` | Yes/No | - | Use each option's `External Value` field as its icon name (or [web resource name](#using-an-image-web-resource-as-an-icon)) instead; several `;`-separated values are tried in order (e.g. `hek_Logo.svg;CheckMark`) | No |
 | `hideHiddenOptions` | Yes/No | - | Hide options marked as hidden in the choice field definition | Yes |
 | `sortBy` | Choice | Value/Text | Sort tiles by numeric Value or alphabetical Text | Value |
 | `tileShape` | Choice | Square/Rounded | Corner shape of each tile | Rounded |
@@ -114,6 +116,8 @@ A few examples spanning different Unicode blocks:
 ## Using an Image Web Resource as an Icon
 
 Anywhere an icon name is accepted - the `icon` property, a per-option JSON `icon` value, or an option's **External Value** - you can instead give the name of an **image web resource** from this environment, and the control renders that image on the tile in place of a font glyph. This is how you put a company logo, a brand mark, or any custom artwork on a choice tile.
+
+**Fallbacks:** separate several values with a semicolon to try them in order - e.g. `hek_MyLogo.png;CheckMark` shows the logo, or the `CheckMark` icon if the web resource can't be loaded. The first value that renders wins; if none does, the `icon` property's default is shown. This works in the `icon` property, a JSON `icon` value and an External Value.
 
 The control tells the two apart by the **publisher prefix**: a value beginning with a prefix and an underscore (e.g. `hek_`) is treated as a web resource name, everything else as an icon name. This is unambiguous because no MDL2 icon name contains an underscore.
 

@@ -1,4 +1,5 @@
 import { IInputs, IOutputs } from "./generated/ManifestTypes";
+import { ThemeFontScope, buildFontStack, readThemeFont } from "./ThemeFont";
 import * as React from "react";
 import { initializeIcons } from "@fluentui/react/lib/Icons";
 import { PDFGalleryControl } from "./PDFGalleryControl";
@@ -40,6 +41,15 @@ export class PDFGallery implements ComponentFramework.ReactControl<IInputs, IOut
    * Called when any value in the property bag has changed. This includes field values, data-sets, global values such as container height and width, offline status, control metadata values such as label, visible, etc.
    * @param context The entire property bag available to control via Context Object; It contains values as set up by the customizer mapped to names defined in the manifest, as well as utility functions
    */
+  // The app's custom theme font (model-driven modern theme `font`), falling back to the previous
+  // Segoe UI stack - see ThemeFont.tsx. display:contents: the font inherits through the wrapper
+  // without it creating a box, so layout is unchanged.
+  private withThemeFont(context: ComponentFramework.Context<IInputs>, element: React.ReactElement): React.ReactElement {
+    const fontFamily = buildFontStack(readThemeFont(context, this.isTestMode()));
+    return React.createElement(ThemeFontScope, { fontFamily },
+      React.createElement("div", { className: "lops-theme-font", style: { fontFamily, display: "contents" } }, element));
+  }
+
   public updateView(context: ComponentFramework.Context<IInputs>): React.ReactElement {
     const dataset = context.parameters.documents;
     const fileColumnName = context.parameters.fileColumnName.raw ?? "";
@@ -50,7 +60,7 @@ export class PDFGallery implements ComponentFramework.ReactControl<IInputs, IOut
     const allowOpenRecord = context.parameters.allowOpenRecord?.raw ?? false;
     const layoutStyle = context.parameters.style?.raw ?? "Horizontal";
 
-    return React.createElement(PDFGalleryControl, {
+    return this.withThemeFont(context, React.createElement(PDFGalleryControl, {
       dataset,
       fileColumnName,
       tabLabelColumnName,
@@ -62,7 +72,7 @@ export class PDFGallery implements ComponentFramework.ReactControl<IInputs, IOut
       webAPI: context.webAPI,
       navigation: context.navigation,
       isTestMode: this.isTestMode(),
-    });
+    }));
   }
 
   /**

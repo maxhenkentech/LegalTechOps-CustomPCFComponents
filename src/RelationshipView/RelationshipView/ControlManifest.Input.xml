@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <manifest>
-  <control namespace="lops" constructor="RelationshipView" version="1.2.2" display-name-key="lops.RelationshipView" description-key="Renders the full ancestor/descendant tree of a self-referential record hierarchy" control-type="virtual">
+  <control namespace="lops" constructor="RelationshipView" version="1.3.0" display-name-key="lops.RelationshipView" description-key="Renders the full ancestor/descendant tree of a self-referential record hierarchy" control-type="virtual">
     <property name="parentLookup" display-name-key="Parent Lookup" description-key="The self-referential lookup field (e.g. Parent Contract) that defines where this record sits in the hierarchy. Place this control on that field." of-type="Lookup.Simple" usage="bound" required="true" />
     <property name="showState" display-name-key="Show State" description-key="If true, displays an Active/Inactive pill for each record state." of-type="TwoOptions" usage="input" required="false" default-value="true" />
     <property name="showInactiveRecords" display-name-key="Show Inactive Records" description-key="If true (default), inactive records are included in the tree and, when Show State is also true, show an Inactive pill. If false, inactive records - and everything below them in the tree - are left out entirely, and the state pill is hidden as well since every remaining record would just show Active." of-type="TwoOptions" usage="input" required="false" default-value="true" />

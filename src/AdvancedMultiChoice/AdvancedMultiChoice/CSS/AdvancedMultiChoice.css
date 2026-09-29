@@ -1,0 +1,234 @@
+/* Field box - resting/hover/focus colors match AdvancedDropDown's OOTB-calibrated DropdownStyles.ts
+   (FIELD_BG #f5f5f5, FIELD_BG_HOVER #ececec, FIELD_BG_FOCUS #ffffff, FIELD_BORDER_FOCUS #a9a9a9). */
+.lops-amc-root {
+  width: 100%;
+  /* font-family is inline: the app's custom theme font, then Segoe UI (ThemeFont.ts). */
+  -webkit-font-smoothing: antialiased;
+}
+
+.lops-amc-field {
+  position: relative;
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
+  width: 100%;
+  /* 3px padding + the 1px (transparent) border = AdvancedLookUp's 4px chip inset, measured: chips
+     sit 4px in from the field edge on every side and a single row is 34px tall, exactly like its
+     selected-record chip. (4px padding measured 5px/36px - the border had been forgotten.) */
+  padding: 3px 34px 3px 3px;
+  min-height: 32px;
+  background-color: #f5f5f5;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  color: #323130;
+  font-size: 14px;
+  cursor: text;
+  transition: background-color 0.15s ease-in-out, border-color 0.15s ease-in-out;
+}
+
+.lops-amc-field.is-tall {
+  min-height: 40px;
+  padding-top: 6px;
+  padding-bottom: 6px;
+}
+
+.lops-amc-field:hover {
+  background-color: #ececec;
+}
+
+.lops-amc-field.is-focused {
+  background-color: #ffffff;
+  border-color: #a9a9a9;
+}
+
+.lops-amc-field.is-disabled,
+.lops-amc-field.is-disabled:hover {
+  background-color: #f5f5f5;
+  cursor: default;
+  padding-right: 3px;
+}
+
+/* Pills and the search box share one wrapping flex row: the input sits to the right of the last
+   pill and a pill that no longer fits drops onto the next line. */
+.lops-amc-values {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  /* 8px between chips = two of AdvancedLookUp's 4px chip margins side by side; 6px between
+     wrapped rows so they never touch. */
+  gap: 6px 8px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.lops-amc-input {
+  flex: 1 1 90px;
+  min-width: 90px;
+  height: 26px;
+  padding: 0 4px;
+  margin: 0;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  box-shadow: none;
+}
+
+.lops-amc-input::placeholder {
+  color: #a19f9d;
+  opacity: 1;
+}
+
+.lops-amc-empty-value {
+  padding: 0 4px;
+  color: #a19f9d;
+  line-height: 26px;
+}
+
+/* Pinned to the first line rather than centred on the whole box, so it stays put as rows wrap.
+   `top` is measured from inside the 1px border: 16px centres it on a Short first row (17px from
+   the outer edge), 19px on a Tall one (20px) - measured against the chip centre. */
+.lops-amc-chevron {
+  position: absolute;
+  right: 14px;
+  top: 16px;
+  transform: translateY(-50%);
+  font-size: 12px;
+  color: #605e5c;
+  pointer-events: none;
+}
+
+.lops-amc-field.is-tall .lops-amc-chevron {
+  top: 19px;
+}
+
+/* TooltipHost wraps each pill in its own div - it has to be allowed to shrink, or a long label
+   would force the pill wider than the field instead of truncating. */
+.lops-amc-pill-host {
+  display: inline-flex;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.lops-amc-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  box-sizing: border-box;
+  max-width: 100%;
+  min-width: 0;
+  height: 26px;
+  padding: 0 8px;
+  font-size: 14px;
+  line-height: 20px;
+  cursor: default;
+}
+
+.lops-amc-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.lops-amc-icon {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.lops-amc-dot {
+  flex-shrink: 0;
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  margin: 0 3px;
+  border-radius: 50%;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+/* Text display mode: no pill chrome. The clear glyph mirrors AdvancedLookUp's .lops-alu-pill-clear
+   (always visible, 6px from the label, 11px stroked Cancel glyph, muted grey darkening on hover). */
+.lops-amc-text-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  box-sizing: border-box;
+  max-width: 100%;
+  min-width: 0;
+  height: 26px;
+  /* AdvancedLookUp's .lops-alu-pill-chip padding (3px 8px) and 14px text; the icon-to-label gap
+     stays at 5px (not the lookup's 6px) by user preference. */
+  padding: 3px 8px;
+  font-size: 14px;
+  line-height: 20px;
+}
+
+/* AdvancedLookUp's .lops-alu-pill-clear, shared by both display modes. Color is set inline (the
+   accent of the pill/chip it sits in), so there is deliberately no color or :hover rule here. */
+.lops-amc-clear {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+
+/* Drop-down list */
+.lops-amc-list {
+  padding: 4px 0;
+  /* font-family is inline: the app's custom theme font, then Segoe UI (ThemeFont.ts). */
+}
+
+.lops-amc-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-sizing: border-box;
+  min-height: 32px;
+  padding: 6px 12px;
+  font-size: 14px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.lops-amc-item-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.lops-amc-item-description {
+  font-size: 12px;
+  font-weight: 400;
+  color: #605e5c;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lops-amc-checkbox {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  width: 16px;
+  height: 16px;
+  border: 1px solid #605e5c;
+  border-radius: 2px;
+  background-color: #ffffff;
+  color: #ffffff;
+  font-size: 11px;
+}
+
+.lops-amc-no-results {
+  padding: 8px 12px;
+  color: #a19f9d;
+  font-size: 14px;
+  font-style: italic;
+}

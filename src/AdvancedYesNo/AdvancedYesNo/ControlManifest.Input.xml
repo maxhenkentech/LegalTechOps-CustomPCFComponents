@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<manifest>
+  <control namespace="lops" constructor="AdvancedYesNo" version="1.0.1" display-name-key="lops.AdvancedYesNo" description-key="AdvancedYesNo description" control-type="virtual">
+    <property name="value" display-name-key="Yes/No column" description-key="The Yes/No (two options) column this control replaces. Place this control directly on that column." of-type="TwoOptions" usage="bound" required="true" />
+    <property name="displayStyle" display-name-key="Display style" description-key="How the Yes/No value is shown and changed" of-type="Enum" usage="input" required="false" default-value="Toggle">
+      <value name="Checkbox" display-name-key="Checkbox" description-key="A checkbox, checked for Yes">Checkbox</value>
+      <value name="Toggle" display-name-key="Toggle" description-key="A switch, on for Yes (default). Shows no icons" default="true">Toggle</value>
+      <value name="LabeledSwitch" display-name-key="Labeled switch" description-key="A switch with the current label inside the track and the icon inside the thumb">LabeledSwitch</value>
+      <value name="Radio" display-name-key="Radio buttons" description-key="Two classic radio buttons, one per option">Radio</value>
+      <value name="Buttons" display-name-key="Buttons" description-key="Two separate buttons, one per option; the selected one is highlighted">Buttons</value>
+      <value name="Segmented" display-name-key="Segmented" description-key="Both options in one field, the selected one highlighted like a chip">Segmented</value>
+      <value name="ToggleButton" display-name-key="Toggle button" description-key="A single button that is shown pressed for Yes, e.g. Favourite or Urgent">ToggleButton</value>
+      <value name="Chip" display-name-key="Status chip" description-key="A single chip showing the current option with its icon and color; click it to switch">Chip</value>
+      <value name="Icon" display-name-key="Icon" description-key="A single icon button, for example a star or a flag; click it to switch. The option label is shown as a tooltip">Icon</value>
+    </property>
+    <property name="showLabels" display-name-key="Show labels" description-key="Show the option labels of the column, e.g. Yes and No. Checkbox, Toggle, Labeled switch, Toggle button and Icon show the label of the current value; Radio buttons, Buttons and Segmented show one label per option" of-type="TwoOptions" usage="input" required="false" default-value="true" />
+    <property name="labelPosition" display-name-key="Label position" description-key="Checkbox, Toggle, Labeled switch and Icon only: whether the label sits to the right (default) or to the left of the control" of-type="Enum" usage="input" required="false" default-value="Right">
+      <value name="Right" display-name-key="Right" description-key="Label to the right of the control (default)" default="true">Right</value>
+      <value name="Left" display-name-key="Left" description-key="Label to the left of the control">Left</value>
+    </property>
+    <property name="optionOrder" display-name-key="Option order" description-key="Buttons, Segmented and Radio buttons: which option comes first" of-type="Enum" usage="input" required="false" default-value="YesFirst">
+      <value name="YesFirst" display-name-key="Yes first" description-key="Yes, then No (default)" default="true">YesFirst</value>
+      <value name="NoFirst" display-name-key="No first" description-key="No, then Yes">NoFirst</value>
+    </property>
+    <property name="widthMode" display-name-key="Width" description-key="Buttons, Segmented, Toggle button, Status chip and Radio buttons: whether they fill the available width (default) or have a fixed width. Checkbox, Toggle, Labeled switch and Icon are not affected" of-type="Enum" usage="input" required="false" default-value="Fill">
+      <value name="Fill" display-name-key="Fill" description-key="Fill the width of the field (default)" default="true">Fill</value>
+      <value name="Fixed" display-name-key="Fixed" description-key="Each button, segment, radio option or chip is Fixed width pixels wide, shrinking only when the field is narrower">Fixed</value>
+    </property>
+    <property name="fixedWidth" display-name-key="Fixed width" description-key="Width in pixels of each button, segment, radio option or chip when Width is Fixed" of-type="Whole.None" usage="input" required="false" default-value="100" />
+    <property name="componentHeight" display-name-key="Component Height" description-key="Height of the control, matching the other form fields" of-type="Enum" usage="input" required="false" default-value="Short">
+      <value name="Tall" display-name-key="Tall" description-key="Standard height field">Tall</value>
+      <value name="Short" display-name-key="Short" description-key="Compact height field (default)" default="true">Short</value>
+    </property>
+    <property name="selectionShape" display-name-key="Selection shape" description-key="Corner shape of the buttons, segments, chip and checkbox" of-type="Enum" usage="input" required="false" default-value="Rounded">
+      <value name="Square" display-name-key="Square" description-key="Sharp corners">Square</value>
+      <value name="Rounded" display-name-key="Rounded" description-key="Slightly rounded corners (default)" default="true">Rounded</value>
+      <value name="Round" display-name-key="Round" description-key="Fully rounded ends">Round</value>
+    </property>
+    <property name="makeFontBold" display-name-key="Make font bold" description-key="Display the labels in bold font weight. The selected option of Buttons and Segmented is always bold" of-type="TwoOptions" usage="input" required="false" default-value="false" />
+    <property name="yesIcon" display-name-key="Yes icon" description-key="Optional icon for Yes: an MDL2 icon name (browse at https://www.flicon.io) or the name of a square image web resource, e.g. lops_Approved.svg. The Icon display style uses CompletedSolid (a check badge) when this is blank" of-type="SingleLine.Text" usage="input" required="false" />
+    <property name="noIcon" display-name-key="No icon" description-key="Optional icon for No: an MDL2 icon name or the name of a square image web resource. The Icon display style uses StatusErrorFull (a cancel badge) when this is blank" of-type="SingleLine.Text" usage="input" required="false" />
+    <property name="iconPosition" display-name-key="Icon position" description-key="Position of the icon relative to its label. Above and Below apply to Buttons and Toggle button; the other styles treat them as Left and Right. Toggle shows no icons" of-type="Enum" usage="input" required="false" default-value="Left">
+      <value name="Left" display-name-key="Left" description-key="Icon to the left of the label (default)" default="true">Left</value>
+      <value name="Right" display-name-key="Right" description-key="Icon to the right of the label">Right</value>
+      <value name="Above" display-name-key="Above" description-key="Icon above the label (Buttons and Toggle button only)">Above</value>
+      <value name="Below" display-name-key="Below" description-key="Icon below the label (Buttons and Toggle button only)">Below</value>
+    </property>
+    <property name="yesColor" display-name-key="Yes color" description-key="Optional color of the Yes option (hex, e.g. #107C10), used wherever a color mode is set to Yes / No color. Yes/No columns have no option colors of their own. Blank uses the fallback color of each setting" of-type="SingleLine.Text" usage="input" required="false" />
+    <property name="noColor" display-name-key="No color" description-key="Optional color of the No option (hex, e.g. #D13438), used wherever a color mode is set to Yes / No color. Blank uses the fallback color of each setting" of-type="SingleLine.Text" usage="input" required="false" />
+    <property name="iconColorMode" display-name-key="Icon color mode" description-key="How MDL2 icon glyphs are colored: automatic contrast, a fixed color, the Yes color / No color (default), or a faded version of it. Image web resources are never recolored." of-type="Enum" usage="input" required="false" default-value="ChoiceColor">
+      <value name="Auto" display-name-key="Automatic" description-key="Icon color matches the text color for contrast">Auto</value>
+      <value name="CustomColor" display-name-key="Fixed color" description-key="Use the Icon color property">CustomColor</value>
+      <value name="ChoiceColor" display-name-key="Yes / No color" description-key="Use the Yes color or No color property (default)" default="true">ChoiceColor</value>
+      <value name="CustomColorFaded" display-name-key="Yes / No color (faded)" description-key="Use a lighter, faded version of the Yes color or No color property">CustomColorFaded</value>
+    </property>
+    <property name="iconColor" display-name-key="Icon color" description-key="Icon color for Fixed color mode, and when Yes color / No color is blank (hex, e.g. #255BA4)" of-type="SingleLine.Text" usage="input" required="false" default-value="#255BA4" />
+    <property name="checkedColorMode" display-name-key="Checked color mode" description-key="Checkbox, Toggle, Labeled switch and Radio buttons: whether the fill when the value is Yes uses a custom color (default), the Yes color property, or a faded version of it" of-type="Enum" usage="input" required="false" default-value="CustomColor">
+      <value name="CustomColor" display-name-key="Custom color" description-key="Use the Checked color property (default)" default="true">CustomColor</value>
+      <value name="ChoiceColor" display-name-key="Yes / No color" description-key="Use the Yes color property">ChoiceColor</value>
+      <value name="CustomColorFaded" display-name-key="Yes / No color (faded)" description-key="Use a lighter, faded version of the Yes color property">CustomColorFaded</value>
+    </property>
+    <property name="checkedColor" display-name-key="Checked color" description-key="Checkbox, Toggle, Labeled switch and Radio buttons: fill when the value is Yes, for Custom color mode and when Yes color is blank (hex, e.g. #255BA4)" of-type="SingleLine.Text" usage="input" required="false" default-value="#255BA4" />
+    <property name="selectionBackgroundMode" display-name-key="Selection background mode" description-key="Buttons, Segmented, Toggle button and Status chip: whether the background of the selected option uses a custom color, the Yes color / No color, or a faded version of it (default)" of-type="Enum" usage="input" required="false" default-value="CustomColorFaded">
+      <value name="CustomColor" display-name-key="Custom color" description-key="Use the Selection color property">CustomColor</value>
+      <value name="ChoiceColor" display-name-key="Yes / No color" description-key="Use the Yes color or No color property">ChoiceColor</value>
+      <value name="CustomColorFaded" display-name-key="Yes / No color (faded)" description-key="Use a lighter, faded version of the Yes color or No color property (default)" default="true">CustomColorFaded</value>
+    </property>
+    <property name="selectionColor" display-name-key="Selection color" description-key="Background of the selected option for Custom color mode, and when Yes color / No color is blank (hex, e.g. #EDF3FB)" of-type="SingleLine.Text" usage="input" required="false" default-value="#EDF3FB" />
+    <property name="selectionBorderMode" display-name-key="Selection border mode" description-key="Buttons, Segmented, Toggle button and Status chip: whether the selected option shows a border, and whether it uses a custom color or the Yes color / No color" of-type="Enum" usage="input" required="false" default-value="ChoiceColor">
+      <value name="Off" display-name-key="Off" description-key="No border">Off</value>
+      <value name="CustomColor" display-name-key="Custom color" description-key="Use the Selection border color property">CustomColor</value>
+      <value name="ChoiceColor" display-name-key="Yes / No color" description-key="Use the Yes color or No color property (default)" default="true">ChoiceColor</value>
+      <value name="CustomColorFaded" display-name-key="Yes / No color (faded)" description-key="Use a lighter, faded version of the Yes color or No color property">CustomColorFaded</value>
+    </property>
+    <property name="selectionBorderColor" display-name-key="Selection border color" description-key="Border of the selected option for Custom color mode, and when Yes color / No color is blank (hex, e.g. #255BA4)" of-type="SingleLine.Text" usage="input" required="false" default-value="#255BA4" />
+    <resources>
+      <code path="index.ts" order="1"/>
+      <css path="CSS/AdvancedYesNo.css" order="1" />
+      <platform-library name="React" version="16.8.6" />
+      <platform-library name="Fluent" version="8.29.0" />
+    </resources>
+    <feature-usage>
+      <uses-feature name="Utility" required="true" />
+    </feature-usage>
+  </control>
+</manifest>

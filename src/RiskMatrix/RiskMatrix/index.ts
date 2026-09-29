@@ -1,4 +1,5 @@
 import { IInputs, IOutputs } from "./generated/ManifestTypes";
+import { buildFontStack, readThemeFont } from "./ThemeFont";
 
 export class RiskMatrix implements ComponentFramework.StandardControl<IInputs, IOutputs> {
     private _container: HTMLDivElement | null = null;
@@ -121,7 +122,7 @@ export class RiskMatrix implements ComponentFramework.StandardControl<IInputs, I
                 padding:12px 12px 18px 12px;
                 background:#fafafa;border:1px solid #e1e5e9;border-radius:8px;
                 box-shadow:0 2px 8px rgba(0,0,0,.1),0 1px 3px rgba(0,0,0,.1);
-                font-family:'Segoe UI',-apple-system,BlinkMacSystemFont,'Roboto','Helvetica Neue',sans-serif;
+                font-family:inherit;
                 display:inline-block
             }
             .rmx-grid{display:grid;gap:0}
@@ -420,6 +421,13 @@ export class RiskMatrix implements ComponentFramework.StandardControl<IInputs, I
     }
 
     public updateView(context: ComponentFramework.Context<IInputs>): void {
+        // The app's custom theme font (model-driven modern theme `font`), falling back to the previous
+        // Segoe UI stack - see ThemeFont.ts. .rmx-container inherits it from the PCF container.
+        if (this._container) {
+            const host = typeof window !== "undefined" ? window.location.hostname : "";
+            const testMode = host === "localhost" || host === "127.0.0.1" || window.location.port === "8181";
+            this._container.style.fontFamily = buildFontStack(readThemeFont(context, testMode));
+        }
         const sizeValue = parseInt(context.parameters.Size?.raw || "0", 10) || 0; // accepts 0,1,2 (small, large, huge)
         const showCategoryLabelsValue = context.parameters.ShowCategoryLabels?.raw !== false;
         const showAxisLabelsValue = context.parameters.ShowAxisLabels?.raw !== false;

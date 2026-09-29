@@ -525,8 +525,11 @@ export const ModernChoiceButtonsControl = ({ rawOptions, selectedKey, onChange, 
           iconColor = contentColor;
         }
 
-        const iconValidation = validateAndGetIcon(icon);
-        const shouldShowIcon = iconValidation.isValid;
+        // `;` fallback chain, same syntax as AdvancedDropDown/AdvancedMultiChoice
+        // ("hek_Logo.svg;Tag"): entries are tried in order, the first one that renders wins,
+        // and the configured default icon is the last resort. A single name is a chain of one.
+        const iconChain = (icon || '').split(';').map(s => s.trim()).filter(s => s.length > 0);
+        const shouldShowIcon = iconChain.some(entry => validateAndGetIcon(entry).isValid);
         const iconFontSize = config.showChoiceValue ? ICON_FONT_SIZE : ICON_FONT_SIZE_NO_LABEL[config.tileSize];
         const isRowLayout = config.iconPosition === 'Left' || config.iconPosition === 'Right';
         const isFlexible = config.reflowBehaviour === 'Flexible';
@@ -571,7 +574,7 @@ export const ModernChoiceButtonsControl = ({ rawOptions, selectedKey, onChange, 
               cursor: interactive ? 'pointer' : 'default',
               opacity: isDisabled ? 0.6 : 1,
               transition: 'background-color 0.12s ease-in-out, border-color 0.12s ease-in-out',
-              fontFamily: "'Segoe UI', 'Segoe UI Web (West European)', -apple-system, BlinkMacSystemFont, 'Roboto', 'Helvetica Neue', sans-serif"
+              fontFamily: "inherit" // the app theme font - see ThemeFont.tsx
             }}
           >
             {shouldShowIcon && (() => {
@@ -584,40 +587,53 @@ export const ModernChoiceButtonsControl = ({ rawOptions, selectedKey, onChange, 
                 return <Icon iconName={resolved} aria-hidden="true" styles={{ root: { fontSize: effectiveIconFontSize, color: iconColor } }} />;
               };
 
-              // An image web resource ignores every icon *color* setting -- it renders as
-              // authored. What it does honor is Icon color scope: under "Selected tile only"
-              // the unselected tiles' images are desaturated and faded, which is the image
-              // equivalent of the glyphs there dropping back to automatic contrast.
-              if (iconValidation.iconType === 'webresource') {
-                return (
-                  <WebResourceIcon
-                    iconName={icon.trim()}
-                    size={effectiveIconFontSize}
-                    deemphasized={!applyIconColorMode}
-                    renderFallback={renderDefaultIcon}
-                  />
-                );
-              }
-              if (iconValidation.iconType === 'mdl2') {
-                const resolvedIconName = resolveMdl2IconName(icon.trim(), config.defaultIconName);
-                if (!resolvedIconName) return null;
-                return <Icon iconName={resolvedIconName} aria-hidden="true" styles={{ root: { fontSize: effectiveIconFontSize, color: iconColor } }} />;
-              }
-              if (iconValidation.iconType === 'unicode') {
-                const unicodeChar = convertToUnicodeChar(icon);
-                if (unicodeChar) {
+              const renderChain = (index: number): React.ReactElement | null => {
+                const entry = iconChain[index];
+                if (entry === undefined) return renderDefaultIcon();
+                const isLast = index === iconChain.length - 1;
+                const iconType = validateAndGetIcon(entry).iconType;
+
+                // An image web resource ignores every icon *color* setting -- it renders as
+                // authored. What it does honor is Icon color scope: under "Selected tile only"
+                // the unselected tiles' images are desaturated and faded, which is the image
+                // equivalent of the glyphs there dropping back to automatic contrast.
+                // A failed load falls through to the next chain entry.
+                if (iconType === 'webresource') {
                   return (
-                    <span aria-hidden="true" style={{ fontFamily: 'Segoe MDL2 Assets, Segoe UI Symbol, Symbols', fontSize: effectiveIconFontSize, lineHeight: effectiveIconFontSize, color: iconColor }}>
-                      {unicodeChar}
-                    </span>
+                    <WebResourceIcon
+                      iconName={entry}
+                      size={effectiveIconFontSize}
+                      deemphasized={!applyIconColorMode}
+                      renderFallback={() => renderChain(index + 1)}
+                    />
                   );
                 }
-              }
-              if (iconValidation.iconType === 'css') {
-                const cssClass = icon.startsWith('.') ? icon.substring(1) : icon;
-                return <i aria-hidden="true" className={`ms-Icon ${cssClass.includes('ms-Icon') ? cssClass : `ms-Icon--${cssClass}`}`} style={{ fontSize: effectiveIconFontSize, color: iconColor }} />;
-              }
-              return null;
+                if (iconType === 'mdl2') {
+                  // Only the last entry warns and falls back to the default icon; an earlier
+                  // unregistered name just passes on to the next entry.
+                  if (!isLast && !isRegisteredMdl2Icon(entry)) return renderChain(index + 1);
+                  const resolvedIconName = resolveMdl2IconName(entry, config.defaultIconName);
+                  if (!resolvedIconName) return null;
+                  return <Icon iconName={resolvedIconName} aria-hidden="true" styles={{ root: { fontSize: effectiveIconFontSize, color: iconColor } }} />;
+                }
+                if (iconType === 'unicode') {
+                  const unicodeChar = convertToUnicodeChar(entry);
+                  if (unicodeChar) {
+                    return (
+                      <span aria-hidden="true" style={{ fontFamily: 'Segoe MDL2 Assets, Segoe UI Symbol, Symbols', fontSize: effectiveIconFontSize, lineHeight: effectiveIconFontSize, color: iconColor }}>
+                        {unicodeChar}
+                      </span>
+                    );
+                  }
+                  return renderChain(index + 1);
+                }
+                if (iconType === 'css') {
+                  const cssClass = entry.startsWith('.') ? entry.substring(1) : entry;
+                  return <i aria-hidden="true" className={`ms-Icon ${cssClass.includes('ms-Icon') ? cssClass : `ms-Icon--${cssClass}`}`} style={{ fontSize: effectiveIconFontSize, color: iconColor }} />;
+                }
+                return renderChain(index + 1);
+              };
+              return renderChain(0);
             })()}
             {config.showChoiceValue && (
               <span

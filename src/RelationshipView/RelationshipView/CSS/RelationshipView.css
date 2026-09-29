@@ -3,7 +3,7 @@
   flex-direction: column;
   width: 100%;
   padding: 8px;
-  font-family: "Segoe UI", "Segoe UI Web (West European)", -apple-system, BlinkMacSystemFont, "Roboto", "Helvetica Neue", sans-serif;
+  font-family: inherit; /* the app theme font, then Segoe UI - set by index.ts withThemeFont (ThemeFont.tsx) */
   font-size: 14px;
   color: #201f1e;
   text-align: left;

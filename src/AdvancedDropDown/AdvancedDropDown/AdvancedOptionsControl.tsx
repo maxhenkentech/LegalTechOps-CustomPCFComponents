@@ -6,195 +6,258 @@ import { Icon } from "@fluentui/react/lib/Icon";
 import { ISelectableOption } from "@fluentui/react/lib/SelectableOption";
 import { getIcon } from "@fluentui/react/lib/Styling";
 import { TooltipHost } from "@fluentui/react/lib/Tooltip";
-import { dropdownStyles, myTheme, darkenColor } from "./DropdownStyles";
+import { DirectionalHint } from "@fluentui/react/lib/Callout";
+import { dropdownStyles, myTheme } from "./DropdownStyles";
+import { themeWithFont } from "./ThemeFont";
 
-// Helper function to determine if a color is dark
+const LOG_PREFIX = "[lops.AdvancedDropDown]";
+
+// ---------------------------------------------------------------------------------------------
+// Family look - AdvancedMultiChoice / AdvancedLookUp
+// ---------------------------------------------------------------------------------------------
+// The selected value renders as AdvancedLookUp's selected-record chip (the same one
+// AdvancedMultiChoice's Text display uses): a tinted backdrop inset 4px in the grey field, with
+// the label darkened from that backdrop. Every blue default is one of AdvancedLookUp's two blues:
+// #EDF3FB (its chip backdrop) and #255BA4 (that backdrop through darkenHexColor, its link/clear
+// accent). An option without a color always falls back to exactly these (or the configured hex).
+export const SERIES_ACCENT = "#255BA4";
+const LIST_TEXT_COLOR = "#323130";
+const LIST_BACKGROUND = "#FFFFFF";
+
+// AdvancedMultiChoice's fade amounts: a faded background has to stay pale enough for dark text
+// (0.82 - Lighter used 0.8 before, visually identical), an icon only needs to soften.
+const FADE_BACKGROUND = 0.82;
+
+// "Selection shape" - AdvancedMultiChoice's SELECTION_RADIUS.
+const SELECTION_RADIUS: Record<IConfig['selectionShape'], string> = {
+  Square: "2px",
+  Rounded: "4px",
+  Round: "999px"
+};
+
+// ---------------------------------------------------------------------------------------------
+// Color helpers (AdvancedMultiChoice's)
+// ---------------------------------------------------------------------------------------------
+
+const isHexColor = (color: string | undefined): color is string =>
+  !!color && /^#([0-9a-f]{3}|[0-9a-f]{6}|[0-9a-f]{8})$/i.test(color.trim());
+
+// Expands #abc to #aabbcc and drops an alpha pair, so every helper below sees #rrggbb.
+const toHex6 = (color: string): string => {
+  const h = color.trim().replace('#', '');
+  return h.length === 3 ? `#${h.split('').map(c => c + c).join('')}` : `#${h.substr(0, 6)}`;
+};
+
 const isColorDark = (color: string): boolean => {
-  if (!color || !color.startsWith('#')) return false;
-  const hex = color.replace('#', '');
+  if (!isHexColor(color)) return false;
+  const hex = toHex6(color).replace('#', '');
   const r = parseInt(hex.substr(0, 2), 16);
   const g = parseInt(hex.substr(2, 2), 16);
   const b = parseInt(hex.substr(4, 2), 16);
-  // Calculate relative luminance
-  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-  return luminance < 0.5;
+  return (0.299 * r + 0.587 * g + 0.114 * b) / 255 < 0.55;
 };
+
+const lightenColor = (color: string, amount: number): string => {
+  if (!isHexColor(color)) return color;
+  const hex = toHex6(color).replace('#', '');
+  const channel = (i: number) => {
+    const c = parseInt(hex.substr(i, 2), 16);
+    return Math.round(c + (255 - c) * amount).toString(16).padStart(2, '0');
+  };
+  return `#${channel(0)}${channel(2)}${channel(4)}`;
+};
+
+// AdvancedLookUp's darkenHexColor: HSL lightness x 0.41 (hue/saturation kept), pixel-calibrated
+// there against the OOTB lookup chip (#EDF3FB backdrop -> #2B5D9E link/clear glyph).
+const darkenHexColor = (color: string, factor = 0.41): string => {
+  if (!isHexColor(color)) return color;
+  const h = toHex6(color).replace('#', '');
+  const [r, g, b] = [0, 2, 4].map(i => parseInt(h.substr(i, 2), 16) / 255);
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  const l = (max + min) / 2;
+  let hue = 0;
+  let sat = 0;
+  if (max !== min) {
+    const d = max - min;
+    sat = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+    hue = max === r ? (g - b) / d + (g < b ? 6 : 0) : max === g ? (b - r) / d + 2 : (r - g) / d + 4;
+    hue /= 6;
+  }
+  const nl = Math.min(1, Math.max(0, l * factor));
+  const hue2rgb = (p: number, q: number, t: number): number => {
+    const tt = t < 0 ? t + 1 : t > 1 ? t - 1 : t;
+    if (tt < 1 / 6) return p + (q - p) * 6 * tt;
+    if (tt < 1 / 2) return q;
+    if (tt < 2 / 3) return p + (q - p) * (2 / 3 - tt) * 6;
+    return p;
+  };
+  const q = nl < 0.5 ? nl * (1 + sat) : nl + sat - nl * sat;
+  const p = 2 * nl - q;
+  const channels = sat === 0 ? [nl, nl, nl] : [hue2rgb(p, q, hue + 1 / 3), hue2rgb(p, q, hue), hue2rgb(p, q, hue - 1 / 3)];
+  return `#${channels.map(c => Math.round(c * 255).toString(16).padStart(2, '0')).join('')}`;
+};
+
+// ---------------------------------------------------------------------------------------------
+// Icon resolution - AdvancedMultiChoice's ";" fallback chain, plus this control's legacy
+// Unicode-escape and CSS-class forms (kept so existing Icon / External Value values still work).
+// ---------------------------------------------------------------------------------------------
 
 // A publisher-prefixed Dataverse web resource name, e.g. "hek_HenkenTechBlack" or the folder
 // form "hek_/images/logo.svg". None of the 1,801 registered MDL2 names contain an underscore,
 // and neither do the Unicode-escape or CSS-class forms below, so a leading "<prefix>_" is an
-// unambiguous marker for "this is an image in the org, not a font glyph". The prefix is matched
-// specifically (2-8 alphanumerics, as Dataverse publisher prefixes are) rather than testing for
-// a bare underscore anywhere, so a typo carrying a stray "_" doesn't get sent off to request a
-// web resource that was never going to exist.
+// unambiguous marker for "this is an image in the org, not a font glyph". Checked before the
+// CSS-class form on purpose: a web resource name may legitimately contain "icon-".
 const WEB_RESOURCE_NAME_PATTERN = /^[a-z][a-z0-9]{1,7}_/i;
+const UNICODE_PATTERNS = [/^\\u[0-9A-Fa-f]{4}$/, /^&#x[0-9A-Fa-f]+;$/, /^0x[0-9A-Fa-f]+$/, /^U\+[0-9A-Fa-f]{4}$/];
+const isCssIconClass = (name: string): boolean =>
+  name.includes('ms-Icon') || name.includes('fabric-icon') || name.includes('icon-') || name.startsWith('.');
+
+// Test-harness hook: the harness serves nothing at /WebResources, so index.ts registers a few fake
+// names (TestModeData.ts) that resolve to inline images instead. Never set against live Dataverse.
+let webResourceUrlOverrides: Record<string, string> = {};
+export const setWebResourceUrlOverrides = (overrides: Record<string, string>): void => {
+  webResourceUrlOverrides = overrides;
+};
 
 // Image web resources are served same-origin at /WebResources/<name>, so rendering one needs no
 // Web API round trip and no base64 decode -- the browser caches it like any other image.
-const getWebResourceUrl = (iconName: string): string => `/WebResources/${encodeURI(iconName.trim())}`;
+const getWebResourceUrl = (name: string): string =>
+  webResourceUrlOverrides[name.trim().toLowerCase()] ?? `/WebResources/${encodeURI(name.trim())}`;
 
-// Simple icon validation without predefined lists - trust Fluent UI's built-in MDL2 support
-const validateAndGetIcon = (iconName: string): {
-  isValid: boolean;
-  iconType: 'webresource' | 'mdl2' | 'unicode' | 'css' | 'unknown';
-} => {
-  if (!iconName || iconName.trim() === '' || iconName === 'undefined') {
-    return { isValid: false, iconType: 'unknown' };
-  }
-
-  const cleanIconName = iconName.trim();
-
-  // Checked before the CSS-class branch below on purpose: a web resource name is free to
-  // contain "icon-" (e.g. "hek_icon-approved.png"), and the prefix is the stronger signal.
-  if (WEB_RESOURCE_NAME_PATTERN.test(cleanIconName)) {
-    return { isValid: true, iconType: 'webresource' };
-  }
-
-  // Check for Unicode patterns (e.g., "\uE700", "&#xE700;", "0xE700")
-  const unicodePatterns = [
-    /^\\u[0-9A-Fa-f]{4}$/,  // \uE700
-    /^&#x[0-9A-Fa-f]+;$/,   // &#xE700;
-    /^0x[0-9A-Fa-f]+$/,     // 0xE700
-    /^U\+[0-9A-Fa-f]{4}$/   // U+E700
-  ];
-
-  if (unicodePatterns.some(pattern => pattern.test(cleanIconName))) {
-    return { isValid: true, iconType: 'unicode' };
-  }
-
-  // Check for CSS class patterns
-  if (cleanIconName.includes('ms-Icon') || cleanIconName.includes('fabric-icon') ||
-    cleanIconName.includes('icon-') || cleanIconName.startsWith('.')) {
-    return { isValid: true, iconType: 'css' };
-  }
-
-  // For all other cases, assume it's an MDL2 icon name and let Fluent UI handle it
-  // Fluent UI's Icon component has comprehensive built-in MDL2 support
-  return { isValid: true, iconType: 'mdl2' };
+// Converts "", "&#xE700;", "0xE700" or "U+E700" to the character itself.
+const convertToUnicodeChar = (iconStr: string): string | null => {
+  const cleaned = iconStr.trim();
+  const hex = cleaned.startsWith('\\u') ? cleaned.substring(2)
+    : cleaned.startsWith('&#x') ? cleaned.substring(3, cleaned.length - 1)
+      : cleaned.startsWith('0x') || cleaned.startsWith('U+') ? cleaned.substring(2)
+        : null;
+  if (hex === null) return null;
+  const code = parseInt(hex, 16);
+  return Number.isNaN(code) ? null : String.fromCharCode(code);
 };
 
-// `validateAndGetIcon` only picks a *rendering strategy* -- it cannot tell a real MDL2 name from
-// a typo or from a Segoe Fluent Icons name with no MDL2 equivalent (only ~490 of the ~1,530 names
-// on Microsoft's Segoe Fluent Icons page exist in @fluentui/font-icons-mdl2). Fluent's <Icon>
-// renders an empty span for an unregistered name, so without this check a wrong name silently
-// renders nothing instead of dropping through to the color-circle fallback below. `getIcon` reads
-// the registry `initializeIcons()` populates; it lower-cases names, so lookups are case-insensitive.
-const isRegisteredMdl2Icon = (iconName: string): boolean => {
+// `getIcon` reads the registry `initializeIcons()` fills (case-insensitive). Fluent's <Icon>
+// renders an empty span for an unknown name, hence this check. Cached because getIcon itself
+// console.warns on every miss, which would otherwise repeat on every re-render.
+const registeredIconCache = new Map<string, boolean>();
+const isRegisteredMdl2Icon = (name: string): boolean => {
+  const key = name.toLowerCase();
+  const cached = registeredIconCache.get(key);
+  if (cached !== undefined) return cached;
+  let registered: boolean;
   try {
-    return getIcon(iconName) !== undefined;
+    registered = getIcon(name) !== undefined;
   } catch {
-    return false;
+    registered = false;
   }
+  registeredIconCache.set(key, registered);
+  return registered;
 };
 
-// Module-level so an unknown name only warns once, not on every re-render.
+// Module-level so each bad name only warns once, not on every re-render.
 const warnedIconNames = new Set<string>();
-
-const warnUnknownIconOnce = (iconName: string): void => {
-  if (warnedIconNames.has(iconName)) return;
-  warnedIconNames.add(iconName);
-  console.warn(
-    `[lops.AdvancedDropDown] Icon "${iconName}" is not an MDL2 icon name and cannot be rendered ` +
-    `-- falling back to the color indicator. See FLUENT_ICONS.md for the full list of supported ` +
-    `names; Microsoft's Segoe Fluent Icons page documents a different (Windows desktop) font and ` +
-    `most of its names do not exist here.`
-  );
+const warnOnce = (name: string, message: string): void => {
+  if (warnedIconNames.has(name)) return;
+  warnedIconNames.add(name);
+  console.warn(`${LOG_PREFIX} ${message}`);
 };
 
-// The de-emphasized state for an image icon. A bitmap or SVG web resource can't be recolored
-// the way a font glyph can, so when "Show color icon" is off -- the setting that forces every
-// glyph to flat black, i.e. "don't use color here" -- images are desaturated instead. No
-// opacity fade in this control: that setting means monochrome, not de-emphasis (unlike
-// ModernChoiceButtons' Icon color scope, where fading unselected tiles back *is* the point).
-const DESATURATED_IMAGE_FILTER = 'grayscale(1)';
+const parseIconChain = (value: string | undefined): string[] =>
+  (value || "").split(";").map(s => s.trim()).filter(s => s.length > 0 && s !== 'undefined');
 
-interface IWebResourceIconProps {
-  iconName: string;
+// "Show option color icon" off means "don't use color here": glyphs take the label color (see
+// iconColorFor) and images are desaturated. No opacity fade - monochrome, not de-emphasis.
+const DESATURATED_IMAGE_FILTER = 'grayscale(1)';
+const ICON_SIZE = 16;
+
+interface IIconChainProps {
+  chain: string[];
+  color: string;
   desaturate: boolean;
-  renderFallback: () => React.ReactElement | null;
 }
 
-// Renders an image web resource as an option icon. A name that doesn't resolve (unpublished,
-// misspelled, or wrong prefix) produces an image load error rather than an HTTP failure we
-// could catch up front, so the fallback is driven off the <img>'s own onError.
-const WebResourceIcon = ({ iconName, desaturate, renderFallback }: IWebResourceIconProps): React.ReactElement | null => {
-  const [failed, setFailed] = React.useState(false);
+// Walks the chain left to right: the first web resource that loads, registered MDL2 name, or
+// Unicode/CSS-class form wins; nothing left -> a dot in the icon color (AdvancedMultiChoice's
+// fallback, replacing the old 12px color circle). A web resource can only be known to fail after
+// the browser tries it, so it renders the rest of the chain as its own onError fallback.
+const IconChain = ({ chain, color, desaturate }: IIconChainProps): React.ReactElement => {
+  for (let i = 0; i < chain.length; i++) {
+    const name = chain[i];
+    if (WEB_RESOURCE_NAME_PATTERN.test(name)) {
+      const rest = chain.slice(i + 1);
+      return (
+        <WebResourceIcon
+          name={name}
+          desaturate={desaturate}
+          renderFallback={() => <IconChain chain={rest} color={color} desaturate={desaturate} />}
+        />
+      );
+    }
+    if (UNICODE_PATTERNS.some(pattern => pattern.test(name))) {
+      const char = convertToUnicodeChar(name);
+      if (char) {
+        return (
+          <span className="lops-add-icon" aria-hidden="true"
+            style={{ color, fontFamily: 'Segoe MDL2 Assets, Segoe UI Symbol, Symbols', fontSize: `${ICON_SIZE - 2}px`, width: `${ICON_SIZE}px` }}>
+            {char}
+          </span>
+        );
+      }
+      continue;
+    }
+    if (isCssIconClass(name)) {
+      const cssClass = name.startsWith('.') ? name.substring(1) : name;
+      return (
+        <i className={`lops-add-icon ms-Icon ${cssClass.includes('ms-Icon') ? cssClass : `ms-Icon--${cssClass}`}`}
+          aria-hidden="true" style={{ color, fontSize: `${ICON_SIZE - 2}px`, width: `${ICON_SIZE}px` }} />
+      );
+    }
+    if (isRegisteredMdl2Icon(name)) {
+      return (
+        <Icon iconName={name} aria-hidden="true" className="lops-add-icon"
+          styles={{ root: { fontSize: `${ICON_SIZE - 2}px`, width: `${ICON_SIZE}px`, color } }} />
+      );
+    }
+    warnOnce(name,
+      `Icon "${name}" is not an MDL2 icon name - trying the next fallback. See FLUENT_ICONS.md ` +
+      `for the supported names (Segoe Fluent Icons names from the Windows docs mostly do not exist here).`);
+  }
+  return <span className="lops-add-dot" aria-hidden="true" style={{ backgroundColor: color }} />;
+};
 
-  // A re-render with a different name deserves a fresh attempt -- otherwise one bad name would
-  // poison the slot for every option that later reuses this component instance.
-  React.useEffect(() => setFailed(false), [iconName]);
+interface IWebResourceIconProps {
+  name: string;
+  desaturate: boolean;
+  renderFallback: () => React.ReactElement;
+}
+
+// Module-level so a name that already failed skips straight to its fallback on every later
+// mount, instead of re-requesting a known 404 each time the list re-renders.
+const failedWebResources = new Set<string>();
+
+const WebResourceIcon = ({ name, desaturate, renderFallback }: IWebResourceIconProps): React.ReactElement => {
+  const [failed, setFailed] = React.useState(() => failedWebResources.has(name));
+  React.useEffect(() => setFailed(failedWebResources.has(name)), [name]);
 
   if (failed) return renderFallback();
 
   return (
     <img
-      src={getWebResourceUrl(iconName)}
+      src={getWebResourceUrl(name)}
       alt=""
       aria-hidden="true"
+      className="lops-add-icon"
       onError={() => {
-        if (!warnedIconNames.has(iconName)) {
-          warnedIconNames.add(iconName);
-          console.warn(
-            `[lops.AdvancedDropDown] Web resource "${iconName}" could not be loaded from ` +
-            `${getWebResourceUrl(iconName)} -- falling back to the color indicator. Check that the ` +
-            `web resource exists, is an image type, and has been published.`
-          );
-        }
+        warnOnce(name,
+          `Web resource "${name}" could not be loaded from ${getWebResourceUrl(name)} - trying the ` +
+          `next fallback. Check that it exists, is an image type, and has been published.`);
+        failedWebResources.add(name);
         setFailed(true);
       }}
-      style={{
-        // Square box matching the MDL2 glyph metrics, with the same 8px gutter. objectFit
-        // "contain" means a square source fills it exactly and a non-square one is letterboxed
-        // down to fit, rather than stretched or cropped.
-        width: '16px',
-        height: '16px',
-        objectFit: 'contain',
-        marginRight: '8px',
-        flexShrink: 0,
-        filter: desaturate ? DESATURATED_IMAGE_FILTER : 'none'
-      }}
+      style={{ width: `${ICON_SIZE}px`, height: `${ICON_SIZE}px`, objectFit: 'contain', filter: desaturate ? DESATURATED_IMAGE_FILTER : 'none' }}
     />
   );
-};
-
-// Convert various Unicode formats to actual Unicode character
-const convertToUnicodeChar = (iconStr: string): string | null => {
-  try {
-    const cleaned = iconStr.trim();
-
-    // Handle \uXXXX format
-    if (cleaned.startsWith('\\u')) {
-      const hexCode = cleaned.substring(2);
-      const charCode = parseInt(hexCode, 16);
-      return String.fromCharCode(charCode);
-    }
-
-    // Handle &#xXXXX; format
-    if (cleaned.startsWith('&#x') && cleaned.endsWith(';')) {
-      const hexCode = cleaned.substring(3, cleaned.length - 1);
-      const charCode = parseInt(hexCode, 16);
-      return String.fromCharCode(charCode);
-    }
-
-    // Handle 0xXXXX format
-    if (cleaned.startsWith('0x')) {
-      const hexCode = cleaned.substring(2);
-      const charCode = parseInt(hexCode, 16);
-      return String.fromCharCode(charCode);
-    }
-
-    // Handle U+XXXX format
-    if (cleaned.startsWith('U+')) {
-      const hexCode = cleaned.substring(2);
-      const charCode = parseInt(hexCode, 16);
-      return String.fromCharCode(charCode);
-    }
-
-    return null;
-  } catch (error) {
-    console.warn(`Failed to convert Unicode string "${iconStr}":`, error);
-    return null;
-  }
 };
 
 import { IInputs } from "./generated/ManifestTypes";
@@ -218,60 +281,13 @@ export interface IConfig {
   iconColorOverride?: string;
   useExternalValueForIcon: boolean;
   placeholderText: string;
+  selectionShape: "Square" | "Rounded" | "Round";
+  selectionColor: string;
+  hoverColor: string;
+  listSelectedColor: string;
 }
-
-/*
-  //IComboBoxOption[]
-  export interface IColorIndexer {
-      [index : number] : string;      
-  }*/
 
 initializeIcons();
-
-// Enhanced icon initialization for Power Platform compatibility
-const ensureIconsLoaded = () => {
-  try {
-    initializeIcons();
-    if (typeof document !== 'undefined') {
-      const iconTest = document.createElement('i');
-      iconTest.className = 'ms-Icon ms-Icon--CircleShapeSolid';
-      iconTest.style.visibility = 'hidden';
-      iconTest.style.position = 'absolute';
-      document.body.appendChild(iconTest);
-      setTimeout(() => document.body.removeChild(iconTest), 100);
-    }
-  } catch (error) {
-    console.warn("Enhanced icon initialization failed:", error);
-  }
-};
-ensureIconsLoaded();
-if (typeof document !== 'undefined') {
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', ensureIconsLoaded);
-  } else {
-    setTimeout(ensureIconsLoaded, 50);
-  }
-}
-
-// Helper function to lighten a hex color
-const lightenColor = (color: string, amount = 0.7): string => {
-  if (!color || !color.startsWith('#')) return color;
-
-  // Convert hex to RGB
-  const hex = color.replace('#', '');
-  const r = parseInt(hex.substr(0, 2), 16);
-  const g = parseInt(hex.substr(2, 2), 16);
-  const b = parseInt(hex.substr(4, 2), 16);
-
-  // Lighten by blending with white
-  const newR = Math.round(r + (255 - r) * amount);
-  const newG = Math.round(g + (255 - g) * amount);
-  const newB = Math.round(b + (255 - b) * amount);
-
-  // Convert back to hex
-  return `#${newR.toString(16).padStart(2, '0')}${newG.toString(16).padStart(2, '0')}${newB.toString(16).padStart(2, '0')}`;
-};
-
 
 interface IAdvancedOptionsProperties {
   rawOptions: ComponentFramework.PropertyHelper.OptionMetadata[];
@@ -280,23 +296,19 @@ interface IAdvancedOptionsProperties {
   isDisabled: boolean;
   defaultValue: number | undefined;
   config: IConfig;
-  selectedColor?: string;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   contextUtils: any;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   contextParameters: any;
   contextMode: ComponentFramework.Mode;
+  // Resolved theme font stack (ThemeFont.tsx), for the list, which renders in a Layer.
+  fontFamily: string;
 }
 
+// Shared tooltip look (AdvancedMultiChoice's): Fluent's own tooltip, wrapped at 280px.
+const TOOLTIP_PROPS = { styles: { content: { maxWidth: 280, whiteSpace: 'normal' as const } } };
 
-
-
-
-
-
-//export default class AdvancedOptionsControl extends React.Component<IAdvancedOptionsProperties, {}> {            
-//export const AdvancedOptionsControl = ({rawOptions, selectedKey, onChange, isDisabled, defaultValue, config}:IAdvancedOptionsProperties): JSX.Element =>{    
-export const AdvancedOptionsControl = ({ rawOptions, selectedKey, onChange, isDisabled, defaultValue, config, selectedColor, contextUtils, contextParameters, contextMode }: IAdvancedOptionsProperties): React.ReactElement => {
+export const AdvancedOptionsControl = ({ rawOptions, selectedKey, onChange, isDisabled, defaultValue, config, contextUtils, contextParameters, contextMode, fontFamily }: IAdvancedOptionsProperties): React.ReactElement => {
 
   // State for enriched icons from metadata
   const [externalIconsMap, setExternalIconsMap] = React.useState<Record<number, string>>({});
@@ -413,18 +425,7 @@ export const AdvancedOptionsControl = ({ rawOptions, selectedKey, onChange, isDi
     }
   }, [config.useExternalValueForIcon, hasFetchedMetadata, contextUtils, contextParameters, contextMode]);
 
-  // Detect if we're in test mode
-  const isTestMode = React.useMemo(() => {
-    if (typeof window === 'undefined') return false;
-    const hostname = window.location?.hostname || '';
-    const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1' || hostname.includes('localhost');
-    const isTestHarness = window.location?.port === '8181' ||
-      window.location?.href?.includes('_pkg/') ||
-      document.title?.includes('Test harness');
-    return isLocalhost || isTestHarness;
-  }, []);
-
-  const allOptions = [{ Label: "--Select--", Value: -1, Color: "transparent", Description: "Select an option" }, ...rawOptions];
+  const allOptions = [{ Label: "--Select--", Value: -1, Color: "transparent", Description: "" }, ...rawOptions];
   let options = allOptions.map((option: ComponentFramework.PropertyHelper.OptionMetadata) => ({
     key: option.Value,
     text: option.Label,
@@ -439,274 +440,118 @@ export const AdvancedOptionsControl = ({ rawOptions, selectedKey, onChange, isDi
   }
 
   const _onSelectedChanged = (event: React.FormEvent<HTMLDivElement>, option?: IDropdownOption) => {
+    if (isDisabled) return;
     const val = (option?.key == null || option?.key === -1) ? null : option?.key as number;
     onChange(val);
   }
 
-  const _renderOption = (option: ISelectableOption | undefined, className?: string, isSelectedField?: boolean): React.ReactElement => {
-    let icon = ((config.jsonConfig && option?.key) ? config.jsonConfig[option?.key]?.icon : config.defaultIconName) ?? config.defaultIconName;
+  // ---- color resolution ---------------------------------------------------------------------
+  // The existing properties keep their meaning; they now drive the family chip instead of the
+  // whole field:
+  //   Color Override            replaces the option color everywhere (as before)
+  //   Show option color background   No -> Selection color; Lighter -> faded option color;
+  //                                  Full -> option color (an option without a color, and no
+  //                                  override, gets Selection color exactly)
+  //   Show option color border  1px border on the chip in the option color (#255BA4 without one)
+  //   Show option color icon    on -> option color (#255BA4 without one); off -> monochrome
 
-    // logic for External Value Icons
-    const enrichedIcon = option?.key ? externalIconsMap[option.key as number] : null;
-    if (config.useExternalValueForIcon && enrichedIcon) {
-      icon = enrichedIcon;
-    } else if (config.useExternalValueForIcon && option?.data?.externalValue) {
-      icon = option.data.externalValue;
-    }
+  const optionColor = (option: ISelectableOption | undefined): string | undefined => {
+    const jsonColor = (config.jsonConfig && option?.key !== undefined) ? config.jsonConfig[option.key]?.color : undefined;
+    // Each candidate must be valid hex on its own - an unparseable override must fall through to
+    // the option color, not mask it.
+    return [config.iconColorOverride, jsonColor, option?.data?.color].find(isHexColor);
+  };
 
-    const defaultColor = option?.data?.color || "#ffffff";
-    const color = ((config.jsonConfig && option?.key) ? config.jsonConfig[option?.key]?.color : defaultColor) ?? defaultColor;
-    const description = option?.data?.description || "";
+  const chipBackground = (color: string | undefined): string => {
+    if (config.showColorBackground === "Full") return color ?? config.selectionColor;
+    if (config.showColorBackground === "Lighter") return color ? lightenColor(color, FADE_BACKGROUND) : config.selectionColor;
+    return config.selectionColor;
+  };
 
-    // Enhanced color logic based on requirements
-    let iconColor: string;
+  // `contrast` is the label color on the same surface, so a monochrome icon matches its label.
+  const iconColorFor = (color: string | undefined, background: string, contrast: string): string => {
+    if (!config.showColorIcon) return contrast;
+    const resolved = color ?? SERIES_ACCENT;
+    // A glyph the same color as the chip behind it would vanish (e.g. Full background).
+    return isHexColor(background) && toHex6(resolved).toLowerCase() === toHex6(background).toLowerCase() ? contrast : resolved;
+  };
 
-    if (!config.showColorIcon) {
-      // When showColorIcon is false, always use black
-      iconColor = "#000000";
-    } else if (config.iconColorOverride && config.showColorBackground === "Full") {
-      if (isSelectedField) {
-        // For selected field: adjust icon based on background darkness
-        const backgroundIsDark = isColorDark(color);
-        if (backgroundIsDark) {
-          // Dark background: use lighter version of override color
-          iconColor = lightenColor(config.iconColorOverride, 0.8);
-        } else {
-          // Light background: use darker version of override color
-          iconColor = darkenColor(config.iconColorOverride, 0.4);
-        }
-      } else {
-        // For dropdown options: use the original override color
-        iconColor = config.iconColorOverride;
-      }
-    } else if (config.iconColorOverride) {
-      // If iconColorOverride is set, use it directly (for No background or Lighter background)
-      iconColor = config.iconColorOverride;
-    } else if (config.showColorBackground === "Full") {
-      if (isSelectedField) {
-        // For selected field: adjust icon based on background darkness
-        const backgroundIsDark = isColorDark(color);
-        if (backgroundIsDark) {
-          // Dark background: use lighter version of option color
-          iconColor = lightenColor(color, 0.8);
-        } else {
-          // Light background: use darker version of option color
-          iconColor = darkenColor(color, 0.4);
-        }
-      } else {
-        // For dropdown options: use the original color
-        iconColor = color;
-      }
-    } else {
-      // For all other cases (No background, Lighter background), use the option color
-      iconColor = color;
-    }
+  const iconChainFor = (option: ISelectableOption | undefined): string[] => {
+    const fixed = ((config.jsonConfig && option?.key !== undefined) ? config.jsonConfig[option.key]?.icon : undefined) ?? config.defaultIconName;
+    const external = config.useExternalValueForIcon
+      ? (externalIconsMap[option?.key as number] || option?.data?.externalValue || "")
+      : "";
+    return [...parseIconChain(external), ...parseIconChain(fixed)];
+  };
 
-    // Determine if we should show an icon (simplified validation)
-    const iconValidation = validateAndGetIcon(icon);
-    const shouldShowIcon = iconValidation.isValid;
+  const renderIcon = (option: ISelectableOption | undefined, background: string, contrast: string): React.ReactElement => {
+    // "--Select--" keeps an icon-sized gap so its label lines up with the others.
+    if (option?.key === -1) return <span className="lops-add-icon" style={{ width: `${ICON_SIZE}px` }} aria-hidden="true" />;
+    return <IconChain chain={iconChainFor(option)} color={iconColorFor(optionColor(option), background, contrast)} desaturate={!config.showColorIcon} />;
+  };
 
-    // Log icon validation results for debugging
-    if (!iconValidation.isValid && icon) {
-      console.warn(`🚫 Unsupported icon "${icon}" - showing color indicator fallback`);
-    }
+  // ---- rendering ----------------------------------------------------------------------------
 
-    const content = (
-      <div className={`${className} option-content`} style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'flex-start',  // Ensure left alignment
-        width: '100%',
-        overflow: 'hidden'
-      }}>
-        {shouldShowIcon && (
-          // Simplified icon rendering - let Fluent UI handle MDL2 icons
-          (() => {
-            // The final color-circle fallback, hoisted so the web resource strategy below can
-            // fall back to the same indicator every other failed strategy lands on.
-            const renderColorIndicator = (): React.ReactElement => (
-              <span
-                className="color-indicator"
-                data-icon={icon}
-                data-color={iconColor}
-                style={{
-                  width: '12px',
-                  height: '12px',
-                  borderRadius: '50%',
-                  marginRight: '8px',
-                  flexShrink: 0,
-                  backgroundColor: iconColor,
-                  border: '1px solid rgba(0,0,0,0.1)',
-                  display: 'inline-block'
-                }}
-                title={`Icon: ${icon} (fallback)`}
-              />
-            );
-
-            // Strategy 0: an image web resource from the org. It ignores every icon *color*
-            // setting -- it renders as authored -- except "Show color icon", which means
-            // "don't use color here" and desaturates the image accordingly.
-            if (iconValidation.iconType === 'webresource') {
-              return (
-                <WebResourceIcon
-                  iconName={icon.trim()}
-                  desaturate={!config.showColorIcon}
-                  renderFallback={renderColorIndicator}
-                />
-              );
-            }
-
-            // Strategy 1: Try MDL2 Icon (most common case). An unregistered name falls
-            // through to the color-circle fallback rather than rendering an empty span.
-            if (iconValidation.iconType === 'mdl2') {
-              const cleanIconName = icon.trim();
-              if (isRegisteredMdl2Icon(cleanIconName)) {
-                return (
-                  <Icon
-                    styles={{ root: { color: iconColor, marginRight: "8px", flexShrink: 0 } }}
-                    iconName={cleanIconName}
-                    aria-hidden="true"
-                  />
-                );
-              }
-              warnUnknownIconOnce(cleanIconName);
-            }
-
-            // Strategy 2: Try Unicode character rendering
-            if (iconValidation.iconType === 'unicode') {
-              try {
-                const unicodeChar = convertToUnicodeChar(icon);
-                if (unicodeChar) {
-                  return (
-                    <span
-                      style={{
-                        color: iconColor,
-                        marginRight: '8px',
-                        flexShrink: 0,
-                        fontFamily: 'Segoe MDL2 Assets, Segoe UI Symbol, Symbols',
-                        fontSize: '14px',
-                        lineHeight: '16px',
-                        textAlign: 'center',
-                        width: '16px',
-                        height: '16px',
-                        display: 'inline-block'
-                      }}
-                      aria-hidden="true"
-                    >
-                      {unicodeChar}
-                    </span>
-                  );
-                }
-              } catch (error) {
-                console.warn(`Unicode icon "${icon}" failed:`, error);
-              }
-            }
-
-            // Strategy 3: Try CSS class-based rendering
-            if (iconValidation.iconType === 'css') {
-              try {
-                const cssClass = icon.startsWith('.') ? icon.substring(1) : icon;
-                return (
-                  <i
-                    className={`ms-Icon ${cssClass.includes('ms-Icon') ? cssClass : `ms-Icon--${cssClass}`}`}
-                    style={{
-                      color: iconColor,
-                      marginRight: '8px',
-                      flexShrink: 0,
-                      fontSize: '14px',
-                      lineHeight: '16px'
-                    }}
-                    aria-hidden="true"
-                  />
-                );
-              } catch (error) {
-                console.warn(`CSS icon "${icon}" failed:`, error);
-              }
-            }
-
-            // Final fallback: Color circle indicator
-            return renderColorIndicator();
-          })()
-        )}
-        <span style={{
-          overflow: 'hidden',
-          textOverflow: 'ellipsis',
-          whiteSpace: 'nowrap',
-          flex: 1,
-          textAlign: 'left'  // Explicitly set text alignment to left
-        }}>{option?.text || ""}</span>
+  // Dropdown list row: icon + label, description tooltip (AdvancedMultiChoice's list row). Row
+  // backgrounds (List hover / List selected color) come from dropdownStyles.
+  const _onRenderOption = (option: ISelectableOption | undefined): React.ReactElement => {
+    const description = (option?.data?.description as string | undefined)?.trim() || "";
+    const row = (
+      <div className="lops-add-item">
+        {renderIcon(option, LIST_BACKGROUND, LIST_TEXT_COLOR)}
+        <span className="lops-add-label">{option?.text || ""}</span>
       </div>
     );
-
-    // Wrap with tooltip - use description if available, otherwise use option text as tooltip
-    const tooltipContent = (description && description.trim() !== "") ? description : option?.text || "";
-
-    if (tooltipContent && tooltipContent.trim() !== "") {
-      return (
-        <TooltipHost
-          content={tooltipContent}
-          delay={1} // TooltipDelay.medium
-          directionalHint={3} // topCenter
-          styles={{
-            root: {
-              width: '100%',
-              display: 'block' // Changed to block to prevent flex interference
-            }
-          }}
-          tooltipProps={{
-            styles: {
-              root: {
-                maxWidth: '250px',
-                padding: '8px 12px',
-                backgroundColor: '#323130',
-                color: '#ffffff',
-                fontSize: '12px',
-                borderRadius: '4px',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
-                border: 'none',
-                wordWrap: 'break-word'
-              }
-            }
-          }}
-        >
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'flex-start',
-            width: '100%'
-          }}>
-            {content}
-          </div>
-        </TooltipHost>
-      );
-    }
-
-    return content;
-  }
-
-  const _onRenderOption = (option: ISelectableOption | undefined): React.ReactElement => {
-    return _renderOption(option, "lops_AdvancedOptions_item", false) // false = dropdown option
+    if (!description) return row;
+    return (
+      <TooltipHost content={description} delay={1} directionalHint={DirectionalHint.rightCenter}
+        tooltipProps={TOOLTIP_PROPS} styles={{ root: { display: 'block', width: '100%' } }}>
+        {row}
+      </TooltipHost>
+    );
   };
 
-  const _onRenderTitle = (options: IDropdownOption[] | undefined): React.ReactElement => {
-    const option = (options || [])[0];
-    return _renderOption(option, "option", true); // true = selected field
-
+  // Selected value: the family chip. Only called when something is selected - Fluent renders its
+  // own placeholder text node for the empty state.
+  const _onRenderTitle = (selected: IDropdownOption[] | undefined): React.ReactElement => {
+    const option = (selected || [])[0];
+    const color = optionColor(option);
+    const background = chipBackground(color);
+    const accent = isColorDark(background) ? "#FFFFFF" : darkenHexColor(background);
+    const border = config.showColorBorder ? `1px solid ${color ?? SERIES_ACCENT}` : "1px solid transparent";
+    const chip = (
+      <span
+        className="lops-add-chip"
+        style={{
+          backgroundColor: background,
+          color: accent,
+          border,
+          borderRadius: SELECTION_RADIUS[config.selectionShape] ?? SELECTION_RADIUS.Rounded,
+          fontWeight: config.makeFontBold ? 600 : 400
+        }}
+      >
+        {renderIcon(option, background, accent)}
+        <span className="lops-add-label">{option?.text || ""}</span>
+      </span>
+    );
+    const description = (option?.data?.description as string | undefined)?.trim() || option?.text || "";
+    return (
+      <TooltipHost content={description} delay={1} directionalHint={DirectionalHint.topCenter}
+        tooltipProps={TOOLTIP_PROPS} hostClassName="lops-add-chip-host">
+        {chip}
+      </TooltipHost>
+    );
   };
+
+  // Only a value Fluent can actually render as the chip - a stored number with no matching (e.g.
+  // hidden) option shows the placeholder, which needs the placeholder's own inset.
+  const hasValue = selectedKey !== null && selectedKey !== -1 && options.some(o => o.key === selectedKey);
 
   return (
-    <div style={{
-      width: '100%',
-      maxWidth: '100%',
-      boxSizing: 'border-box',
-      overflow: 'visible',
-      minHeight: config.componentHeight === "Short" ? '36px' : '44px', // Increased minimum height
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'flex-start'  // Ensure left alignment for main container
-    }}>
+    <div className="lops-add-root" style={{ minHeight: config.componentHeight === "Short" ? '32px' : '40px' }}>
       <Dropdown
-        placeHolder={config.placeholderText}
+        // Read-only and empty shows "---" (AdvancedMultiChoice), not an inviting placeholder.
+        placeHolder={isDisabled ? "---" : config.placeholderText}
         options={options}
         defaultSelectedKey={defaultValue || -1}
         selectedKey={selectedKey}
@@ -715,22 +560,16 @@ export const AdvancedOptionsControl = ({ rawOptions, selectedKey, onChange, isDi
         onChange={_onSelectedChanged}
         disabled={isDisabled}
         className="ComboBox"
-        styles={(props) => dropdownStyles(props, selectedColor, config.showColorBackground, config.showColorBorder, config.makeFontBold, config.componentHeight, config.iconColorOverride)}
-        theme={myTheme}
+        styles={(props) => dropdownStyles(props, {
+          hasValue,
+          makeFontBold: config.makeFontBold,
+          componentHeight: config.componentHeight,
+          hoverColor: config.hoverColor,
+          listSelectedColor: config.listSelectedColor
+        })}
+        // Explicit theme prop beats the scoped one, so it carries the theme font itself.
+        theme={themeWithFont(fontFamily, myTheme)}
       />
     </div>
   );
-
 };
-/*, (prev, next)=> {  
-  return prev.rawOptions === next.rawOptions
-        && prev.selectedKey === next.selectedKey 
-        && prev.isDisabled===next.isDisabled 
-        && prev.defaultValue===next.defaultValue 
-        && prev.config===next.config;  
-})   */
-
-
-
-
-

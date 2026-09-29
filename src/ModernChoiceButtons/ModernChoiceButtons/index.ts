@@ -1,4 +1,5 @@
 import { IInputs, IOutputs } from "./generated/ManifestTypes";
+import { ThemeFontScope, buildFontStack, readThemeFont } from "./ThemeFont";
 import * as React from 'react';
 import { ModernChoiceButtonsControl, IConfig, ISetupSchema } from "./ModernChoiceButtonsControl";
 import { initializeIcons } from '@fluentui/react/lib/Icons';
@@ -156,7 +157,7 @@ export class ModernChoiceButtons implements ComponentFramework.ReactControl<IInp
 	}
 
 	public init(context: ComponentFramework.Context<IInputs>, notifyOutputChanged: () => void, state: ComponentFramework.Dictionary, container: HTMLDivElement) {
-		console.log("🚀 ModernChoiceButtons: Version 1.8.3 Loaded");
+		console.log("🚀 ModernChoiceButtons: Version 1.9.1 Loaded");
 
 		try {
 			initializeIconsForEnvironment();
@@ -173,10 +174,14 @@ export class ModernChoiceButtons implements ComponentFramework.ReactControl<IInp
 	};
 
 	private renderControl(context: ComponentFramework.Context<IInputs>): React.ReactElement {
-		this.isDisabled = context.mode.isControlDisabled;
-		this.currentValue = context.parameters.optionsInput.raw;
-
 		const testMode = this.isTestMode();
+		// Read-only when the form says so (isControlDisabled: field set Read Only, inactive record,
+		// business rule/script) OR column-level security denies update, which PCF reports separately
+		// via security.editable. ?readonly in the harness URL forces it on, since the harness has no toggle.
+		this.isDisabled = context.mode.isControlDisabled ||
+			context.parameters.optionsInput.security?.editable === false ||
+			(testMode && typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('readonly'));
+		this.currentValue = context.parameters.optionsInput.raw;
 
 		let sourceOptions: ComponentFramework.PropertyHelper.OptionMetadata[];
 		if (testMode) {
@@ -220,7 +225,16 @@ export class ModernChoiceButtons implements ComponentFramework.ReactControl<IInp
 			contextMode: context.mode
 		};
 
-		return React.createElement(ModernChoiceButtonsControl, params);
+		return this.withThemeFont(context, React.createElement(ModernChoiceButtonsControl, params));
+	}
+
+	// The app's custom theme font (model-driven modern theme `font`), falling back to the previous
+	// Segoe UI stack - see ThemeFont.tsx. display:contents: the font inherits through the wrapper
+	// without it creating a box, so layout is unchanged.
+	private withThemeFont(context: ComponentFramework.Context<IInputs>, element: React.ReactElement): React.ReactElement {
+		const fontFamily = buildFontStack(readThemeFont(context, this.isTestMode()));
+		return React.createElement(ThemeFontScope, { fontFamily },
+			React.createElement("div", { className: "lops-theme-font", style: { fontFamily, display: "contents" } }, element));
 	}
 
 	public updateView(context: ComponentFramework.Context<IInputs>): React.ReactElement {

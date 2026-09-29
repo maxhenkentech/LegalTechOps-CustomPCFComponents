@@ -1158,7 +1158,7 @@ function ImageAttributeValue({
         }}
       />
       {expanded && imgRef.current && (
-        <Callout target={imgRef.current} onDismiss={() => setExpanded(false)} setInitialFocus isBeakVisible={false} gapSpace={4}>
+        <Callout target={imgRef.current} onDismiss={() => setExpanded(false)} setInitialFocus isBeakVisible={false} gapSpace={4} styles={CALLOUT_THEME_FONT_STYLES}>
           <div className="rv-image-callout">
             <button type="button" className="rv-image-callout-dismiss" aria-label="Dismiss" onClick={() => setExpanded(false)}>
               <Icon iconName="Cancel" />
@@ -1246,7 +1246,7 @@ function FileAttributeValue({
         {file.fileName}
       </a>
       {expanded && linkRef.current && (
-        <Callout target={linkRef.current} onDismiss={() => setExpanded(false)} setInitialFocus isBeakVisible={false} gapSpace={4}>
+        <Callout target={linkRef.current} onDismiss={() => setExpanded(false)} setInitialFocus isBeakVisible={false} gapSpace={4} styles={CALLOUT_THEME_FONT_STYLES}>
           <div className="rv-pdf-callout">
             <div className="rv-pdf-callout-toolbar">
               <a className="rv-pdf-callout-download" href={file.downloadUrl} download={file.fileName}>
@@ -1869,6 +1869,13 @@ function collectAllRecords(
   ancestorSiblings.forEach(walk);
   return records;
 }
+
+// Callout content renders in a Layer under <body>, outside the control's font-inheriting wrapper.
+// The style function receives the scoped theme (index.ts withThemeFont -> ThemeFont.tsx), whose
+// fonts carry the app's custom theme font.
+const CALLOUT_THEME_FONT_STYLES = (props: { theme: { fonts: { medium: { fontFamily?: string } } } }) => ({
+  calloutMain: { fontFamily: props.theme.fonts.medium.fontFamily },
+});
 
 export const RelationshipViewControl = (props: IRelationshipViewProps): React.ReactElement => {
   const [loading, setLoading] = React.useState(true);

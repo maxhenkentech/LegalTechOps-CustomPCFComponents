@@ -217,6 +217,16 @@ export function createLiveFieldAccessor(): FieldAccessor {
       return { ok: false, error: message };
     }
 
+    // Column-level security: a field the user can't update would only fail later, at save, with a
+    // platform error - refuse it up front and report it like any other skipped field. (A field that
+    // is merely read-only on the form is still written on purpose: setting locked status fields is
+    // what these buttons are for.)
+    if (attribute.getUserPrivilege?.()?.canUpdate === false) {
+      const message = `Field "${fieldName}" is not updatable for the current user (column security) and was not updated.`;
+      warnOnce(`write:${fieldName}`, message);
+      return { ok: false, error: message };
+    }
+
     let coerced: unknown;
     try {
       coerced = coerceForAttribute(attribute, value);

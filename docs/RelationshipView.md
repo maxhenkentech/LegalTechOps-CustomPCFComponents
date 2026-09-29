@@ -27,6 +27,7 @@ A field control, bound directly to a self-referential lookup (e.g. "Parent Contr
 - **Thumbnail Icon Color Mode**: recolor any icon-based thumbnail (Choice column, fixed icon, or icon-name text column) - use the Choice value's own configured color on the icon or the frame background (with automatic contrast), or a fixed dark/light grey look, each with a matching border around the thumbnail frame
 - **Configurable Indentation & Highlight**: adjust how far each tree level indents, and the highlight color used for the current record's row
 - **Cycle-Safe**: a shared visited-node guard protects against a corrupted self-referential lookup accidentally forming a cycle and infinite-looping the tree walk
+- **Follows your app theme font**: uses the font of the app's modern [custom theme](https://learn.microsoft.com/power-apps/maker/model-driven-apps/modern-theme-overrides) (the `font` of its Custom theme definition), falling back to Segoe UI when no custom theme is set or the font can't be displayed
 
 ### Choice Color Display
 

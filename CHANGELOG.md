@@ -2,7 +2,59 @@
 
 # Changelog
 
-## Version 7.2.2.0 (Current)
+## Version 8.0.0.0 (Current)
+Major release with everything since the last GitHub release (v7.2.2): two new components, Advanced Multi Choice and Advanced Yes/No, one shared look for the field controls, theme font support for every component, and consistent read-only handling.
+
+#### 🎨 All Components
+- **NEW**: Every component now uses the font of the app's modern **custom theme** (the `font` of a model-driven app's [Custom theme definition](https://learn.microsoft.com/power-apps/maker/model-driven-apps/modern-theme-overrides)) - including dropdown lists, tooltips and callouts. When no custom theme is set, or its font can't be displayed on the user's machine, the previous Segoe UI font is used, exactly as before
+- **IMPROVED**: Advanced Dropdown, Advanced LookUp, Advanced Multi Choice and Advanced Yes/No now share one look - the same grey field (`#f5f5f5`, `#ececec` on hover, white with a thin grey border when focused), the same 34px height with the selected value as a tinted chip 4px in from the edge, the same blue defaults (`#EDF3FB` chip, `#255BA4` accent), the same "x", list row colors, tooltip style and `---` read-only placeholder
+- **FIX**: Read-only is now enforced consistently. Advanced Dropdown, Advanced LookUp and Modern Choice Buttons also respect **column-level security** (a user without update permission on the column), not only a field set to Read Only, a business rule or an inactive record. Risk Matrix, PDF Gallery, Relationship View and Markdown Help Text were checked and only display data
+
+#### ✅ Advanced Yes/No Component (NEW)
+- **NEW**: Field control bound to a **Yes/No** (two options) field, with nine display styles set per field with `Display style`: **Checkbox**, **Toggle** (default), **Labeled switch** (the label inside the track, the icon in the thumb), **Radio buttons**, **Buttons**, **Segmented** (both options in one field, the selected one as a chip), **Toggle button** (one button, pressed for Yes), **Status chip** (click to switch) and **Icon** (a single icon button)
+- **NEW**: `Yes icon` and `No icon` set on the control itself, because Yes/No columns have no External Values. Each accepts an MDL2 icon name or an image web resource name, and every style except the Toggle can show them. The Icon style defaults to a check badge and a cancel badge
+- **NEW**: `Yes color` and `No color` stand in for the option colors a Yes/No column doesn't have. Icon, checked, selection background and selection border colors can each use them, a faded version, or a custom hex color. When they are blank, the control uses the family blues (`#EDF3FB` / `#255BA4`)
+- **NEW**: `Width` Fill or Fixed with `Fixed width` for Buttons, Segmented, Radio buttons, Toggle button and Status chip. Fixed items shrink only when the field is narrower
+- **NEW**: Labels come from the column itself (relabelled columns work, long labels are shortened with "…"). Also: `Show labels`, `Label position`, `Option order`, `Icon position` (left, right, above, below), `Component Height` (Short 34px / Tall 40px, matching the other fields), `Selection shape` and `Make font bold`
+- **NEW**: Readable text on any color: the Labeled switch and the checkbox tick use black or white, whichever contrasts more; selected buttons, segments and chips keep a darker tint of their color, darkened until it meets the WCAG AA contrast of 4.5:1
+- **NEW**: Keyboard support (Space/Enter to toggle, arrow keys between options), read-only on the form or through column-level security, OnChange fired exactly once per change, and the app's theme font
+
+#### 🔖 Advanced Multi Choice Component (NEW)
+- **NEW**: Field control bound to a **multi-select choice** field that replaces it with a searchable checkbox list - click the field to open it, click options (or use the arrow keys and Enter) to select and deselect several in a row
+- **NEW**: Selected options are shown in the field as colored **pills** or borderless **text chips** (Advanced LookUp's selected-record style), set per field with `Selected values display` - both wrap onto a new line when the next option no longer fits, and each has its own remove "x"
+- **NEW**: The search box sits to the right of the selected options; typing filters the list by option label and, with `Search option descriptions` (on by default), by the option's description too
+- **NEW**: Per-option icons from the choice's **External Value**, with `Fixed Icon Name` as a fallback - each accepts an MDL2 icon name or an image web resource name, and several semicolon-separated values are tried in order (e.g. `lops_contract.svg;PageEdit`); if none work, a dot in the option's color is shown
+- **NEW**: Each option's description is shown as a tooltip on the selected option and in the list
+- **NEW**: Modern Choice Buttons-style color modes for the option background, pill border, and icon color (choice color, faded choice color, or a custom hex color); options without a color always use the configured hex colors exactly. Defaults match Advanced LookUp's blue selected-record chip
+- **NEW**: `Sort by` offers Value, Text (alphabetical), and **Autofit**, which arranges the selected options into as few lines as possible and re-arranges them when the field is resized
+- **NEW**: Respects read-only - when the field is read-only on the form, locked by a business rule, on an inactive record, or restricted by column-level security, the options can be viewed but not changed
+- **NEW**: `Hide hidden choice options`, `Selection shape` (Square/Rounded/Round), `Component Height` (Tall/Short), `Make font bold`, configurable placeholder text, and list hover/selected colors
+- **NEW**: Follows the app's modern theme font (see All Components above)
+
+#### 🔽 Advanced Dropdown Component
+- **IMPROVED**: The selected option is shown as a tinted **chip** inside the grey field - Advanced LookUp's selected-record look - instead of coloring the whole field. All existing properties keep their names and meaning and now style the chip: `Show option color background` (No / Lighter / Full) sets the chip background, `Show option color border` its border, `Color Override` replaces the option color everywhere. Existing forms need no changes
+- **NEW**: `Selection shape` (Square / Rounded / Round), `Selection color` (chip background, `#EDF3FB`), `List hover color` and `List selected color` properties
+- **NEW**: Semicolon-separated icon fallbacks in `Icon` and External Value (e.g. `hek_Logo.png;Tag`) - the first icon that renders wins, and an option's External Value falls back to `Icon`; if nothing renders, a small dot in the icon color is shown
+- **IMPROVED**: Options without a color use the family blues (`#255BA4` icon and border, `#EDF3FB` chip) instead of white; `Show option color icon` off now renders icons in the text color
+- **IMPROVED**: Description tooltips in the Advanced Multi Choice style; properties reordered logically in the form editor
+- **IMPROVED**: Read-only hides the chevron and shows `---` when empty
+- **FIX**: An invalid `Color Override` value no longer hides the option's own color
+
+#### 🔍 Advanced LookUp Component
+- **NEW**: `Selection shape` (Square / Rounded / Round) for the selected-record chip, plus `List hover color` and `List selected color` - the current record is now highlighted in bold in the results list
+- **IMPROVED**: MDL2 icons without a configured `Icon Color` use the family accent (the chip's link color, `#255BA4` in the list) instead of black
+- **IMPROVED**: Properties reordered logically in the form editor (search, display, icons, colors); thinner 1px focus border matching the other components
+- **FIX**: Read-only now also hides the search glyph, keeps the field flat grey when clicked, and shows `---` when empty
+- **FIX**: An icon name that isn't a real MDL2 icon no longer leaves an empty gap before the record name
+
+#### 🔘 Modern Choice Buttons Component
+- **FIX**: Respects column-level security - buttons are read-only for a user who can't update the column
+- **NEW**: Semicolon-separated icon fallbacks in `Icon` and External Value (e.g. `hek_Logo.svg;CheckMark`), the same syntax as Advanced Dropdown and Advanced Multi Choice - the first icon that renders wins, then the default icon
+
+#### ⚡ Quick Action Buttons Component
+- **IMPROVED**: A target field the current user isn't allowed to update (column-level security) is skipped and reported in the error panel, instead of failing when the record is saved
+
+## Version 7.2.2.0 (Previous)
 #### 🔍 Advanced LookUp Component
 - **NEW**: `Icon Column` now accepts `<lookup field>.<column>` dot notation to pull the icon from a related record a lookup field on the target table points to, instead of only a column on the target table itself - works for all three icon source types (Image, MDL2 icon-name text, Choice)
 - **NEW**: `Additional Search Columns` now supports lookup columns - a lookup entry is matched against the primary name of the record it points to (e.g. searching by a related Account's name), instead of being rejected

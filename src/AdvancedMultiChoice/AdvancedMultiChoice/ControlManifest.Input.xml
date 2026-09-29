@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<manifest>
+  <control namespace="lops" constructor="AdvancedMultiChoice" version="1.0.0" display-name-key="lops.AdvancedMultiChoice" description-key="AdvancedMultiChoice description" control-type="virtual">
+    <property name="optionsInput" display-name-key="Choices" description-key="The multi-select choice column this control replaces. Place this control directly on that column." of-type="MultiSelectOptionSet" usage="bound" required="true" />
+    <property name="hideHiddenOptions" display-name-key="Hide hidden choice options" description-key="Hide options marked as hidden in the choice. Options that are already selected are always shown." of-type="TwoOptions" usage="input" required="false" default-value="true" />
+    <property name="sortBy" display-name-key="Sort by" description-key="Order of the selected values and the options list" of-type="Enum" usage="input" required="false" default-value="Value">
+      <value name="Value" display-name-key="Value" description-key="Sort by the integer value of the options (default)" default="true">Value</value>
+      <value name="Text" display-name-key="Text" description-key="Sort alphabetically by the option label, in the user language">Text</value>
+      <value name="Autofit" display-name-key="Autofit" description-key="Arrange the selected values to fit into as few lines as possible, repacking when the field is resized. The drop-down list keeps value order">Autofit</value>
+    </property>
+    <property name="searchDescriptions" display-name-key="Search option descriptions" description-key="When enabled, typing in the search box also matches the description of each choice option, not only its label" of-type="TwoOptions" usage="input" required="false" default-value="true" />
+    <property name="placeholderText" display-name-key="Placeholder Text" description-key="Search box placeholder, shown to the right of the selected options." of-type="SingleLine.Text" usage="input" required="false" default-value="Search options..." />
+    <property name="selectedDisplayMode" display-name-key="Selected values display" description-key="How the selected options are shown in the field" of-type="Enum" usage="input" required="false" default-value="Pills">
+      <value name="Pills" display-name-key="Pills" description-key="Each selected option is shown as a colored pill with a remove button (default)" default="true">Pills</value>
+      <value name="Text" display-name-key="Text" description-key="Selected options are shown as a comma-separated list of icons and labels">Text</value>
+    </property>
+    <property name="componentHeight" display-name-key="Component Height" description-key="Minimum height of the field. The field grows as selected options wrap onto more lines." of-type="Enum" usage="input" required="false" default-value="Short">
+      <value name="Tall" display-name-key="Tall" description-key="Standard height field">Tall</value>
+      <value name="Short" display-name-key="Short" description-key="Compact height field" default="true">Short</value>
+    </property>
+    <property name="selectionShape" display-name-key="Selection shape" description-key="Corner shape of each selected option, in both the Pills and Text display" of-type="Enum" usage="input" required="false" default-value="Rounded">
+      <value name="Square" display-name-key="Square" description-key="Sharp corners">Square</value>
+      <value name="Rounded" display-name-key="Rounded" description-key="Slightly rounded corners (default)" default="true">Rounded</value>
+      <value name="Round" display-name-key="Round" description-key="Fully rounded ends">Round</value>
+    </property>
+    <property name="makeFontBold" display-name-key="Make font bold" description-key="Display the selected option labels in bold font weight" of-type="TwoOptions" usage="input" required="false" default-value="false" />
+    <property name="useExternalValueForIcon" display-name-key="Use external value for icon" description-key="When enabled, the External Value of each choice option is used as its icon. Accepts an MDL2 icon name (browse at https://www.flicon.io) or the name of a square image web resource, e.g. lops_MyLogo.png. Semicolon-separate several values (lops_Logo.png;Tag) to try them in order - the first one that renders wins. Options without a usable External Value fall back to Fixed Icon Name." of-type="TwoOptions" usage="input" required="false" default-value="true" />
+    <property name="iconFixedName" display-name-key="Fixed Icon Name" description-key="Optional: an MDL2 icon name or image web resource name shown for every option whose External Value produced no icon - or for every option, if Use external value for icon is off. Semicolon-separate several values to try them in order. When nothing resolves, a dot in the choice color is shown instead." of-type="SingleLine.Text" usage="input" required="false" />
+    <property name="iconColorMode" display-name-key="Icon color mode" description-key="How MDL2 icon glyphs are colored: automatic contrast, a fixed color, the choice option own color (default), or a faded version of it. Image web resources are never recolored." of-type="Enum" usage="input" required="false" default-value="ChoiceColor">
+      <value name="Auto" display-name-key="Automatic" description-key="Icon color matches the text color for contrast">Auto</value>
+      <value name="CustomColor" display-name-key="Fixed color" description-key="Use the Icon color property">CustomColor</value>
+      <value name="ChoiceColor" display-name-key="Choice value color" description-key="Use the option own configured color (default)" default="true">ChoiceColor</value>
+      <value name="CustomColorFaded" display-name-key="Choice value color (faded)" description-key="Use a lighter, faded version of the option own configured color">CustomColorFaded</value>
+    </property>
+    <property name="iconColor" display-name-key="Icon color" description-key="Icon color when Icon color mode is Fixed color (hex, e.g. #255BA4)" of-type="SingleLine.Text" usage="input" required="false" default-value="#255BA4" />
+    <property name="selectionBackgroundMode" display-name-key="Selection background mode" description-key="Whether the background behind each selected option (Pills and Text display) uses a custom color, the choice option own color, or a faded version of it" of-type="Enum" usage="input" required="false" default-value="CustomColorFaded">
+      <value name="CustomColor" display-name-key="Custom color" description-key="Use the Selection color property">CustomColor</value>
+      <value name="ChoiceColor" display-name-key="Choice value color" description-key="Use the option own configured color">ChoiceColor</value>
+      <value name="CustomColorFaded" display-name-key="Choice value color (faded)" description-key="Use a lighter, faded version of the option own configured color (default)" default="true">CustomColorFaded</value>
+    </property>
+    <property name="selectionColor" display-name-key="Selection color" description-key="Background color behind each selected option (Pills and Text display) when Selection background mode is Custom color, and the fallback for options without a color (hex, e.g. #EDF3FB)" of-type="SingleLine.Text" usage="input" required="false" default-value="#EDF3FB" />
+    <property name="pillBorderMode" display-name-key="Pill border mode" description-key="Pills display only: whether each pill shows a border, and whether it uses a custom color or the choice option own color. Text display never shows a border." of-type="Enum" usage="input" required="false" default-value="ChoiceColor">
+      <value name="Off" display-name-key="Off" description-key="No border">Off</value>
+      <value name="CustomColor" display-name-key="Custom color" description-key="Use the Pill border color property">CustomColor</value>
+      <value name="ChoiceColor" display-name-key="Choice value color" description-key="Use the option own configured color (default)" default="true">ChoiceColor</value>
+      <value name="CustomColorFaded" display-name-key="Choice value color (faded)" description-key="Use a lighter, faded version of the option own configured color">CustomColorFaded</value>
+    </property>
+    <property name="pillBorderColor" display-name-key="Pill border color" description-key="Pills display only: border color when Pill border mode is Custom color, and the fallback for options without a color (hex, e.g. #255BA4)" of-type="SingleLine.Text" usage="input" required="false" default-value="#255BA4" />
+    <property name="hoverColor" display-name-key="List hover color" description-key="Background of an option in the drop-down list while hovered or keyboard-highlighted (hex, e.g. #F3F2F1)" of-type="SingleLine.Text" usage="input" required="false" default-value="#F3F2F1" />
+    <property name="listSelectedColor" display-name-key="List selected color" description-key="Background of an already selected option in the drop-down list (hex, e.g. #EDF3FB)" of-type="SingleLine.Text" usage="input" required="false" default-value="#EDF3FB" />
+    <resources>
+      <code path="index.ts" order="1"/>
+      <css path="CSS/AdvancedMultiChoice.css" order="1" />
+      <platform-library name="React" version="16.8.6" />
+      <platform-library name="Fluent" version="8.29.0" />
+    </resources>
+    <feature-usage>
+      <uses-feature name="Utility" required="true" />
+    </feature-usage>
+  </control>
+</manifest>
