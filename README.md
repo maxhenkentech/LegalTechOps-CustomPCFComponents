@@ -18,6 +18,7 @@ A collection of custom Power Platform Component Framework (PCF) components creat
   - [⚡ Quick Action Buttons Component](#-quick-action-buttons-component)
   - [🔖 Advanced Multi Choice Component](#-advanced-multi-choice-component)
   - [✅ Advanced Yes/No Component](#-advanced-yesno-component)
+  - [🔗 Advanced Multi LookUp Component](#-advanced-multi-lookup-component)
 - [Author](#author)
 - [Installation](#installation)
 - [Development](#development)
@@ -152,6 +153,18 @@ A field control that replaces a standard Yes/No field with one of nine modern st
 *The nine display styles, with check and cancel badges, custom icons (a star, a flag, a lock, colorful web resources) and per-control Yes and No colors.*
 
 📖 **[Full documentation](docs/AdvancedYesNo.md)** - display styles, icons, colors, fixed width, and properties.
+
+---
+
+### 🔗 Advanced Multi LookUp Component
+
+A control for many-to-many (N:N) relationships: placed on an N:N subgrid, it shows the related records as removable pills or chips in a searchable field - the Advanced Multi Choice look with Advanced LookUp's live search, additional search and display columns, and per-record icons (pictures, MDL2 icons, choice icons, or icons from a related record). Each record's name opens the record, and ticking or removing a record adds or removes the relationship straight away.
+
+<img src="Screenshots/AdvancedMultiLookUp/Hero.png" alt="Advanced Multi LookUp Overview" width="50%">
+
+*Related matters as pills with their pictures, and the search list open - each record with a client and status line from `Additional Display Columns`.*
+
+📖 **[Full documentation](docs/AdvancedMultiLookUp.md)** - subgrid setup, search/display/label/tooltip/icon columns, relationship detection, and properties.
 
 ---
 
@@ -354,6 +367,16 @@ Step-by-step configuration for each component (binding, properties, and any comp
 │   │   │   └── CSS/           # Component stylesheets
 │   │   ├── package.json
 │   │   └── pcfconfig.json
+│   ├── AdvancedMultiLookUp/    # Advanced Multi LookUp PCF component (dataset control, N:N subgrid)
+│   │   ├── AdvancedMultiLookUp/
+│   │   │   ├── index.ts       # Main component logic, dataset and form-record wiring
+│   │   │   ├── AdvancedMultiLookUpControl.tsx # React component
+│   │   │   ├── Dataverse.ts   # Web API helpers: metadata, N:N associate/disassociate, icon columns
+│   │   │   ├── TestModeData.ts # Test-harness fake related records
+│   │   │   ├── ControlManifest.Input.xml
+│   │   │   └── CSS/           # Component stylesheets
+│   │   ├── package.json
+│   │   └── pcfconfig.json
 │   └── Other/                 # Solution metadata
 ├── bin/Release/               # Packaged solution output
 └── README.md
@@ -415,32 +438,19 @@ If you encounter any issues or have suggestions for improvements, please open an
 
 Full version history lives in [CHANGELOG.md](CHANGELOG.md).
 
-### Version 8.0.0.0 (Current)
-Major release with everything since the last GitHub release (v7.2.2): two new components, Advanced Multi Choice and Advanced Yes/No.
+### Version 9.0.0.0 (Current)
+A new component, Advanced Multi LookUp, for many-to-many relationships, plus faster icons and pictures and a related-choice icon fix.
 
-#### 🎨 All Components
-- **NEW**: Every component follows the app's modern custom theme font, falling back to Segoe UI when no theme is set or the font can't be displayed.
-- **IMPROVED**: Advanced Dropdown, Advanced LookUp, Advanced Multi Choice and Advanced Yes/No share one look (field, chip, colors, list, tooltips); read-only is enforced consistently, including column-level security.
-
-#### ✅ Advanced Yes/No Component (NEW)
-- **NEW**: Field control for Yes/No fields with nine display styles: Checkbox, Toggle, Labeled switch, Radio buttons, Buttons, Segmented, Toggle button, Status chip and Icon.
-- **NEW**: Yes and No icons set on the control (MDL2 icon or image web resource), optional Yes and No colors with automatically readable text, fill or fixed width, and the family field look.
-
-#### 🔖 Advanced Multi Choice Component (NEW)
-- **NEW**: Field control for multi-select choice fields - a searchable checkbox list, with the selected options shown as colored, removable pills or text chips that wrap onto new lines.
-- **NEW**: Icons from each option's External Value or a Fixed Icon Name (MDL2 icon or image web resource, semicolon-separated fallbacks), description tooltips and description search, choice-color/faded/custom color modes, and Value / Text / Autofit sorting.
-
-#### 🔽 Advanced Dropdown Component
-- **IMPROVED**: The selected option is shown as a tinted chip; existing properties keep their meaning. New `Selection shape`, `Selection color` and list color properties, and semicolon icon fallbacks.
+#### 🔗 Advanced Multi LookUp Component (NEW)
+- **NEW**: Control for N:N subgrids - the related records as removable pills or text chips in a searchable field, with Advanced LookUp's live search, additional search and display columns, label, tooltip and icon columns.
+- **NEW**: Each record's name opens the record; ticking or removing a record adds or removes the relationship immediately; the relationship is detected from the subgrid; read-only, new-record and theme-font aware.
 
 #### 🔍 Advanced LookUp Component
-- **NEW**: `Selection shape` and list color properties; icons default to the family accent; read-only and icon-gap fixes.
+- **FIX**: Icons from a Choice column on a related record (`lookupfield.choicecolumn`) now appear.
+- **IMPROVED**: Pictures use Dataverse's cached image links and appear with the results; faster start with a session metadata cache.
 
-#### 🔘 Modern Choice Buttons Component
-- **NEW**: Semicolon-separated icon fallbacks (e.g. `hek_Logo.svg;CheckMark`); respects column-level security.
-
-#### ⚡ Quick Action Buttons Component
-- **IMPROVED**: Target fields the user can't update (column-level security) are skipped and reported instead of failing at save.
+#### 🌳 Relationship View, 📄 PDF Gallery, 📝 Markdown Help Text
+- **IMPROVED**: Cached image links for Relationship View thumbnails; table information reused within the session (refreshed every 5 minutes).
 
 See [CHANGELOG.md](CHANGELOG.md) for full details.
 

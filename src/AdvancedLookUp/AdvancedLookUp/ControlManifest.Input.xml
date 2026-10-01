@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <manifest>
-  <control namespace="lops" constructor="AdvancedLookUp" version="1.11.0" display-name-key="lops.AdvancedLookUp" description-key="AdvancedLookUp description" control-type="virtual">
+  <control namespace="lops" constructor="AdvancedLookUp" version="1.11.3" display-name-key="lops.AdvancedLookUp" description-key="AdvancedLookUp description" control-type="virtual">
     <property name="lookupValue" display-name-key="Lookup Value" description-key="The lookup field this control replaces. Place this control directly on that field." of-type="Lookup.Simple" usage="bound" required="true" />
     <property name="searchColumns" display-name-key="Additional Search Columns" description-key="Optional: comma-separated logical names of additional columns on the target table to search against, besides its primary name column (always searched). Text columns are matched directly; a lookup column is matched against the primary name of the record it points to." of-type="SingleLine.Text" usage="input" required="false" />
     <property name="sortColumnName" display-name-key="Sort Column" description-key="Optional: logical name of a column on the target table to sort search results by, always ascending. Both text and number columns are supported. Defaults to the primary name column when left blank." of-type="SingleLine.Text" usage="input" required="false" />

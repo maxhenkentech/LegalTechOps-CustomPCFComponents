@@ -49,7 +49,27 @@ function unknownResolution(tag: IParsedFieldTag): IFieldTagResolution {
 
 const EMPTY_RESOLUTION: IFieldTagResolution = { status: "empty", text: "empty" };
 
+// Schema metadata is fixed for the life of a page and identical for every instance of this control,
+// so it's shared per page session (in-flight request included; failures not cached) and expires
+// after 5 minutes so a maker's change reaches open sessions without a refresh. Schema only - never
+// record data. Callers get a shallow copy, so nothing can mutate the cached value.
+const METADATA_TTL_MS = 5 * 60 * 1000;
+const metadataCache = new Map<string, { at: number; pending: Promise<unknown> }>();
+function cachedMetadata<T>(key: string, load: () => Promise<T>): Promise<T> {
+  const hit = metadataCache.get(key);
+  if (hit && Date.now() - hit.at < METADATA_TTL_MS) return hit.pending as Promise<T>;
+  const pending = load();
+  metadataCache.set(key, { at: Date.now(), pending });
+  pending.catch(() => metadataCache.delete(key));
+  return pending;
+}
+
 async function resolveAttributeMetadata(entityLogicalName: string, logicalNames: string[]): Promise<Record<string, IFieldMeta>> {
+  const key = `attributes:${entityLogicalName}:${Array.from(new Set(logicalNames)).sort().join(",")}`;
+  return { ...(await cachedMetadata(key, () => loadAttributeMetadata(entityLogicalName, logicalNames))) };
+}
+
+async function loadAttributeMetadata(entityLogicalName: string, logicalNames: string[]): Promise<Record<string, IFieldMeta>> {
   const uniqueNames = Array.from(new Set(logicalNames));
   if (uniqueNames.length === 0) return {};
 

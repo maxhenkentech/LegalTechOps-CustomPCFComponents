@@ -57,6 +57,7 @@
     <ProjectReference Include="src/QuickActionButtons/QuickActionButtons.pcfproj" />
     <ProjectReference Include="src/AdvancedMultiChoice/AdvancedMultiChoice.pcfproj" />
     <ProjectReference Include="src/AdvancedYesNo/AdvancedYesNo.pcfproj" />
+    <ProjectReference Include="src/AdvancedMultiLookUp/AdvancedMultiLookUp.pcfproj" />
   </ItemGroup>
 
   <Import Project="$(MSBuildToolsPath)\Microsoft.Common.targets" />

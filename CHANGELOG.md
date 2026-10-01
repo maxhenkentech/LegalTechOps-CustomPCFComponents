@@ -2,7 +2,36 @@
 
 # Changelog
 
-## Version 8.0.0.0 (Current)
+## Version 9.0.0.0 (Current)
+A new component, Advanced Multi LookUp, for many-to-many relationships, plus faster icons and pictures in Advanced LookUp and Relationship View and a fix for icons taken from a related record's choice.
+
+#### 🔗 Advanced Multi LookUp Component (NEW)
+- **NEW**: Control for **N:N (many-to-many) relationships**: placed on an N:N subgrid, it shows the related records as removable **pills** or borderless **text chips** in a searchable field, in the Advanced Multi Choice look
+- **NEW**: Live, type-to-filter search of the related table, like Advanced LookUp: the primary name, `Label Column` and `Additional Search Columns` (text columns directly, a lookup column by the name of the record it points to), with `Sort Column`, `Show Inactive Records` and `Result Limit`
+- **NEW**: `Additional Display Columns` show a context line under each record in the list (choice, lookup, currency, date and number columns use their formatted value)
+- **NEW**: Each selected record's name is a link that opens the record (Ctrl/Cmd+click for a new window), also when the field is read-only
+- **NEW**: Ticking a record adds the relationship and removing it (× or unticking) removes it, immediately - like the standard subgrid's Add Existing and Remove. A failed change (e.g. a missing privilege) is undone and explained under the field
+- **NEW**: Icons per record from an Image column, an MDL2 icon-name column, a Choice column (MDL2 name or image web resource), or `lookupfield.column` from a related record, with semicolon fallbacks and `Fixed Icon Name`; `Icon Shape`, `Icon Background Color`, `Icon Color`
+- **NEW**: `Tooltip Column`, `Sort selected by` (subgrid view order, Text, Autofit), `Selected values display`, `Component Height`, `Selection shape`, `Make font bold`, selection, pill border and list colors
+- **NEW**: Detects the N:N relationship from the subgrid, even when two relationships connect the same tables (it compares the subgrid's records); `Relationship Name` is only needed when that can't be decided
+- **NEW**: Respects a read-only subgrid and inactive records, explains that a new record must be saved first, follows the app's theme font, and shows a red panel for misconfigured columns or colors
+
+#### 🔍 Advanced LookUp Component
+- **FIX**: Icons from a **Choice column on a related record** (`Icon Column` `lookupfield.choicecolumn`) never appeared - every record fell back to the next icon. They now show the choice option's icon
+- **IMPROVED**: Pictures from an Image column appear together with the search results and are no longer downloaded again on every search or form load (they use Dataverse's cached image links); a record without a picture falls back to the next icon straight away
+- **IMPROVED**: Faster start: the selected record is loaded once instead of twice, and table information is reused across fields and records in the same session (refreshed every 5 minutes)
+
+#### 🌳 Relationship View Component
+- **IMPROVED**: Thumbnails from an Image column use Dataverse's cached image links - no separate download per record, and cached across form loads
+- **IMPROVED**: Table information is loaded in parallel and reused within the session (refreshed every 5 minutes)
+
+#### 📄 PDF Gallery Component
+- **IMPROVED**: Table information is reused within the session, so documents start loading about half a second sooner when you return to a record (refreshed every 5 minutes)
+
+#### 📝 Markdown Help Text Component
+- **IMPROVED**: The column information needed for `{field}` tags is reused within the session (refreshed every 5 minutes); field values are still read live
+
+## Version 8.0.0.0 (Previous)
 Major release with everything since the last GitHub release (v7.2.2): two new components, Advanced Multi Choice and Advanced Yes/No, one shared look for the field controls, theme font support for every component, and consistent read-only handling.
 
 #### 🎨 All Components

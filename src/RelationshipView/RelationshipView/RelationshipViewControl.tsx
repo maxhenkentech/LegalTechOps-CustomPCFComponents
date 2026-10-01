@@ -65,6 +65,9 @@ interface ITreeRecord {
   // own value for that lookup ("_<lookupField>_value"), i.e. the id of the RELATED record the
   // thumbnail should actually be fetched from. Undefined if the lookup has no value on this record.
   thumbnailLookupTargetId?: string;
+  // Set only when thumbnailColumnName (no dot notation) is an Image column: its "<column>_url"
+  // companion from this record's own $select - see imageThumbnailUrl.
+  thumbnailImageUrl?: string;
   // Set only when sortByColumnName is configured - used to order records within the same tree
   // level (buildVirtualRoots), never rendered directly.
   sortValue?: ISortValue;
@@ -111,7 +114,7 @@ function parseThumbnailColumnName(thumbnailColumnName: string | undefined): IThu
 
 // Metadata needed to fetch a dot-notation lookup thumbnail: which entity/entity-set the lookup
 // points to, and the resolved type of the column on THAT entity (String -> icon name, ImageType ->
-// fetch bytes via fetchThumbnailUrl, same distinction already made for the current record's own
+// read its "_url" companion (imageThumbnailUrl), same distinction already made for the current record's own
 // thumbnail column).
 interface ILookupThumbnailMeta {
   targetEntityLogicalName: string;
@@ -254,7 +257,28 @@ function resolveCurrentRecordContext(
   return { entityTypeName, entityId };
 }
 
-async function resolveEntityMetadata(entityLogicalName: string): Promise<IEntityMeta> {
+// Table/column metadata is fixed for the life of a page, and UCI keeps this bundle loaded across
+// record navigations, so it's shared per page session (in-flight promise included; a failure is
+// dropped so the next load retries). Not sessionStorage: a maker editing columns would then see
+// stale metadata after a reload. (v1.3.2 - see CLAUDE.md for the startup trace.)
+// Entries expire after METADATA_TTL_MS, so a schema change made while a user has the app open
+// reaches them within 5 minutes even without a refresh. Only schema is cached - never record data.
+const METADATA_TTL_MS = 5 * 60 * 1000;
+const metadataCache = new Map<string, { at: number; pending: Promise<unknown> }>();
+function cachedMetadata<T>(key: string, load: () => Promise<T>): Promise<T> {
+  const hit = metadataCache.get(key);
+  if (hit && Date.now() - hit.at < METADATA_TTL_MS) return hit.pending as Promise<T>;
+  const pending = load();
+  metadataCache.set(key, { at: Date.now(), pending });
+  pending.catch(() => metadataCache.delete(key));
+  return pending;
+}
+
+function resolveEntityMetadata(entityLogicalName: string): Promise<IEntityMeta> {
+  return cachedMetadata(`entity:${entityLogicalName}`, () => loadEntityMetadata(entityLogicalName));
+}
+
+async function loadEntityMetadata(entityLogicalName: string): Promise<IEntityMeta> {
   const url = `/api/data/v9.2/EntityDefinitions(LogicalName='${entityLogicalName}')?$select=EntitySetName,PrimaryIdAttribute,PrimaryNameAttribute`;
   const response = await fetch(url, { headers: { Accept: "application/json" } });
   if (!response.ok) {
@@ -268,7 +292,12 @@ async function resolveEntityMetadata(entityLogicalName: string): Promise<IEntity
   return { entitySetName: data.EntitySetName, primaryIdAttribute: data.PrimaryIdAttribute, primaryNameAttribute: data.PrimaryNameAttribute };
 }
 
-async function resolveAttributeMetadata(entityLogicalName: string, logicalNames: string[]): Promise<Record<string, IAttributeMeta>> {
+function resolveAttributeMetadata(entityLogicalName: string, logicalNames: string[]): Promise<Record<string, IAttributeMeta>> {
+  const key = `attributes:${entityLogicalName}:${Array.from(new Set(logicalNames)).sort().join(",")}`;
+  return cachedMetadata(key, () => loadAttributeMetadata(entityLogicalName, logicalNames));
+}
+
+async function loadAttributeMetadata(entityLogicalName: string, logicalNames: string[]): Promise<Record<string, IAttributeMeta>> {
   const uniqueNames = Array.from(new Set(logicalNames));
   if (uniqueNames.length === 0) return {};
 
@@ -431,10 +460,10 @@ function toWebApiSelectFields(logicalName: string, attributeMeta: Record<string,
   return [logicalName];
 }
 
-// thumbnailColumnName is only added to the $select when it resolves to a text column (icon-name
-// mode) - an Image-column thumbnail is deliberately NOT selected here, since its bytes are already
-// fetched lazily per-visible-record via fetchThumbnailUrl; embedding it here too would pull a
-// base64 blob into every single row of the tree/ancestor/descendant/sibling queries.
+// thumbnailColumnName is added to the $select as itself for a text/Choice column (icon mode) and as
+// its "<column>_url" companion for an Image column (a short URL string - see imageThumbnailUrl).
+// The Image column itself is never selected: that would pull a base64 blob into every row of the
+// tree/ancestor/descendant/sibling queries.
 // When thumbnailColumnRef resolves to "<lookupField>.<column>" dot notation, the actual thumbnail
 // column lives on a DIFFERENT entity (whatever the lookup points to) and can't be $select-ed from
 // this query at all - only the lookup's own bound value ("_<lookupField>_value") is added here, so
@@ -453,10 +482,13 @@ function buildSelectClause(
     .filter((value): value is string => !!value)
     .flatMap((value) => toWebApiSelectFields(value, attributeMeta));
   const thumbnailOwnColumnType = thumbnailColumnRef && attributeMeta[thumbnailColumnRef.columnLogicalName]?.attributeType;
+  const thumbnailOwnIsImage = !!thumbnailColumnRef && attributeMeta[thumbnailColumnRef.columnLogicalName]?.attributeTypeName === "ImageType";
   const thumbnailFields = thumbnailColumnRef?.lookupFieldLogicalName
     ? [`_${thumbnailColumnRef.lookupFieldLogicalName}_value`]
     : thumbnailOwnColumnType === "String" || thumbnailOwnColumnType === "Picklist"
     ? toWebApiSelectFields(thumbnailColumnRef!.columnLogicalName, attributeMeta)
+    : thumbnailOwnIsImage
+    ? [`${thumbnailColumnRef!.columnLogicalName}_url`]
     : [];
   const sortFields = sortByColumnName ? toWebApiSelectFields(sortByColumnName, attributeMeta) : [];
   return [...fixedFields, ...customFields, ...thumbnailFields, ...sortFields].join(",");
@@ -530,6 +562,11 @@ function mapWebApiRecordToTreeRecord(
     ? (record[`_${thumbnailColumnRef.lookupFieldLogicalName}_value`] as string | undefined)
     : undefined;
 
+  const thumbnailImageUrl =
+    isOwnColumnThumbnail && attributeMeta[thumbnailColumnRef!.columnLogicalName]?.attributeTypeName === "ImageType"
+      ? (record[`${thumbnailColumnRef!.columnLogicalName}_url`] as string | undefined)
+      : undefined;
+
   return {
     id,
     entityLogicalName,
@@ -543,6 +580,7 @@ function mapWebApiRecordToTreeRecord(
     thumbnailIconName: thumbnailIconName || undefined,
     thumbnailChoiceOptionValue: thumbnailChoiceOptionValue ?? undefined,
     thumbnailLookupTargetId: thumbnailLookupTargetId || undefined,
+    thumbnailImageUrl: thumbnailImageUrl || undefined,
     sortValue: sortByColumnName ? readSortValue(record, sortByColumnName, attributeMeta[sortByColumnName]) : undefined,
   };
 }
@@ -932,41 +970,24 @@ async function fetchQuickViewValues(
 
 // Rendering options that need the image's real aspect ratio to look right. Dataverse's default
 // image-column $value is a SQUARE center-cropped 144px thumbnail (crops a wide/tall image to a
-// square before it ever reaches the browser - see fetchThumbnailUrl), so for these modes we must
+// square before it ever reaches the browser - the "_url" handler too, see imageThumbnailUrl), so for these modes we must
 // request the full-sized original instead, otherwise "Fit Width"/"Fit Height"/"Contain" all
 // operate on an already-square image and can't reproduce the original shape (naturalWidth ===
 // naturalHeight === 1 ratio). Cover/Stretch/Tile fill the square frame regardless, so the cheaper
 // thumbnail is fine (and avoids fetching a potentially large full-sized image per row).
 const ASPECT_SENSITIVE_RENDERING_OPTIONS = new Set(["Contain", "Center", "FitWidth", "FitHeight"]);
 
-async function fetchThumbnailUrl(
-  entitySetName: string,
-  id: string,
-  thumbnailColumnName: string,
-  preferFullSize: boolean
-): Promise<string | undefined> {
-  const base = `/api/data/v9.2/${entitySetName}(${id})/${thumbnailColumnName}/$value`;
-  const toBlobUrl = (buffer: ArrayBuffer, contentType: string): string => {
-    const blob = new Blob([buffer], { type: contentType.startsWith("image/") ? contentType : "image/png" });
-    return URL.createObjectURL(blob);
-  };
-
-  // ?size=full returns the uncropped original (aspect ratio preserved). If the column isn't
-  // configured to store full-sized images (CanStoreFullImage=false), Dataverse responds 204 No
-  // Content with an empty body - detected via an empty buffer here - so we fall back to the
-  // square thumbnail rather than producing a broken (zero-byte) blob.
-  if (preferFullSize) {
-    const fullResponse = await fetch(`${base}?size=full`, { headers: { Accept: "*/*" } });
-    if (fullResponse.ok && fullResponse.status !== 204) {
-      const buffer = await fullResponse.arrayBuffer();
-      if (buffer.byteLength > 0) return toBlobUrl(buffer, fullResponse.headers.get("Content-Type") || "");
-    }
-  }
-
-  const response = await fetch(base, { headers: { Accept: "*/*" } });
-  if (!response.ok) return undefined;
-  const buffer = await response.arrayBuffer();
-  return toBlobUrl(buffer, response.headers.get("Content-Type") || "");
+// An Image column's thumbnail as a plain URL, from its "<column>_url" companion attribute
+// ($select'ed with the tree - see buildSelectClause - or read off the related record for dot
+// notation). It is the app's own image handler (/Image/download.aspx?...&Timestamp=...), which the
+// browser caches (private, 7 days; the Timestamp changes with the picture), unlike the old per-row
+// /$value fetch (no-cache, re-downloaded on every load, wrapped in a blob URL). Without Full=true it
+// is the same square 144px thumbnail /$value returned; with it, the uncropped original that the
+// aspect-sensitive modes need (Thumbnail falls back to the plain URL if no full image is stored -
+// the old ?size=full 204 case). See CLAUDE.md (measured before/after on the test forms).
+function imageThumbnailUrl(imageUrl: string | undefined, preferFullSize: boolean): string | undefined {
+  if (!imageUrl) return undefined;
+  return preferFullSize ? `${imageUrl}&Full=true` : imageUrl;
 }
 
 // The Web API's /$value endpoint for an Image-type column returns the SAME bytes already embedded
@@ -1398,11 +1419,19 @@ function Thumbnail({ style, url, iconName, renderingOption, iconColorMode, choic
   const containerRef = React.useRef<HTMLDivElement>(null);
   const imgRef = React.useRef<HTMLImageElement>(null);
   const [failed, setFailed] = React.useState(false);
+  // A Full=true URL fails when the column stores no full-size image; retry the thumbnail URL.
+  const [useThumbnail, setUseThumbnail] = React.useState(false);
   const [naturalSize, setNaturalSize] = React.useState<{ width: number; height: number } | undefined>(undefined);
   React.useEffect(() => {
     setFailed(false);
+    setUseThumbnail(false);
     setNaturalSize(undefined);
   }, [url]);
+  const src = url && useThumbnail ? url.replace("&Full=true", "") : url;
+  const handleError = (): void => {
+    if (!useThumbnail && url?.includes("&Full=true")) setUseThumbnail(true);
+    else setFailed(true);
+  };
 
   // A data: URI (test mode's placeholder SVG) or a browser-cached image is already `complete`
   // by the time this mounts, so the `load` event fires before React attaches the img's onLoad
@@ -1477,15 +1506,15 @@ function Thumbnail({ style, url, iconName, renderingOption, iconColorMode, choic
       {showImage && (
         <img
           ref={imgRef}
-          src={url}
+          src={src}
           alt=""
-          onError={() => setFailed(true)}
+          onError={handleError}
           onLoad={handleLoad}
           className={`rv-thumb-fit-${renderingOption.toLowerCase()}`}
           style={imgStyle}
         />
       )}
-      {showImage && isTile && <div className="rv-thumb-tile" style={{ backgroundImage: `url(${url})` }} />}
+      {showImage && isTile && <div className="rv-thumb-tile" style={{ backgroundImage: `url(${src})` }} />}
       {!showImage && <Icon iconName="Photo2" className="rv-thumb-placeholder" />}
     </div>
   );
@@ -2053,10 +2082,6 @@ export const RelationshipViewControl = (props: IRelationshipViewProps): React.Re
           throw new Error("Unable to resolve the parent lookup field's logical name.");
         }
 
-        const meta = await resolveEntityMetadata(entityTypeName);
-        if (cancelled) return;
-        setEntityMeta(meta);
-
         const customAttrNames = [
           props.customAttribute1,
           props.customAttribute2,
@@ -2067,8 +2092,14 @@ export const RelationshipViewControl = (props: IRelationshipViewProps): React.Re
           thumbnailColumnRef?.lookupFieldLogicalName ? undefined : thumbnailColumnRef?.columnLogicalName,
           props.sortByColumnName,
         ].filter((v): v is string => !!v);
-        const resolvedAttributeMeta = await resolveAttributeMetadata(entityTypeName, customAttrNames);
+        // In parallel - the column metadata never depended on the entity metadata (they used to run
+        // one after the other, ~0.27 s each on the test form).
+        const [meta, resolvedAttributeMeta] = await Promise.all([
+          resolveEntityMetadata(entityTypeName),
+          resolveAttributeMetadata(entityTypeName, customAttrNames),
+        ]);
         if (cancelled) return;
+        setEntityMeta(meta);
 
         // Plain (non-dot-notation) thumbnailColumnName that does NOT resolve to any real column on
         // this entity at all - confirmed by resolvedAttributeMeta simply having no entry for it, the
@@ -2459,8 +2490,13 @@ export const RelationshipViewControl = (props: IRelationshipViewProps): React.Re
             })
             .catch((err: Error) => console.error("Failed to load lookup thumbnail choice value", err));
         } else {
-          fetchThumbnailUrl(lookupThumbnailMeta.targetEntitySetName, targetId, lookupThumbnailMeta.targetColumnMeta.logicalName, preferFullSize)
-            .then((url) => {
+          // Image column on the related record: only its "_url" companion is read (a small JSON
+          // call per distinct related record, as before), never the picture bytes.
+          const columnName = lookupThumbnailMeta.targetColumnMeta.logicalName;
+          props.webAPI
+            .retrieveRecord(lookupThumbnailMeta.targetEntityLogicalName, targetId, `?$select=${columnName}_url`)
+            .then((record: ComponentFramework.WebApi.Entity) => {
+              const url = imageThumbnailUrl(record[`${columnName}_url`] as string | undefined, preferFullSize);
               if (!url) return undefined;
               setThumbnailUrls((prev) => {
                 const next = { ...prev };
@@ -2503,18 +2539,21 @@ export const RelationshipViewControl = (props: IRelationshipViewProps): React.Re
       return;
     }
 
-    if (!entityMeta) return;
+    // Own Image column: each record already carries its "_url" companion from the tree query
+    // (ITreeRecord.thumbnailImageUrl), so no request is needed here at all.
     const preferFullSize = ASPECT_SENSITIVE_RENDERING_OPTIONS.has(props.thumbnailRenderingOption);
-    allIds.forEach((id) => {
-      if (thumbnailUrlsRef.current[id]) return;
-      fetchThumbnailUrl(entityMeta.entitySetName, id, thumbnailColumnRef.columnLogicalName, preferFullSize)
-        .then((url) => {
-          if (url) setThumbnailUrls((prev) => (prev[id] ? prev : { ...prev, [id]: url }));
-          return undefined;
-        })
-        .catch((err: Error) => {
-          console.error("Failed to load thumbnail", err);
-        });
+    const allRecords = collectAllRecords(ancestors, currentRecord, descendantTree, siblingTree, ancestorSiblingTree);
+    setThumbnailUrls((prev) => {
+      let changed = false;
+      const next = { ...prev };
+      allRecords.forEach((r: ITreeRecord) => {
+        const url = imageThumbnailUrl(r.thumbnailImageUrl, preferFullSize);
+        if (url && next[r.id] !== url) {
+          next[r.id] = url;
+          changed = true;
+        }
+      });
+      return changed ? next : prev;
     });
   }, [
     thumbnailColumnRef,

@@ -121,8 +121,8 @@ interface IconCandidate {
   // file). Only ever set alongside lookupFieldLogicalName.
   lookupTargetEntityLogicalName?: string;
   // lookupTargetEntityLogicalName's own EntitySetName - needed to address the related record via
-  // a raw Web API URL (fetchImageUrl's /$value fetch, or the plain $select fetch a dot-notation
-  // text/choice candidate needs - see resolveDotNotationIconValue). Resolved once per distinct
+  // a raw Web API URL (the plain $select fetch a dot-notation candidate needs - "<column>_url" for an
+  // image, the column itself for text/choice - see resolveDotNotationIconValue). Resolved once per distinct
   // target entity, not per candidate or per record.
   lookupTargetEntitySetName?: string;
 }
@@ -294,47 +294,65 @@ function resolveTargetEntityType(lookupProperty: ComponentFramework.PropertyType
   return lookupProperty.raw?.[0]?.entityType;
 }
 
+// Table/column metadata is fixed for the life of a page, and every lookup on a form (and every
+// form opened in the same session - UCI keeps this bundle loaded) asks the same questions, so
+// metadata GETs are shared per page session, in-flight promise included. A failed request is
+// dropped so the next mount retries. Not sessionStorage: a maker editing columns would then see
+// stale metadata after a reload. (v1.11.3 - see CLAUDE.md for the startup trace.)
+// Entries expire after METADATA_TTL_MS, so a schema change made while a user has the app open
+// reaches them within 5 minutes even without a refresh. Only schema is cached - never record data.
+const METADATA_TTL_MS = 5 * 60 * 1000;
+const metadataCache = new Map<string, { at: number; pending: Promise<unknown> }>();
+function fetchMetadata<T>(url: string, failure: string): Promise<T> {
+  const hit = metadataCache.get(url);
+  if (hit && Date.now() - hit.at < METADATA_TTL_MS) return hit.pending as Promise<T>;
+  const pending = fetch(url, { headers: { Accept: "application/json" } }).then(async (response) => {
+    if (!response.ok) throw new Error(`${failure} (${response.status} ${response.statusText})`);
+    return (await response.json()) as T;
+  });
+  metadataCache.set(url, { at: Date.now(), pending });
+  pending.catch(() => metadataCache.delete(url));
+  return pending;
+}
+
 async function resolveEntityMetadata(entityLogicalName: string): Promise<IEntityMeta> {
-  const url = `/api/data/v9.2/EntityDefinitions(LogicalName='${entityLogicalName}')?$select=EntitySetName,PrimaryIdAttribute,PrimaryNameAttribute`;
-  const response = await fetch(url, { headers: { Accept: "application/json" } });
-  if (!response.ok) {
-    throw new Error(`Failed to resolve entity metadata (${response.status} ${response.statusText})`);
-  }
-  const data = (await response.json()) as { EntitySetName: string; PrimaryIdAttribute: string; PrimaryNameAttribute: string };
+  const data = await fetchMetadata<{ EntitySetName: string; PrimaryIdAttribute: string; PrimaryNameAttribute: string }>(
+    `/api/data/v9.2/EntityDefinitions(LogicalName='${entityLogicalName}')?$select=EntitySetName,PrimaryIdAttribute,PrimaryNameAttribute`,
+    "Failed to resolve entity metadata"
+  );
   return { entitySetName: data.EntitySetName, primaryIdAttribute: data.PrimaryIdAttribute, primaryNameAttribute: data.PrimaryNameAttribute };
 }
 
-// AttributeTypeName distinguishes an Image column from a plain text column - both otherwise
-// report AttributeType "Virtual"/"String" ambiguously, same distinction RelationshipView's
-// thumbnailColumnName resolution already relies on.
+// One call for a table's whole column list, including AttributeTypeName (which tells an Image
+// column apart from a plain one - both report AttributeType "Virtual"/"String" ambiguously). Shared
+// by resolveAttributeLogicalNames and resolveIconColumnMeta through the metadata cache, so
+// classifying Icon Column entries no longer costs a filtered request per entry (it used to, after
+// the entity metadata, which held up the selected record by ~0.5 s and made it fetch twice).
+interface IAttributeListEntry {
+  LogicalName: string;
+  AttributeType?: string;
+  AttributeTypeName?: { Value: string };
+}
+function fetchAttributeList(entityLogicalName: string): Promise<{ value: IAttributeListEntry[] }> {
+  return fetchMetadata(
+    `/api/data/v9.2/EntityDefinitions(LogicalName='${entityLogicalName}')/Attributes?$select=LogicalName,AttributeType,AttributeTypeName`,
+    "Failed to resolve attribute list"
+  );
+}
+
 async function resolveIconColumnMeta(entityLogicalName: string, logicalName: string): Promise<IAttributeMeta | undefined> {
-  const escaped = logicalName.replace(/'/g, "''");
-  const url = `/api/data/v9.2/EntityDefinitions(LogicalName='${entityLogicalName}')/Attributes?$select=LogicalName,AttributeType,AttributeTypeName&$filter=LogicalName eq '${escaped}'`;
-  const response = await fetch(url, { headers: { Accept: "application/json" } });
-  if (!response.ok) {
-    throw new Error(`Failed to resolve icon column metadata (${response.status} ${response.statusText})`);
-  }
-  const data = (await response.json()) as { value: { LogicalName: string; AttributeType: string; AttributeTypeName?: { Value: string } }[] };
-  const found = data.value[0];
+  const data = await fetchAttributeList(entityLogicalName);
+  const found = data.value.find((a) => a.LogicalName.toLowerCase() === logicalName.toLowerCase());
   if (!found) return undefined;
-  return { logicalName: found.LogicalName, attributeType: found.AttributeType, attributeTypeName: found.AttributeTypeName?.Value };
+  return { logicalName: found.LogicalName, attributeType: found.AttributeType || "", attributeTypeName: found.AttributeTypeName?.Value };
 }
 
 // Backs validateConfig()'s column-existence checks (Label Column / Tooltip Column / Additional
 // Search Columns / Additional Display Columns) AND Additional Display Columns' need to know which
-// configured columns are Lookup-like (see isLookupLikeAttributeType below) - one call for the whole
-// attribute list rather than one filtered call per configured column (the pattern
-// resolveIconColumnMeta uses), same reasoning as before: a single pass over every attribute answers
-// both "does this name exist" and "what type is it" at once. Returns a Map (logical name -> Dataverse
-// AttributeType) rather than a Set now that a second property needs more than yes/no - callers that
-// only need existence still just call `.has(name)`, identical to when this returned a Set.
+// configured columns are Lookup-like (see isLookupLikeAttributeType below). Returns a Map (logical
+// name -> Dataverse AttributeType); callers that only need existence call `.has(name)`.
 async function resolveAttributeLogicalNames(entityLogicalName: string): Promise<Map<string, string>> {
-  const url = `/api/data/v9.2/EntityDefinitions(LogicalName='${entityLogicalName}')/Attributes?$select=LogicalName,AttributeType`;
-  const response = await fetch(url, { headers: { Accept: "application/json" } });
-  if (!response.ok) {
-    throw new Error(`Failed to resolve attribute list (${response.status} ${response.statusText})`);
-  }
-  const data = (await response.json()) as { value: { LogicalName: string; AttributeType?: string }[] };
+  const data = await fetchAttributeList(entityLogicalName);
   return new Map(data.value.map((a) => [a.LogicalName.toLowerCase(), a.AttributeType || ""]));
 }
 
@@ -347,12 +365,10 @@ async function resolveAttributeLogicalNames(entityLogicalName: string): Promise<
 // without an extra call per record, so this deliberately just uses Targets[0]).
 async function resolveLookupTargetEntityLogicalName(entityLogicalName: string, lookupFieldLogicalName: string): Promise<string | undefined> {
   const escaped = lookupFieldLogicalName.replace(/'/g, "''");
-  const url = `/api/data/v9.2/EntityDefinitions(LogicalName='${entityLogicalName}')/Attributes(LogicalName='${escaped}')/Microsoft.Dynamics.CRM.LookupAttributeMetadata?$select=Targets`;
-  const response = await fetch(url, { headers: { Accept: "application/json" } });
-  if (!response.ok) {
-    throw new Error(`Failed to resolve lookup field "${lookupFieldLogicalName}" (${response.status} ${response.statusText})`);
-  }
-  const data = (await response.json()) as { Targets?: string[] };
+  const data = await fetchMetadata<{ Targets?: string[] }>(
+    `/api/data/v9.2/EntityDefinitions(LogicalName='${entityLogicalName}')/Attributes(LogicalName='${escaped}')/Microsoft.Dynamics.CRM.LookupAttributeMetadata?$select=Targets`,
+    `Failed to resolve lookup field "${lookupFieldLogicalName}"`
+  );
   return data.Targets?.[0];
 }
 
@@ -368,12 +384,10 @@ async function resolveLookupTargetEntityLogicalName(entityLogicalName: string, l
 // this specific attribute backs, rather than guessed.
 async function resolveLookupNavigationPropertyName(entityLogicalName: string, lookupFieldLogicalName: string): Promise<string | undefined> {
   const escaped = lookupFieldLogicalName.replace(/'/g, "''");
-  const url = `/api/data/v9.2/EntityDefinitions(LogicalName='${entityLogicalName}')/ManyToOneRelationships?$filter=ReferencingAttribute eq '${escaped}'&$select=ReferencingEntityNavigationPropertyName`;
-  const response = await fetch(url, { headers: { Accept: "application/json" } });
-  if (!response.ok) {
-    throw new Error(`Failed to resolve navigation property for lookup field "${lookupFieldLogicalName}" (${response.status} ${response.statusText})`);
-  }
-  const data = (await response.json()) as { value: { ReferencingEntityNavigationPropertyName?: string }[] };
+  const data = await fetchMetadata<{ value: { ReferencingEntityNavigationPropertyName?: string }[] }>(
+    `/api/data/v9.2/EntityDefinitions(LogicalName='${entityLogicalName}')/ManyToOneRelationships?$filter=ReferencingAttribute eq '${escaped}'&$select=ReferencingEntityNavigationPropertyName`,
+    `Failed to resolve navigation property for lookup field "${lookupFieldLogicalName}"`
+  );
   return data.value[0]?.ReferencingEntityNavigationPropertyName;
 }
 
@@ -437,26 +451,24 @@ function buildContextText(record: ComponentFramework.WebApi.Entity, columnNames:
   return parts.length > 0 ? parts.join(" · ") : undefined;
 }
 
-// Same raw-fetch-plus-Blob technique RelationshipView's fetchThumbnailUrl uses for an Image
-// column's /$value bytes - the Web API's own content type header for this endpoint isn't
-// reliably an image/* type, so it's forced explicitly when re-wrapping into a Blob.
-async function fetchImageUrl(entitySetName: string, id: string, columnLogicalName: string): Promise<string | undefined> {
-  const url = `/api/data/v9.2/${entitySetName}(${id})/${columnLogicalName}/$value`;
-  const response = await fetch(url, { headers: { Accept: "*/*" } });
-  if (!response.ok) return undefined;
-  const buffer = await response.arrayBuffer();
-  if (buffer.byteLength === 0) return undefined;
-  const contentType = response.headers.get("Content-Type") || "";
-  const blob = new Blob([buffer], { type: contentType.startsWith("image/") ? contentType : "image/png" });
-  return URL.createObjectURL(blob);
+// An Image column's picture URL, from its "<column>_url" companion attribute ($select'ed alongside
+// everything else - see buildSelectColumns). It points at the app's own image handler
+// (/Image/download.aspx?...&Timestamp=...), which the browser caches (Cache-Control: private,
+// Expires +7 days; the Timestamp changes when the picture does), unlike the old per-record
+// /$value fetch (no-cache, re-downloaded on every search, wrapped in a never-revoked blob URL).
+// Same 144px thumbnail either way. Null when the record has no picture, so an empty image is now
+// known without a request and the fallback chain resolves synchronously (v1.12.0, measured on the
+// test forms - see CLAUDE.md).
+function imageUrlFromRecord(record: ComponentFramework.WebApi.Entity, columnLogicalName: string): string | undefined {
+  const url = record[`${columnLogicalName}_url`] as string | undefined;
+  return url || undefined;
 }
 
 // Resolves ONE dot-notation Icon Column candidate's value for ONE already-known related record id -
-// the async counterpart to resolveIconValueSync's plain text/choice branches and fetchImageUrl's
-// image branch, just addressed at lookupTargetEntitySetName/targetId instead of this record's own
+// the async counterpart to resolveIconValueSync's plain text/choice/image branches, just addressed at lookupTargetEntitySetName/targetId instead of this record's own
 // entity set. A raw same-origin fetch, not context.webAPI.retrieveRecord, matching every other
 // metadata/value call in this file (resolveEntityMetadata, resolveIconColumnMeta,
-// resolveAttributeLogicalNames, fetchImageUrl) - this function is module-level, outside the React
+// resolveAttributeLogicalNames) - this function is module-level, outside the React
 // component, with no access to the webAPI prop anyway. Callers (resolveIconForRecord) are expected
 // to memoize this per {targetEntity, targetId, column, kind} so N rows sharing the same related
 // record only trigger one fetch, not N - see dotNotationIconCacheRef in the component.
@@ -464,14 +476,22 @@ async function resolveDotNotationIconValue(candidate: IconCandidate, targetId: s
   const targetEntitySetName = candidate.lookupTargetEntitySetName;
   const column = candidate.column;
   if (!targetEntitySetName || !column) return {};
-  if (candidate.kind === "image") {
-    const url = await fetchImageUrl(targetEntitySetName, targetId, column);
-    return url ? { thumbnailUrl: url } : {};
-  }
-  const url = `/api/data/v9.2/${targetEntitySetName}(${targetId})?$select=${column}`;
-  const response = await fetch(url, { headers: { Accept: "application/json" } });
+  // An image needs only its "_url" companion (a small JSON read), never the picture bytes.
+  const selectKey = candidate.kind === "image" ? `${column}_url` : column;
+  const url = `/api/data/v9.2/${targetEntitySetName}(${targetId})?$select=${selectKey}`;
+  // A raw fetch (unlike context.webAPI) only returns FormattedValue annotations when asked to, and
+  // a "choice" candidate reads nothing else - without this header every related-choice icon fell
+  // through to the next candidate (v1.11.1, confirmed on a real form: the value came back, the
+  // label did not).
+  const response = await fetch(url, {
+    headers: { Accept: "application/json", Prefer: 'odata.include-annotations="OData.Community.Display.V1.FormattedValue"' },
+  });
   if (!response.ok) return {};
   const record = (await response.json()) as ComponentFramework.WebApi.Entity;
+  if (candidate.kind === "image") {
+    const imageUrl = imageUrlFromRecord(record, column);
+    return imageUrl ? { thumbnailUrl: imageUrl } : {};
+  }
   if (candidate.kind === "choice") {
     const label = readChoiceLabel(record, column);
     return label ? resolveChoiceIconLabel(label) : {};
@@ -506,9 +526,7 @@ function buildSelectColumns(
   attributeTypesByName?: Map<string, string>
 ): string[] {
   const cols = new Set<string>([entityMeta.primaryIdAttribute, entityMeta.primaryNameAttribute]);
-  // Image candidates are deliberately NOT $select'd - their bytes never come back inline via
-  // $select regardless (see fetchImageUrl's separate /$value fetch), so there's nothing to ask
-  // for here.
+  // Image candidates are $select'd as "<column>_url" (see imageUrlFromRecord), never the bytes.
   iconCandidates.forEach((c) => {
     // A dot-notation candidate's own column lives on a DIFFERENT entity and cannot be $select'd
     // through a nav property here - only the lookup field itself, as `_<field>_value`, so the
@@ -520,6 +538,8 @@ function buildSelectColumns(
       return;
     }
     if ((c.kind === "text" || c.kind === "choice") && c.column) cols.add(c.column);
+    // An Image column's picture comes back as its "_url" companion (see imageUrlFromRecord).
+    if (c.kind === "image" && c.column) cols.add(`${c.column}_url`);
   });
   tooltipColumnNames.forEach((c) => cols.add(c));
   labelColumnNames.forEach((c) => cols.add(c));
@@ -577,6 +597,11 @@ function resolveIconValueSync(candidates: IconCandidate[], record: ComponentFram
     if (c.kind === "choice" && c.column) {
       const label = readChoiceLabel(record, c.column);
       if (label) return resolveChoiceIconLabel(label);
+      continue;
+    }
+    if (c.kind === "image" && c.column) {
+      const imageUrl = imageUrlFromRecord(record, c.column);
+      if (imageUrl) return { thumbnailUrl: imageUrl };
       continue;
     }
   }
@@ -639,8 +664,8 @@ async function resolveIconForRecord(
       continue;
     }
     if (c.kind === "image" && c.column) {
-      const url = await fetchImageUrl(entitySetName, recordId, c.column);
-      if (url) return { thumbnailUrl: url };
+      const imageUrl = imageUrlFromRecord(record, c.column);
+      if (imageUrl) return { thumbnailUrl: imageUrl };
       continue;
     }
   }
@@ -925,7 +950,9 @@ export const AdvancedLookUpControl: React.FC<IAdvancedLookUpProps> = (props) => 
       try {
         const meta = await resolveEntityMetadata(targetEntity);
         if (cancelled) return;
-        setEntityMeta(meta);
+        // setEntityMeta(meta) is deliberately deferred until the icon candidates are known (below):
+        // loadSelected/runSearch start as soon as entityMeta is set, and setting it first made the
+        // selected record load once without its icon columns and again with them.
 
         // One resolveIconColumnMeta call per candidate, in parallel - each entry in the fallback
         // chain is independently classified image/text/choice exactly as a single value always
@@ -998,7 +1025,9 @@ export const AdvancedLookUpControl: React.FC<IAdvancedLookUpProps> = (props) => 
           const metas = await Promise.all(
             iconRefs.map((ref) => {
               const sourceEntity = ref.lookupFieldLogicalName ? newLookupFieldTargetEntity[ref.lookupFieldLogicalName.toLowerCase()] : targetEntity;
-              return sourceEntity ? resolveIconColumnMeta(sourceEntity, ref.columnLogicalName) : Promise.resolve(undefined);
+              // A failure means "no candidate", never a thrown effect: entityMeta is only set after
+              // this, and the field must still work if the column list can't be read.
+              return sourceEntity ? resolveIconColumnMeta(sourceEntity, ref.columnLogicalName).catch(() => undefined) : Promise.resolve(undefined);
             })
           );
           if (cancelled) return;
@@ -1021,7 +1050,10 @@ export const AdvancedLookUpControl: React.FC<IAdvancedLookUpProps> = (props) => 
         if (iconFixedName && iconFixedName.trim()) {
           candidates.push({ kind: "fixed", fixedValue: iconFixedName.trim() });
         }
+        // Candidates first, then entityMeta: these setStates run after an await, so React 16 renders
+        // each one separately, and loadSelected must see both on the render that triggers it.
         setIconCandidates(candidates);
+        setEntityMeta(meta);
 
         // Additional Search Column's Lookup/Owner/Customer support - see
         // resolveLookupNavigationPropertyName's own comment for why this can't be approximated the
@@ -1288,7 +1320,7 @@ export const AdvancedLookUpControl: React.FC<IAdvancedLookUpProps> = (props) => 
           // resolveIconValueSync's comment. An image candidate OR any dot-notation
           // ("<lookupField>.<column>") entry, anywhere in the chain, forces the slower async wave
           // below instead - neither can be read straight out of this row's own $select response.
-          const needsAsyncIconResolution = iconCandidates.some((c) => c.kind === "image" || c.lookupFieldLogicalName);
+          const needsAsyncIconResolution = iconCandidates.some((c) => !!c.lookupFieldLogicalName);
 
           const newOptions: IComboBoxOption[] = [];
           const newRecordData: Record<string, ITargetRecordData> = {};
@@ -1415,7 +1447,7 @@ export const AdvancedLookUpControl: React.FC<IAdvancedLookUpProps> = (props) => 
         setSelectedName(resolveDisplayName(record, name, labelColumnNames));
         setSelectedTooltip(readTooltipValue(record, tooltipColumnNames));
 
-        const needsAsyncIconResolution = iconCandidates.some((c) => c.kind === "image" || c.lookupFieldLogicalName);
+        const needsAsyncIconResolution = iconCandidates.some((c) => !!c.lookupFieldLogicalName);
         if (!needsAsyncIconResolution) {
           const { iconValue, thumbnailUrl } = resolveIconValueSync(iconCandidates, record);
           setSelectedIconValue(iconValue);

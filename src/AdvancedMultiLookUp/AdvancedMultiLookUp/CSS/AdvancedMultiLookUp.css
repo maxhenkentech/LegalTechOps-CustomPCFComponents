@@ -1,0 +1,253 @@
+/* Geometry and colors are AdvancedMultiChoice's (lops-amc-*), which are the family's measured
+   values - see the main CLAUDE.md "Component family conventions". Config-dependent colors are inline. */
+.lops-aml-root {
+  width: 100%;
+  /* font-family is inline: the app's custom theme font, then Segoe UI (ThemeFont.tsx). */
+  -webkit-font-smoothing: antialiased;
+}
+
+.lops-aml-field {
+  position: relative;
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
+  width: 100%;
+  /* 3px padding + 1px transparent border = the family's 4px chip inset; one row is 34px (Short). */
+  padding: 3px 34px 3px 3px;
+  min-height: 32px;
+  background-color: #f5f5f5;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  color: #323130;
+  font-size: 14px;
+  cursor: text;
+  transition: background-color 0.15s ease-in-out, border-color 0.15s ease-in-out;
+}
+
+.lops-aml-field.is-tall {
+  min-height: 40px;
+  padding-top: 6px;
+  padding-bottom: 6px;
+}
+
+.lops-aml-field:hover {
+  background-color: #ececec;
+}
+
+.lops-aml-field.is-focused {
+  background-color: #ffffff;
+  border-color: #a9a9a9;
+}
+
+.lops-aml-field.is-disabled,
+.lops-aml-field.is-disabled:hover {
+  background-color: #f5f5f5;
+  cursor: default;
+  padding-right: 3px;
+}
+
+/* Values and the search box share one wrapping row (AdvancedMultiChoice). */
+.lops-aml-values {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 8px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.lops-aml-input {
+  flex: 1 1 90px;
+  min-width: 90px;
+  height: 26px;
+  padding: 0 4px;
+  margin: 0;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  box-shadow: none;
+}
+
+.lops-aml-input::placeholder {
+  color: #a19f9d;
+  opacity: 1;
+}
+
+.lops-aml-empty-value {
+  padding: 0 4px;
+  color: #a19f9d;
+  line-height: 26px;
+}
+
+/* AdvancedLookUp's search glyph (this is a record search, not a fixed list), at AdvancedMultiChoice's
+   chevron position: pinned to the first row so it stays put as values wrap. */
+.lops-aml-search-icon {
+  position: absolute;
+  right: 14px;
+  top: 16px;
+  transform: translateY(-50%);
+  font-size: 14px;
+  color: #605e5c;
+  pointer-events: none;
+}
+
+.lops-aml-field.is-tall .lops-aml-search-icon {
+  top: 19px;
+}
+
+/* TooltipHost wraps each value in its own div; it must be able to shrink so long labels truncate. */
+.lops-aml-pill-host {
+  display: inline-flex;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.lops-aml-pill,
+.lops-aml-text-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  box-sizing: border-box;
+  max-width: 100%;
+  min-width: 0;
+  height: 26px;
+  font-size: 14px;
+  line-height: 20px;
+  cursor: default;
+  transition: opacity 0.15s ease-in-out;
+}
+
+/* Pills: AdvancedMultiChoice's 0 8px + a 1px border. Text: AdvancedLookUp's chip padding 3px 8px. */
+.lops-aml-pill {
+  padding: 0 8px;
+}
+
+.lops-aml-text-item {
+  padding: 3px 8px;
+}
+
+/* AdvancedLookUp's .lops-alu-pill-link: underlined, opens the record. Color is inline. */
+.lops-aml-link {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+  text-decoration: underline;
+  cursor: pointer;
+  font-weight: inherit;
+}
+
+.lops-aml-icon {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+/* AdvancedLookUp's clear glyph: no box, no hover background. Color is inline. */
+.lops-aml-clear {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+/* Drop-down list */
+.lops-aml-list {
+  padding: 4px 0;
+}
+
+.lops-aml-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-sizing: border-box;
+  min-height: 32px;
+  padding: 6px 12px;
+  font-size: 14px;
+  cursor: pointer;
+  user-select: none;
+  transition: opacity 0.15s ease-in-out;
+}
+
+.lops-aml-item-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.lops-aml-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+/* AdvancedLookUp's .lops-alu-option-context (Additional Display Columns). */
+.lops-aml-item-context {
+  font-size: 11px;
+  line-height: 14px;
+  font-weight: 400;
+  color: #605e5c;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lops-aml-checkbox {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  width: 16px;
+  height: 16px;
+  border: 1px solid #605e5c;
+  border-radius: 2px;
+  background-color: #ffffff;
+  color: #ffffff;
+  font-size: 11px;
+}
+
+.lops-aml-no-results {
+  padding: 8px 12px;
+  color: #a19f9d;
+  font-size: 14px;
+  font-style: italic;
+}
+
+/* AdvancedLookUp's config-error panel and amber diagnostic note. */
+.lops-aml-config-error {
+  border: 1px solid #d13438;
+  border-radius: 4px;
+  padding: 10px 12px;
+  background-color: #fde7e9;
+  color: #a4262c;
+  font-size: 13px;
+  box-sizing: border-box;
+  width: 100%;
+}
+
+.lops-aml-config-error-title {
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.lops-aml-config-error-list {
+  margin: 2px 0 0 18px;
+  padding: 0;
+}
+
+.lops-aml-config-error-list li {
+  font-family: monospace;
+}
+
+.lops-aml-notice {
+  margin-top: 4px;
+  font-size: 11px;
+  color: #8a6d1a;
+}

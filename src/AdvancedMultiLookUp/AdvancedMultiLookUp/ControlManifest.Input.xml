@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<manifest>
+  <control namespace="lops" constructor="AdvancedMultiLookUp" version="1.0.3" display-name-key="lops.AdvancedMultiLookUp" description-key="Replaces a many-to-many (N:N) subgrid with a searchable multi-select lookup field. Selected records show as removable pills or chips that open the record when clicked." control-type="virtual">
+    <data-set name="records" display-name-key="Related records" description-key="The many-to-many (N:N) related records. Add this control to a subgrid that shows the related records of an N:N relationship." />
+    <property name="relationshipName" display-name-key="Relationship Name" description-key="Optional: schema name of the N:N relationship to add and remove records through, e.g. lops_matter_contact. Leave blank to detect it automatically from the subgrid - only needed when several N:N relationships connect the same two tables." of-type="SingleLine.Text" usage="input" required="false" />
+    <property name="searchColumns" display-name-key="Additional Search Columns" description-key="Optional: comma-separated logical names of additional columns on the related table to search against, besides its primary name column (always searched). Text columns are matched directly; a lookup column is matched against the primary name of the record it points to." of-type="SingleLine.Text" usage="input" required="false" />
+    <property name="sortColumnName" display-name-key="Sort Column" description-key="Optional: logical name of a column on the related table to sort search results by, always ascending. Both text and number columns are supported. Defaults to the primary name column when left blank." of-type="SingleLine.Text" usage="input" required="false" />
+    <property name="showInactiveRecords" display-name-key="Show Inactive Records" description-key="If false (default), search results only include active records. If true, inactive records are included too." of-type="TwoOptions" usage="input" required="false" default-value="false" />
+    <property name="resultLimit" display-name-key="Result Limit" description-key="Maximum number of matching records fetched and shown per search - re-queried from the server on every search, not a client-side page size." of-type="Whole.None" usage="input" required="false" default-value="10" />
+    <property name="placeholderText" display-name-key="Placeholder Text" description-key="Search box placeholder, shown to the right of the selected records." of-type="SingleLine.Text" usage="input" required="false" default-value="Search records..." />
+    <property name="labelColumnName" display-name-key="Label Column" description-key="Optional: logical name of a column on the related table to display as the label for each record, in the drop-down list and the selected values, instead of the primary name column. Semicolon-separate multiple names (col1;col2) to try them in order per record - the first one with a value wins." of-type="SingleLine.Text" usage="input" required="false" />
+    <property name="additionalDisplayColumns" display-name-key="Additional Display Columns" description-key="Optional: semicolon-separated logical names of columns on the related table to show as smaller context text underneath each record name in the drop-down list. Every listed column value is shown, not a fallback chain. Choice, lookup, currency, date and number columns show their formatted display value." of-type="SingleLine.Text" usage="input" required="false" />
+    <property name="tooltipColumnName" display-name-key="Tooltip Column" description-key="Optional: logical name of a column on the related table whose value is shown as a tooltip when hovering over a selected record. Semicolon-separate multiple names (col1;col2) to try them in order per record - the first one with a value wins. Without it the tooltip shows the record name." of-type="SingleLine.Text" usage="input" required="false" />
+    <property name="sortBy" display-name-key="Sort selected by" description-key="Order of the selected records in the field" of-type="Enum" usage="input" required="false" default-value="View">
+      <value name="View" display-name-key="Subgrid view" description-key="The sort order of the subgrid view (default)" default="true">View</value>
+      <value name="Text" display-name-key="Text" description-key="Alphabetically by the displayed label, in the user language">Text</value>
+      <value name="Autofit" display-name-key="Autofit" description-key="Arrange the selected records to fit into as few lines as possible, repacking when the field is resized">Autofit</value>
+    </property>
+    <property name="selectedDisplayMode" display-name-key="Selected values display" description-key="How the selected records are shown in the field" of-type="Enum" usage="input" required="false" default-value="Pills">
+      <value name="Pills" display-name-key="Pills" description-key="Each selected record is shown as a bordered pill with a remove button (default)" default="true">Pills</value>
+      <value name="Text" display-name-key="Text" description-key="Each selected record is shown as a borderless chip, like the out-of-the-box lookup field">Text</value>
+    </property>
+    <property name="componentHeight" display-name-key="Component Height" description-key="Minimum height of the field. The field grows as selected records wrap onto more lines." of-type="Enum" usage="input" required="false" default-value="Short">
+      <value name="Tall" display-name-key="Tall" description-key="Standard height field">Tall</value>
+      <value name="Short" display-name-key="Short" description-key="Compact height field" default="true">Short</value>
+    </property>
+    <property name="selectionShape" display-name-key="Selection shape" description-key="Corner shape of each selected record, in both the Pills and Text display" of-type="Enum" usage="input" required="false" default-value="Rounded">
+      <value name="Square" display-name-key="Square" description-key="Sharp corners">Square</value>
+      <value name="Rounded" display-name-key="Rounded" description-key="Slightly rounded corners (default)" default="true">Rounded</value>
+      <value name="Round" display-name-key="Round" description-key="Fully rounded ends">Round</value>
+    </property>
+    <property name="makeFontBold" display-name-key="Make font bold" description-key="Display the selected record labels in bold font weight" of-type="TwoOptions" usage="input" required="false" default-value="false" />
+    <property name="iconColumnName" display-name-key="Icon Column" description-key="Optional: logical name of a column on the related table to render as each record icon. Point this at an Image column to show that picture, a text column containing an MDL2 icon name, or a Choice column whose option label is an MDL2 icon name or a web resource file name (e.g. logo.png) - detected automatically from the column type. Semicolon-separate multiple names (col1;col2) to try them in order per record. Use lookupfield.column (e.g. lops_parentaccount.lops_thumbnail) to pull the icon from the record a lookup on the related table points to." of-type="SingleLine.Text" usage="input" required="false" />
+    <property name="iconFixedName" display-name-key="Fixed Icon Name" description-key="Optional: a literal MDL2 icon name shown for any record where Icon Column produced no value - or for every record, if Icon Column is left blank." of-type="SingleLine.Text" usage="input" required="false" />
+    <property name="iconShape" display-name-key="Icon Shape" description-key="Shape drawn behind each record icon or picture. Full fills the icons square box edge to edge (default). Rounded Square uses a small corner radius. Circle fully rounds it. None applies no shape or background at all, regardless of Icon Background Color." of-type="Enum" usage="input" required="false" default-value="Full">
+      <value name="Full" display-name-key="Full" description-key="Square box, fills edge to edge (default)" default="true">Full</value>
+      <value name="RoundedSquare" display-name-key="Rounded Square" description-key="Square box with rounded corners">RoundedSquare</value>
+      <value name="Circle" display-name-key="Circle" description-key="Fully rounded circular box">Circle</value>
+      <value name="None" display-name-key="None" description-key="No shape or background - icon or picture rendered with no box">None</value>
+    </property>
+    <property name="iconBackgroundColor" display-name-key="Icon Background Color" description-key="Optional: hex color (e.g. #0078D4) painted behind each record icon or picture, in the shape set by Icon Shape. Blank by default - no background is drawn. Ignored when Icon Shape is None." of-type="SingleLine.Text" usage="input" required="false" />
+    <property name="iconColor" display-name-key="Icon Color" description-key="Optional: hex color (e.g. #0078D4) applied to MDL2 icon glyphs. Blank by default - the icon takes the label color of the selected record, and #255BA4 in the list. Pictures and web resource images are not recolored." of-type="SingleLine.Text" usage="input" required="false" />
+    <property name="selectionColor" display-name-key="Selection color" description-key="Background color behind each selected record, in both the Pills and Text display (hex, e.g. #EDF3FB). The label, link and remove button use a darker shade of it." of-type="SingleLine.Text" usage="input" required="false" default-value="#EDF3FB" />
+    <property name="pillBorderMode" display-name-key="Pill border mode" description-key="Pills display only: whether each pill shows a border. Text display never shows a border." of-type="Enum" usage="input" required="false" default-value="CustomColor">
+      <value name="Off" display-name-key="Off" description-key="No border">Off</value>
+      <value name="CustomColor" display-name-key="Custom color" description-key="Use the Pill border color property (default)" default="true">CustomColor</value>
+    </property>
+    <property name="pillBorderColor" display-name-key="Pill border color" description-key="Pills display only: border color when Pill border mode is Custom color (hex, e.g. #255BA4)" of-type="SingleLine.Text" usage="input" required="false" default-value="#255BA4" />
+    <property name="hoverColor" display-name-key="List hover color" description-key="Background of a record in the drop-down list while hovered or keyboard-highlighted (hex, e.g. #F3F2F1)" of-type="SingleLine.Text" usage="input" required="false" default-value="#F3F2F1" />
+    <property name="listSelectedColor" display-name-key="List selected color" description-key="Background of an already selected record in the drop-down list (hex, e.g. #EDF3FB)" of-type="SingleLine.Text" usage="input" required="false" default-value="#EDF3FB" />
+    <resources>
+      <code path="index.ts" order="1"/>
+      <css path="CSS/AdvancedMultiLookUp.css" order="1" />
+      <platform-library name="React" version="16.8.6" />
+      <platform-library name="Fluent" version="8.29.0" />
+    </resources>
+    <feature-usage>
+      <uses-feature name="WebAPI" required="true" />
+      <uses-feature name="Utility" required="true" />
+    </feature-usage>
+  </control>
+</manifest>
