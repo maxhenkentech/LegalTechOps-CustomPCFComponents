@@ -5,7 +5,7 @@ import { AdvancedYesNoControl, IConfig, IYesNoOptions, setWebResourceUrlOverride
 import { TEST_MODE_FIXTURES, TEST_MODE_DEFAULT_COLORS, TEST_MODE_DEFAULT_FIXTURE, TEST_MODE_DEFAULT_ICONS, TEST_MODE_DEFAULT_VALUE, TEST_MODE_WEB_RESOURCES } from "./TestModeData";
 import { buildFontStack, readThemeFont } from "./ThemeFont";
 
-const CONTROL_VERSION = "1.0.1";
+const CONTROL_VERSION = "1.0.2";
 
 // Initialize icons for both test harness and production
 const initializeIconsForEnvironment = () => {

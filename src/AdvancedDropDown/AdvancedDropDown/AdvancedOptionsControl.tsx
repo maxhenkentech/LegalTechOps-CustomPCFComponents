@@ -236,9 +236,25 @@ interface IWebResourceIconProps {
 // mount, instead of re-requesting a known 404 each time the list re-renders.
 const failedWebResources = new Set<string>();
 
+// One detached <img> per web resource URL, kept for the page's lifetime. The list is unmounted
+// whenever it closes, so only the selected option's icon stayed referenced; the others were
+// dropped from the browser's in-memory image cache and some reopenings re-requested them, so the
+// icons popped in ~0.5s after the list (measured on the test form, Solution 9.0.2.0). While an
+// image is still referenced, a new <img> with the same URL is served from memory at once.
+const keptImages = new Map<string, HTMLImageElement>();
+const keepImageAlive = (url: string): void => {
+  if (keptImages.has(url)) return;
+  const img = new Image();
+  img.src = url;
+  keptImages.set(url, img);
+};
+
 const WebResourceIcon = ({ name, desaturate, renderFallback }: IWebResourceIconProps): React.ReactElement => {
   const [failed, setFailed] = React.useState(() => failedWebResources.has(name));
   React.useEffect(() => setFailed(failedWebResources.has(name)), [name]);
+  // Keeps a fallback icon too (e.g. the second web resource of a ";" chain whose first one is
+  // missing), not only the first name of each chain that the options effect warms up.
+  React.useEffect(() => { if (!failed) keepImageAlive(getWebResourceUrl(name)); }, [name, failed]);
 
   if (failed) return renderFallback();
 
@@ -483,6 +499,16 @@ export const AdvancedOptionsControl = ({ rawOptions, selectedKey, onChange, isDi
       : "";
     return [...parseIconChain(external), ...parseIconChain(fixed)];
   };
+
+  // Load every option's web-resource icon as soon as the options are known and keep it referenced
+  // (keepImageAlive), so opening the list never waits on its icons.
+  const webResourceIconKey = options
+    .map(option => iconChainFor(option).find(name => WEB_RESOURCE_NAME_PATTERN.test(name)) ?? "")
+    .filter(Boolean)
+    .join("|");
+  React.useEffect(() => {
+    webResourceIconKey.split("|").filter(Boolean).forEach(name => keepImageAlive(getWebResourceUrl(name)));
+  }, [webResourceIconKey]);
 
   const renderIcon = (option: ISelectableOption | undefined, background: string, contrast: string): React.ReactElement => {
     // "--Select--" keeps an icon-sized gap so its label lines up with the others.

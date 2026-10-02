@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <manifest>
-  <control namespace="lops" constructor="AdvancedYesNo" version="1.0.1" display-name-key="lops.AdvancedYesNo" description-key="AdvancedYesNo description" control-type="virtual">
+  <control namespace="lops" constructor="AdvancedYesNo" version="1.0.2" display-name-key="lops.AdvancedYesNo" description-key="AdvancedYesNo description" control-type="virtual">
     <property name="value" display-name-key="Yes/No column" description-key="The Yes/No (two options) column this control replaces. Place this control directly on that column." of-type="TwoOptions" usage="bound" required="true" />
     <property name="displayStyle" display-name-key="Display style" description-key="How the Yes/No value is shown and changed" of-type="Enum" usage="input" required="false" default-value="Toggle">
       <value name="Checkbox" display-name-key="Checkbox" description-key="A checkbox, checked for Yes">Checkbox</value>

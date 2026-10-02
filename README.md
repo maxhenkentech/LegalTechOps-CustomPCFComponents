@@ -40,7 +40,7 @@ This solution currently contains the following custom components. All of them fo
 
 An enhanced dropdown control that extends the standard Power Platform choice field with advanced visual customization options, including color coding, custom icons, and flexible sizing. The selected option is shown as the same tinted chip Advanced LookUp, Advanced Multi Choice and Advanced Yes/No use, so they look like one family on a form.
 
-<img src="Screenshots/AdvancedDropDown/Hero.png" alt="Advanced Dropdown Overview" width="50%">
+<img src="Screenshots/AdvancedDropDown/Hero.gif" alt="Advanced Dropdown Overview" width="50%">
 
 *The selected option as a tinted chip, with the options list open and an icon from each option's External Value.*
 
@@ -100,7 +100,7 @@ A field control that renders Markdown as formatted, visually polished help text 
 
 A field control that replaces a standard choice field with a horizontal row of clickable tiles - one per option, each showing an MDL2 icon above the option's own label - instead of a dropdown list.
 
-<img src="Screenshots/ModernChoiceButtons/Hero.png" alt="Modern Choice Buttons Overview" width="50%">
+<img src="Screenshots/ModernChoiceButtons/Hero.gif" alt="Modern Choice Buttons Overview" width="50%">
 
 *Four layouts of the same choice column: faded choice colors, large tiles in full choice color, small tiles with the icon on the left, and icons only.*
 
@@ -112,7 +112,7 @@ A field control that replaces a standard choice field with a horizontal row of c
 
 A field control that replaces a standard lookup field with a searchable, type-to-filter dropdown - type to search live Dataverse records, with a per-record icon (from a picture column, an MDL2 icon-name column, or a fixed icon) and a hover tooltip on the selected value.
 
-<img src="Screenshots/AdvancedLookUp/Hero.png" alt="Advanced LookUp Overview" width="50%">
+<img src="Screenshots/AdvancedLookUp/Hero.gif" alt="Advanced LookUp Overview" width="50%">
 
 *Live, server-side search with per-record icons from an image column and a smaller context line (`Additional Display Columns`) under each name.*
 
@@ -136,7 +136,7 @@ A field control that is not bound to any single field's value - it renders up to
 
 A field control that replaces a standard multi-select choice field with a searchable checkbox list, showing the selected options as colored, removable pills or chips - each with an icon from the option's External Value (an MDL2 icon or an image web resource, with semicolon-separated fallbacks) and its description as a tooltip. Search matches option descriptions as well as labels, and an Autofit sort arranges the selected options into as few lines as possible.
 
-<img src="Screenshots/AdvancedMultiChoice/Hero.png" alt="Advanced Multi Choice Overview" width="50%">
+<img src="Screenshots/AdvancedMultiChoice/Hero.gif" alt="Advanced Multi Choice Overview" width="50%">
 
 *Selected options as pills in their faded choice colors, with the checkbox list open - each option with its multi-color web resource or MDL2 icon.*
 
@@ -148,7 +148,7 @@ A field control that replaces a standard multi-select choice field with a search
 
 A field control that replaces a standard Yes/No field with one of nine modern styles - a checkbox, a toggle, a labeled switch, radio buttons, two buttons, a segmented field, a toggle button, a status chip or an icon button. The icons for Yes and No are set on the control (Yes/No columns have no External Values), with optional Yes and No colors, fill or fixed widths, and the same field look as the other Advanced controls.
 
-<img src="Screenshots/AdvancedYesNo/Hero.png" alt="Advanced Yes/No Overview" width="50%">
+<img src="Screenshots/AdvancedYesNo/Hero.gif" alt="Advanced Yes/No Overview" width="50%">
 
 *The nine display styles, with check and cancel badges, custom icons (a star, a flag, a lock, colorful web resources) and per-control Yes and No colors.*
 
@@ -160,7 +160,7 @@ A field control that replaces a standard Yes/No field with one of nine modern st
 
 A control for many-to-many (N:N) relationships: placed on an N:N subgrid, it shows the related records as removable pills or chips in a searchable field - the Advanced Multi Choice look with Advanced LookUp's live search, additional search and display columns, and per-record icons (pictures, MDL2 icons, choice icons, or icons from a related record). Each record's name opens the record, and ticking or removing a record adds or removes the relationship straight away.
 
-<img src="Screenshots/AdvancedMultiLookUp/Hero.png" alt="Advanced Multi LookUp Overview" width="50%">
+<img src="Screenshots/AdvancedMultiLookUp/Hero.gif" alt="Advanced Multi LookUp Overview" width="50%">
 
 *Related matters as pills with their pictures, and the search list open - each record with a client and status line from `Additional Display Columns`.*
 

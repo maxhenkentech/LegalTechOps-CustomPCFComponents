@@ -6,7 +6,7 @@ import { TEST_MODE_OPTIONS, TEST_MODE_WEB_RESOURCES } from "./TestModeData";
 
 import { initializeIcons } from '@fluentui/react/lib/Icons';
 
-const CONTROL_VERSION = "3.8.0";
+const CONTROL_VERSION = "3.8.2";
 
 // Initialize icons for both test harness and production
 const initializeIconsForEnvironment = () => {

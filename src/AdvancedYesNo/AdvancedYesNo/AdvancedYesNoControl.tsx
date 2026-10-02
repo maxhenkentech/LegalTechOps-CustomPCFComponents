@@ -292,13 +292,17 @@ const contrastRatio = (a: string, b: string): number => {
   return (Math.max(la, lb) + 0.05) / (Math.min(la, lb) + 0.05);
 };
 
-// Black or white, whichever contrasts more with the background (user: "make it so the font is
-// either black or white based on best contrast" - a gold Labeled switch track was unreadable with
-// the old brightness cut-off, which picked a darkened gold).
+// Black or white text on a solid fill (user: "make it so the font is either black or white based
+// on best contrast" - a gold Labeled switch track was unreadable with the old brightness cut-off,
+// which picked a darkened gold). White wins whenever it is readable (WCAG AA, 4.5:1); only below
+// that does the higher ratio decide. Pure "highest ratio" picked black on mid-tones where both are
+// ~4.6:1 (teal #038387, blue #0078D4, orange #CA5010), which looked wrong; gold #C19C00 (white
+// 2.6:1) still gets black.
 const blackOrWhiteOn = (background: string): string => {
   if (!isHexColor(background)) return "#000000";
   const bg = background.substr(0, 7);
-  return contrastRatio("#FFFFFF", bg) >= contrastRatio("#000000", bg) ? "#FFFFFF" : "#000000";
+  const white = contrastRatio("#FFFFFF", bg);
+  return white >= 4.5 || white >= contrastRatio("#000000", bg) ? "#FFFFFF" : "#000000";
 };
 
 // Text on a selected option: the family's darkened tint of the background (#255BA4 on #EDF3FB),

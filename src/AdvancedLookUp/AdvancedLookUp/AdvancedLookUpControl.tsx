@@ -2070,9 +2070,11 @@ export const AdvancedLookUpControl: React.FC<IAdvancedLookUpProps> = (props) => 
 
   // selectedTooltip can only be set if a Tooltip Column fallback chain actually resolved a value
   // for this record, so its own truthiness is sufficient here without separately checking
-  // tooltipColumnNames.
+  // tooltipColumnNames. Only the chip gets it: wrapping the search field too made the tooltip open
+  // on focus when the user clicked in to search, so it sat behind the results list (a sliver
+  // showing under short lists) and lingered after it closed (seen recording the v9 hero animation).
   const field =
-    selectedTooltip ? (
+    selectedTooltip && showPill ? (
       <TooltipHost
         content={selectedTooltip}
         directionalHint={DirectionalHint.bottomLeftEdge}

@@ -2,7 +2,19 @@
 
 # Changelog
 
-## Version 9.0.0.0 (Current)
+## Version 9.0.4.0 (Current)
+Fixes for Advanced Yes/No text colors, the Advanced LookUp tooltip and Advanced Dropdown icons.
+
+#### ✅ Advanced Yes/No Component
+- **FIX**: Text on a colored fill (the Labeled switch track, the Checkbox check mark) is now white whenever white is readable. Before, mid-tone colors such as teal `#038387`, blue `#0078D4`, orange `#CA5010` or magenta `#E3008C` got black text, because black was a fraction more contrasting. Light colors like gold and yellow still get black text
+
+#### 🔍 Advanced LookUp Component
+- **FIX**: The selected record's tooltip no longer opens when you click into the field to search. It appeared behind the results list (a strip of it showed below short lists) and stayed open after the list closed. It still shows when you hover the selected record
+
+#### 🔽 Advanced Dropdown Component
+- **FIX**: Option icons from image web resources now appear together with the list every time it opens. Before, icons the selected option didn't use could appear up to half a second after the list
+
+## Version 9.0.0.0 (Previous)
 A new component, Advanced Multi LookUp, for many-to-many relationships, plus faster icons and pictures in Advanced LookUp and Relationship View and a fix for icons taken from a related record's choice.
 
 #### 🔗 Advanced Multi LookUp Component (NEW)
