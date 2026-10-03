@@ -2,8 +2,8 @@
 
 # Changelog
 
-## Version 9.1.0.0 (Current)
-A new component, Activity Graph: a record's history as a GitHub-style activity graph, with every change field by field.
+## Version 10.0.0.0 (Current)
+Major release with everything since the last GitHub release (v9.0.0): a new component, Activity Graph, which shows a record's history as a GitHub-style activity graph with every change field by field, plus fixes for Advanced Yes/No, Advanced LookUp and Advanced Dropdown and animated README previews.
 
 #### 📊 Activity Graph Component (NEW)
 - **NEW**: Field control that shows the current record's history as a **GitHub-style activity graph**: five shades from "nothing" to "busiest" (relative to the busiest square in view), a *Less → More* legend, month and weekday labels, a total such as *"996 events in the last year"* and a tooltip on every square
@@ -16,9 +16,6 @@ A new component, Activity Graph: a record's history as a GitHub-style activity g
 - **NEW**: The squares fit the column; in a column too narrow for every square the graph scrolls, starting at the most recent end. In the **form designer**, a column too narrow for the aggregation shows a configuration error naming the width it needs
 - **NEW**: Keyboard support (arrow keys between squares, Enter to open, Esc to close), notes when auditing is off, permission is missing or the record isn't saved yet, and the app's theme font
 
-## Version 9.0.4.0 (Previous)
-Fixes for Advanced Yes/No text colors, the Advanced LookUp tooltip and Advanced Dropdown icons.
-
 #### ✅ Advanced Yes/No Component
 - **FIX**: Text on a colored fill (the Labeled switch track, the Checkbox check mark) is now white whenever white is readable. Before, mid-tone colors such as teal `#038387`, blue `#0078D4`, orange `#CA5010` or magenta `#E3008C` got black text, because black was a fraction more contrasting. Light colors like gold and yellow still get black text
 
@@ -27,6 +24,9 @@ Fixes for Advanced Yes/No text colors, the Advanced LookUp tooltip and Advanced 
 
 #### 🔽 Advanced Dropdown Component
 - **FIX**: Option icons from image web resources now appear together with the list every time it opens. Before, icons the selected option didn't use could appear up to half a second after the list
+
+#### 📖 Documentation
+- **IMPROVED**: The README shows an animated preview for every interactive component (Advanced Dropdown, Advanced LookUp, Advanced Multi Choice, Advanced Yes/No, Advanced Multi LookUp, Modern Choice Buttons, Activity Graph), and every component's preview shows the control exactly as it renders
 
 ## Version 9.0.0.0 (Previous)
 A new component, Advanced Multi LookUp, for many-to-many relationships, plus faster icons and pictures in Advanced LookUp and Relationship View and a fix for icons taken from a related record's choice.

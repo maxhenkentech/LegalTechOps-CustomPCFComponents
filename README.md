@@ -462,13 +462,16 @@ If you encounter any issues or have suggestions for improvements, please open an
 
 Full version history lives in [CHANGELOG.md](CHANGELOG.md).
 
-### Version 9.1.0.0 (Current)
-A new component, Activity Graph: a record's history as a GitHub-style activity graph, with every change field by field.
+### Version 10.0.0.0 (Current)
+Major release with everything since v9.0.0: a new component, Activity Graph, plus fixes for Advanced Yes/No, Advanced LookUp and Advanced Dropdown and animated README previews.
 
 #### 📊 Activity Graph Component (NEW)
 - **NEW**: The record's audit history, related activities, notes or everything, by day (the GitHub layout), week, month or year, with 12 color schemes and a configurable first day of the week (Monday by default).
 - **NEW**: Click a square for every change, activity or note in it; expand a change for each field's previous, new and current value, formatted as on the form.
 - **NEW**: Fits the column and scrolls when narrow; the form designer shows a configuration error when the column is too narrow for the aggregation.
+
+#### ✅ Advanced Yes/No, 🔍 Advanced LookUp, 🔽 Advanced Dropdown
+- **FIX**: Readable white text on mid-tone Yes/No colors; the LookUp tooltip no longer opens behind the search list; Dropdown web resource icons appear together with the list.
 
 See [CHANGELOG.md](CHANGELOG.md) for full details.
 
