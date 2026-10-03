@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<manifest>
+  <control namespace="lops" constructor="ActivityGraph" version="1.0.7" display-name-key="lops.ActivityGraph" description-key="Shows the activity history of the current record as a GitHub-style contribution graph, aggregated by day, week, month or year" control-type="virtual">
+    <type-group name="anyValue">
+      <type>SingleLine.Text</type>
+      <type>Multiple</type>
+      <type>Whole.None</type>
+      <type>Decimal</type>
+      <type>Currency</type>
+      <type>OptionSet</type>
+      <type>TwoOptions</type>
+      <type>DateAndTime.DateAndTime</type>
+      <type>DateAndTime.DateOnly</type>
+    </type-group>
+    <property name="boundField" display-name-key="Bound field (unused)" description-key="Bind to any existing field on the form so the control can be added. Its value is never read or changed - the graph always shows the history of the whole record." of-type-group="anyValue" usage="bound" required="true" />
+    <property name="source" display-name-key="Source" description-key="What counts as activity. Audit history needs auditing turned on for the environment and the table, and the View Audit History privilege." of-type="Enum" usage="input" required="false" default-value="Audit">
+      <value name="Audit" display-name-key="Audit history" description-key="Changes from the audit log: creates, updates, assigns, shares and deletes of this record" default="true">Audit</value>
+      <value name="Activities" display-name-key="Related activities" description-key="Activities (emails, phone calls, tasks, appointments and custom activities) regarding this record">Activities</value>
+      <value name="Notes" display-name-key="Notes" description-key="Notes attached to this record">Notes</value>
+      <value name="ActivitiesAndNotes" display-name-key="Activities and notes" description-key="Related activities and notes together">ActivitiesAndNotes</value>
+      <value name="All" display-name-key="Everything" description-key="Audit history, related activities and notes together">All</value>
+    </property>
+    <property name="activityDate" display-name-key="Activity Date" description-key="Which date places a related activity in the graph. Only used for related activities." of-type="Enum" usage="input" required="false" default-value="CreatedOn">
+      <value name="CreatedOn" display-name-key="Created on" description-key="The date the activity was created" default="true">CreatedOn</value>
+      <value name="CompletedOn" display-name-key="Completed on" description-key="The actual end date of a completed activity, or its created on date while it is still open">CompletedOn</value>
+    </property>
+    <property name="aggregation" display-name-key="Aggregation" description-key="What one square of the graph stands for." of-type="Enum" usage="input" required="false" default-value="Day">
+      <value name="Day" display-name-key="Day" description-key="One square per day, in week columns with a row per weekday - the GitHub contribution graph" default="true">Day</value>
+      <value name="Week" display-name-key="Week" description-key="One square per week, one row per year">Week</value>
+      <value name="Month" display-name-key="Month" description-key="One square per month, one row per year">Month</value>
+      <value name="Year" display-name-key="Year" description-key="One square per year">Year</value>
+    </property>
+    <property name="yearsToShow" display-name-key="Years To Show" description-key="How many calendar years to show, newest first. 0 (default) is automatic: the last 12 months for Day, and every year since the record was created (up to 10) for Week, Month and Year." of-type="Whole.None" usage="input" required="false" default-value="0" />
+    <property name="firstDayOfWeek" display-name-key="First Day Of Week" description-key="The weekday each week column or week square starts on. Monday by default; Automatic uses the first day of the week from the user personal settings." of-type="Enum" usage="input" required="false" default-value="Monday">
+      <value name="Monday" display-name-key="Monday" description-key="Weeks start on Monday" default="true">Monday</value>
+      <value name="Tuesday" display-name-key="Tuesday" description-key="Weeks start on Tuesday">Tuesday</value>
+      <value name="Wednesday" display-name-key="Wednesday" description-key="Weeks start on Wednesday">Wednesday</value>
+      <value name="Thursday" display-name-key="Thursday" description-key="Weeks start on Thursday">Thursday</value>
+      <value name="Friday" display-name-key="Friday" description-key="Weeks start on Friday">Friday</value>
+      <value name="Saturday" display-name-key="Saturday" description-key="Weeks start on Saturday">Saturday</value>
+      <value name="Sunday" display-name-key="Sunday" description-key="Weeks start on Sunday">Sunday</value>
+      <value name="Auto" display-name-key="Automatic" description-key="The first day of the week from the user personal settings">Auto</value>
+    </property>
+    <property name="showDetails" display-name-key="Show Details On Click" description-key="If true (default), clicking a square opens a callout listing the changes, activities or notes in it." of-type="TwoOptions" usage="input" required="false" default-value="true" />
+    <property name="showSummary" display-name-key="Show Summary" description-key="If true (default), shows the total above the graph, for example 214 changes in the last year." of-type="TwoOptions" usage="input" required="false" default-value="true" />
+    <property name="showLegend" display-name-key="Show Legend" description-key="If true (default), shows the Less to More color scale below the graph." of-type="TwoOptions" usage="input" required="false" default-value="true" />
+    <property name="cellShape" display-name-key="Square Shape" description-key="The corner shape of each square." of-type="Enum" usage="input" required="false" default-value="Rounded">
+      <value name="Square" display-name-key="Square" description-key="Sharp corners">Square</value>
+      <value name="Rounded" display-name-key="Rounded" description-key="Slightly rounded corners, as on GitHub" default="true">Rounded</value>
+      <value name="Round" display-name-key="Round" description-key="Circles">Round</value>
+    </property>
+    <property name="colorScheme" display-name-key="Color Scheme" description-key="The colors of the five activity levels." of-type="Enum" usage="input" required="false" default-value="Green">
+      <value name="Green" display-name-key="Green" description-key="The GitHub contribution greens" default="true">Green</value>
+      <value name="Blue" display-name-key="Blue" description-key="The blue of the LegalTechOps field controls">Blue</value>
+      <value name="Purple" display-name-key="Purple" description-key="Shades of purple">Purple</value>
+      <value name="Orange" display-name-key="Orange" description-key="Shades of orange">Orange</value>
+      <value name="Red" display-name-key="Red" description-key="Shades of red">Red</value>
+      <value name="Pink" display-name-key="Pink" description-key="Shades of pink">Pink</value>
+      <value name="Teal" display-name-key="Teal" description-key="Shades of teal">Teal</value>
+      <value name="Gray" display-name-key="Gray" description-key="Shades of gray">Gray</value>
+      <value name="Halloween" display-name-key="Halloween" description-key="Yellow to orange to near-black, the GitHub Halloween graph">Halloween</value>
+      <value name="Heat" display-name-key="Heat" description-key="Yellow to orange to dark red">Heat</value>
+      <value name="Ocean" display-name-key="Ocean" description-key="Light green to teal to deep blue">Ocean</value>
+      <value name="Custom" display-name-key="Custom" description-key="Shades of the Custom Color below">Custom</value>
+    </property>
+    <property name="customColor" display-name-key="Custom Color" description-key="Hex color (for example #8250DF) for the busiest squares when Color Scheme is Custom. Quieter squares use lighter shades of it." of-type="SingleLine.Text" usage="input" required="false" />
+    <resources>
+      <code path="index.ts" order="1" />
+      <css path="CSS/ActivityGraph.css" order="1" />
+      <platform-library name="React" version="16.8.6" />
+      <platform-library name="Fluent" version="8.29.0" />
+    </resources>
+    <feature-usage>
+      <uses-feature name="Utility" required="true" />
+      <uses-feature name="WebAPI" required="true" />
+    </feature-usage>
+  </control>
+</manifest>

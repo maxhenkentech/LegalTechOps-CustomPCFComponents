@@ -19,6 +19,7 @@ A collection of custom Power Platform Component Framework (PCF) components creat
   - [🔖 Advanced Multi Choice Component](#-advanced-multi-choice-component)
   - [✅ Advanced Yes/No Component](#-advanced-yesno-component)
   - [🔗 Advanced Multi LookUp Component](#-advanced-multi-lookup-component)
+  - [📊 Activity Graph Component](#-activity-graph-component)
 - [Author](#author)
 - [Installation](#installation)
 - [Development](#development)
@@ -165,6 +166,18 @@ A control for many-to-many (N:N) relationships: placed on an N:N subgrid, it sho
 *Related matters as pills with their pictures, and the search list open - each record with a client and status line from `Additional Display Columns`.*
 
 📖 **[Full documentation](docs/AdvancedMultiLookUp.md)** - subgrid setup, search/display/label/tooltip/icon columns, relationship detection, and properties.
+
+---
+
+### 📊 Activity Graph Component
+
+A control that shows a record's history as a GitHub-style activity graph: one square per day, week, month or year, darker the busier it was. The history comes from the audit log, related activities, notes, or all of them. Click a square to see who changed what and when, and expand a change to compare each field's previous, new and current value.
+
+<img src="Screenshots/ActivityGraph/Hero.gif" alt="Activity Graph Overview" width="50%">
+
+*A year of a matter's activity by day, with today's square opened and one change expanded field by field.*
+
+📖 **[Full documentation](docs/ActivityGraph.md)** - sources, aggregations, field-level changes, color schemes, auditing setup, and properties.
 
 ---
 
@@ -377,6 +390,17 @@ Step-by-step configuration for each component (binding, properties, and any comp
 │   │   │   └── CSS/           # Component stylesheets
 │   │   ├── package.json
 │   │   └── pcfconfig.json
+│   ├── ActivityGraph/          # Activity Graph PCF component
+│   │   ├── ActivityGraph/
+│   │   │   ├── index.ts       # Main component logic, record context, time zone, first day of week
+│   │   │   ├── ActivityGraphControl.tsx # React component (graph, tooltip, callout, change table)
+│   │   │   ├── ActivityData.ts # Web API: audit, activities, notes, audit details, value formatting
+│   │   │   ├── Calendar.ts    # Day/week/month/year grid layout and bucketing
+│   │   │   ├── TestModeData.ts # Test-harness generated history
+│   │   │   ├── ControlManifest.Input.xml
+│   │   │   └── CSS/           # Component stylesheets
+│   │   ├── package.json
+│   │   └── pcfconfig.json
 │   └── Other/                 # Solution metadata
 ├── bin/Release/               # Packaged solution output
 └── README.md
@@ -438,19 +462,13 @@ If you encounter any issues or have suggestions for improvements, please open an
 
 Full version history lives in [CHANGELOG.md](CHANGELOG.md).
 
-### Version 9.0.0.0 (Current)
-A new component, Advanced Multi LookUp, for many-to-many relationships, plus faster icons and pictures and a related-choice icon fix.
+### Version 9.1.0.0 (Current)
+A new component, Activity Graph: a record's history as a GitHub-style activity graph, with every change field by field.
 
-#### 🔗 Advanced Multi LookUp Component (NEW)
-- **NEW**: Control for N:N subgrids - the related records as removable pills or text chips in a searchable field, with Advanced LookUp's live search, additional search and display columns, label, tooltip and icon columns.
-- **NEW**: Each record's name opens the record; ticking or removing a record adds or removes the relationship immediately; the relationship is detected from the subgrid; read-only, new-record and theme-font aware.
-
-#### 🔍 Advanced LookUp Component
-- **FIX**: Icons from a Choice column on a related record (`lookupfield.choicecolumn`) now appear.
-- **IMPROVED**: Pictures use Dataverse's cached image links and appear with the results; faster start with a session metadata cache.
-
-#### 🌳 Relationship View, 📄 PDF Gallery, 📝 Markdown Help Text
-- **IMPROVED**: Cached image links for Relationship View thumbnails; table information reused within the session (refreshed every 5 minutes).
+#### 📊 Activity Graph Component (NEW)
+- **NEW**: The record's audit history, related activities, notes or everything, by day (the GitHub layout), week, month or year, with 12 color schemes and a configurable first day of the week (Monday by default).
+- **NEW**: Click a square for every change, activity or note in it; expand a change for each field's previous, new and current value, formatted as on the form.
+- **NEW**: Fits the column and scrolls when narrow; the form designer shows a configuration error when the column is too narrow for the aggregation.
 
 See [CHANGELOG.md](CHANGELOG.md) for full details.
 

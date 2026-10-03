@@ -1,0 +1,373 @@
+/* ActivityGraph - GitHub-style contribution graph. Sizes that depend on the field width
+   (square size, gap, grid template) are inline; everything static is here. */
+
+.lops-ag-root {
+	width: 100%;
+	box-sizing: border-box;
+	font-family: inherit;
+	color: #242424;
+	/* hosts (the harness) may center text */
+	text-align: left;
+}
+
+.lops-ag-summary {
+	font-size: 14px;
+	line-height: 20px;
+	margin-bottom: 8px;
+}
+
+.lops-ag-loading .lops-ag-summary {
+	color: #605e5c;
+}
+
+.lops-ag-scroll {
+	overflow-x: auto;
+	overflow-y: hidden;
+	/* room for the focus ring of the outer squares */
+	padding: 2px;
+	margin: -2px;
+}
+
+.lops-ag-block + .lops-ag-block {
+	margin-top: 10px;
+}
+
+.lops-ag-block-title {
+	font-size: 12px;
+	font-weight: 600;
+	color: #605e5c;
+	margin-bottom: 2px;
+}
+
+.lops-ag-grid {
+	display: grid;
+	width: max-content;
+}
+
+/* GitHub's label style: 12px muted text. */
+.lops-ag-label {
+	font-size: 12px;
+	line-height: 16px;
+	color: #605e5c;
+	white-space: nowrap;
+	min-width: 0;
+}
+
+.lops-ag-col-label {
+	align-self: end;
+}
+
+.lops-ag-col-label-below {
+	align-self: start;
+}
+
+.lops-ag-col-label-center {
+	text-align: center;
+	overflow: visible;
+	justify-self: center;
+}
+
+.lops-ag-row-label {
+	text-align: left;
+	overflow: visible;
+}
+
+.lops-ag-cell {
+	outline: 1px solid;
+	outline-offset: -1px;
+	box-sizing: border-box;
+}
+
+.lops-ag-loading .lops-ag-cell {
+	opacity: 0.6;
+}
+
+.lops-ag-cell-future {
+	/* after today: nothing can have happened yet - fainter than an empty past square */
+	opacity: 0.45;
+}
+
+.lops-ag-cell-clickable {
+	cursor: pointer;
+}
+
+.lops-ag-cell-selected {
+	outline: 2px solid #242424;
+	outline-offset: 1px;
+}
+
+.lops-ag-cell:focus {
+	outline: none;
+}
+
+.lops-ag-cell:focus-visible {
+	outline: 2px solid #0f6cbd;
+	outline-offset: 1px;
+}
+
+.lops-ag-footer {
+	display: flex;
+	align-items: center;
+	justify-content: flex-start;
+	flex-wrap: wrap;
+	gap: 6px 16px;
+	margin-top: 8px;
+	min-height: 16px;
+}
+
+.lops-ag-footnote {
+	font-size: 12px;
+	color: #605e5c;
+}
+
+.lops-ag-legend {
+	display: inline-flex;
+	align-items: center;
+	gap: 3px;
+	flex: none;
+}
+
+.lops-ag-legend .lops-ag-label:first-child {
+	margin-right: 3px;
+}
+
+.lops-ag-legend .lops-ag-label:last-child {
+	margin-left: 3px;
+}
+
+.lops-ag-legend-cell {
+	display: inline-block;
+	width: 10px;
+	height: 10px;
+	outline: 1px solid;
+	outline-offset: -1px;
+}
+
+.lops-ag-problem {
+	display: flex;
+	align-items: flex-start;
+	gap: 6px;
+	margin-top: 8px;
+	font-size: 12px;
+	line-height: 16px;
+	color: #605e5c;
+}
+
+.lops-ag-problem-icon {
+	font-size: 12px;
+	line-height: 16px;
+	flex: none;
+}
+
+/* Inside the details Callout (rendered under <body>, so the root's styles don't reach it). */
+.lops-ag-details {
+	width: 420px;
+	max-width: calc(100vw - 32px);
+	box-sizing: border-box;
+	padding: 10px 14px 12px;
+	color: #242424;
+	text-align: left;
+}
+
+.lops-ag-details-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	font-size: 14px;
+	font-weight: 600;
+	line-height: 20px;
+	margin-bottom: 4px;
+}
+
+.lops-ag-close {
+	border: none;
+	background: transparent;
+	color: #605e5c;
+	width: 24px;
+	height: 24px;
+	border-radius: 4px;
+	cursor: pointer;
+	font-size: 10px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.lops-ag-close:hover {
+	background: #f3f2f1;
+	color: #242424;
+}
+
+.lops-ag-item {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: flex-start;
+	gap: 0 10px;
+	padding: 6px 0;
+}
+
+.lops-ag-item + .lops-ag-item {
+	border-top: 1px solid #f3f2f1;
+}
+
+.lops-ag-item-icon {
+	flex: none;
+	width: 28px;
+	height: 28px;
+	border-radius: 50%;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 14px;
+}
+
+.lops-ag-item-body {
+	display: flex;
+	flex-direction: column;
+	min-width: 0;
+	flex: 1;
+}
+
+.lops-ag-item-title {
+	font-size: 14px;
+	line-height: 20px;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.lops-ag-item-meta {
+	font-size: 12px;
+	line-height: 16px;
+	color: #605e5c;
+}
+
+.lops-ag-item-snippet {
+	display: -webkit-box;
+	-webkit-line-clamp: 2;
+	-webkit-box-orient: vertical;
+	overflow: hidden;
+}
+
+.lops-ag-link {
+	border: none;
+	background: none;
+	padding: 0;
+	font: inherit;
+	color: #255ba4;
+	cursor: pointer;
+	text-align: left;
+}
+
+.lops-ag-link:hover {
+	text-decoration: underline;
+}
+
+.lops-ag-more {
+	font-size: 12px;
+	margin-top: 4px;
+}
+
+.lops-ag-chevron {
+	flex: none;
+	border: none;
+	background: transparent;
+	color: #605e5c;
+	width: 24px;
+	height: 24px;
+	margin-top: 2px;
+	border-radius: 4px;
+	cursor: pointer;
+	font-size: 12px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.lops-ag-chevron:hover {
+	background: #f3f2f1;
+	color: #242424;
+}
+
+.lops-ag-chevron i {
+	transition: transform 0.15s ease;
+}
+
+/* Field-level changes of an audit row: full callout width under the row. */
+.lops-ag-changes {
+	flex-basis: 100%;
+	width: 100%;
+	margin-top: 6px;
+	border-collapse: collapse;
+	table-layout: fixed;
+	font-size: 12px;
+	line-height: 16px;
+}
+
+.lops-ag-changes th,
+.lops-ag-changes td {
+	padding: 4px 6px;
+	text-align: left;
+	vertical-align: top;
+	border-top: 1px solid #edebe9;
+	overflow-wrap: anywhere;
+}
+
+.lops-ag-changes thead th {
+	border-top: none;
+	color: #605e5c;
+	font-weight: 600;
+	background: #faf9f8;
+}
+
+.lops-ag-changes tbody th {
+	font-weight: 600;
+	color: #242424;
+}
+
+.lops-ag-value {
+	color: #242424;
+}
+
+/* Long text (descriptions, rich text) stops at 3 lines with an ellipsis; the cell's title holds the
+   full value. Measured on the test record: a one-sentence Summary took 6 lines in its column. */
+.lops-ag-value-text {
+	display: -webkit-box;
+	-webkit-line-clamp: 3;
+	-webkit-box-orient: vertical;
+	overflow: hidden;
+}
+
+.lops-ag-value-same {
+	color: #8a8886;
+}
+
+.lops-ag-value-empty,
+.lops-ag-value-none {
+	color: #a19f9d;
+	font-style: italic;
+}
+
+.lops-ag-changes-note {
+	flex-basis: 100%;
+	margin-top: 6px;
+	font-size: 12px;
+	color: #a4262c;
+}
+
+/* Same box as QuickActionButtons' configuration error. */
+.lops-ag-config-error {
+	border: 1px solid #d13438;
+	border-radius: 4px;
+	padding: 10px 12px;
+	background-color: #fde7e9;
+	color: #a4262c;
+	font-size: 13px;
+	line-height: 18px;
+	margin-bottom: 10px;
+}
+
+.lops-ag-config-error-title {
+	font-weight: 600;
+	margin-bottom: 4px;
+}

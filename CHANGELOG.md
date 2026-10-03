@@ -2,7 +2,21 @@
 
 # Changelog
 
-## Version 9.0.4.0 (Current)
+## Version 9.1.0.0 (Current)
+A new component, Activity Graph: a record's history as a GitHub-style activity graph, with every change field by field.
+
+#### 📊 Activity Graph Component (NEW)
+- **NEW**: Field control that shows the current record's history as a **GitHub-style activity graph**: five shades from "nothing" to "busiest" (relative to the busiest square in view), a *Less → More* legend, month and weekday labels, a total such as *"996 events in the last year"* and a tooltip on every square
+- **NEW**: `Source`: the record's **audit history** (creates, updates, assigns, shares, deletes; the default), its **related activities** (emails, phone calls, tasks, appointments and custom activities regarding the record), its **notes**, activities and notes together, or **everything**. `Activity Date` places activities by their created on or completed on date
+- **NEW**: `Aggregation` **Day** (the GitHub layout: week columns, a row per weekday), **Week** (one row per year), **Month** (12 squares per year) or **Year**. `Years To Show`: 0 (automatic) shows the last 12 months for Day, and every year since the record was created or its oldest entry for the others; a number shows that many calendar years, newest first
+- **NEW**: `First Day Of Week`: any weekday, **Monday** by default, or Automatic from the user's personal settings
+- **NEW**: **Click a square** to open a callout listing every change, activity or note in it: who, when, which fields changed, activity subjects (click to open the activity) and note text. The callout opens toward the middle of the graph so it stays within the control
+- **NEW**: **Field-level changes**: a chevron on every audit entry expands its **Previous**, **New** and **Current** value per field, formatted as on the form (choice labels, lookup names, Yes/No labels, dates and times in the user's time zone, numbers and currency, multi-select choices, rich text as plain text). A field set from or to nothing shows *(empty)*; Current shows *n/a* for a field that no longer exists or can't be shown, and is greyed where it still matches New
+- **NEW**: 12 `Color Scheme`s: GitHub Green, the family Blue, Purple, Orange, Red, Pink, Teal, Gray, Halloween, Heat, Ocean, or shades of your own `Custom Color`. `Square Shape` Square, Rounded or Round; `Show Summary`, `Show Legend` and `Show Details On Click`
+- **NEW**: The squares fit the column; in a column too narrow for every square the graph scrolls, starting at the most recent end. In the **form designer**, a column too narrow for the aggregation shows a configuration error naming the width it needs
+- **NEW**: Keyboard support (arrow keys between squares, Enter to open, Esc to close), notes when auditing is off, permission is missing or the record isn't saved yet, and the app's theme font
+
+## Version 9.0.4.0 (Previous)
 Fixes for Advanced Yes/No text colors, the Advanced LookUp tooltip and Advanced Dropdown icons.
 
 #### ✅ Advanced Yes/No Component
