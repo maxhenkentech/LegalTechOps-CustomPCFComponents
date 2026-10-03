@@ -127,7 +127,7 @@ A field control that is not bound to any single field's value - it renders up to
 
 <img src="Screenshots/QuickActionButtons/Hero.png" alt="Quick Action Buttons Overview" width="50%">
 
-*Four layouts of the same five buttons: white, per-button background color, small with the icon on the left, and icons only.*
+*Five button sets in five layouts: white with emoji icons, per-button background with 3D emoji, small with MDL2 font icons on the left, a grey field style with the icon on the right, and icons only with one button hovered.*
 
 📖 **[Full documentation](docs/QuickActionButtons.md)** - Actions JSON format, the expression function reference, color modes, and properties.
 
