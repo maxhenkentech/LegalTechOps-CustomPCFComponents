@@ -101,7 +101,7 @@ export class QuickActionButtons implements ComponentFramework.ReactControl<IInpu
 	}
 
 	public init(context: ComponentFramework.Context<IInputs>): void {
-		console.log("🚀 QuickActionButtons: Version 1.4.0 Loaded");
+		console.log("🚀 QuickActionButtons: Version 1.4.2 Loaded");
 
 		try {
 			initializeIconsForEnvironment();

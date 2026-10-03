@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <manifest>
-  <control namespace="lops" constructor="QuickActionButtons" version="1.4.0" display-name-key="lops.QuickActionButtons" description-key="QuickActionButtons description" control-type="virtual">
+  <control namespace="lops" constructor="QuickActionButtons" version="1.4.2" display-name-key="lops.QuickActionButtons" description-key="QuickActionButtons description" control-type="virtual">
     <type-group name="anyValue">
       <type>SingleLine.Text</type>
       <type>Multiple</type>

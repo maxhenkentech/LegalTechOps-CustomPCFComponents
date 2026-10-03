@@ -7,7 +7,7 @@
 // page it's hosted in, and no prior art for this in the rest of the repo -- see this control's
 // CLAUDE.md for the full rationale and risk callout.
 
-import { ExprValue, FieldReader, LookupRef } from "./ExpressionEngine";
+import { ExprValue, FieldReader, LookupRef, formatTimestamp, parseTimestamp } from "./ExpressionEngine";
 
 export interface WriteResult {
   ok: boolean;
@@ -79,7 +79,7 @@ function coerceForAttribute(attribute: any, value: ExprValue): unknown {
     case "string":
     case "memo":
       if (isLookupRef(value)) throw new Error("expects text, but got a lookup value");
-      return value instanceof Date ? value.toISOString() : String(value);
+      return value instanceof Date ? formatTimestamp(value) : String(value);
     case "integer":
     case "decimal":
     case "double":
@@ -116,8 +116,9 @@ function coerceForAttribute(attribute: any, value: ExprValue): unknown {
     }
     case "datetime": {
       if (isLookupRef(value)) throw new Error("expects a date/time value, but got a lookup value");
-      const date = value instanceof Date ? value : new Date(String(value));
-      if (Number.isNaN(date.getTime())) return undefined;
+      // Text (e.g. a formatDateTime() result) is read by parseTimestamp: UTC unless it names a zone, never browser-local.
+      const date = value instanceof Date ? value : typeof value === "number" ? new Date(value) : parseTimestamp(String(value));
+      if (!date || Number.isNaN(date.getTime())) return undefined;
 
       // getAttributeType() reports "datetime" for both Date Only and Date and Time fields --
       // getFormat() is what actually distinguishes them ("date" vs "datetime"). Date Only
@@ -198,6 +199,14 @@ export function createLiveFieldAccessor(): FieldAccessor {
       const arr = raw as { id: string; entityType?: string; name?: string }[];
       if (!arr.length) return null;
       return { id: normalizeGuid(arr[0].id), entityType: arr[0].entityType, name: arr[0].name };
+    }
+    if (attrType === "datetime" && attribute.getFormat?.() === "date" && raw instanceof Date) {
+      // A Date Only field hands back local midnight of its calendar day, but every date function in the
+      // expression engine works in UTC - east of UTC that local midnight is still the previous day in UTC,
+      // so formatDateTime() printed the day before and addDays(<date-only>, 1) landed on the same day
+      // (2026-10-03 expression tests, Europe/Berlin). Hand the engine UTC midnight of the same calendar day;
+      // coerceForAttribute's Date Only branch maps it back to the right day on write.
+      return new Date(Date.UTC(raw.getFullYear(), raw.getMonth(), raw.getDate()));
     }
     if (attrType === "multiselectoptionset") {
       // Normalize to the same comma-separated-string shape the Dataverse Web API uses, so a
