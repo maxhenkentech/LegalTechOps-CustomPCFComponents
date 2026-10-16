@@ -6,7 +6,7 @@ import { setWebResourceUrlOverrides } from "./Dataverse";
 import { TEST_MODE_WEB_RESOURCES } from "./TestModeData";
 import { ThemeFontScope, buildFontStack, readThemeFont } from "./ThemeFont";
 
-const CONTROL_VERSION = "1.0.3";
+const CONTROL_VERSION = "1.0.4";
 
 initializeIcons();
 

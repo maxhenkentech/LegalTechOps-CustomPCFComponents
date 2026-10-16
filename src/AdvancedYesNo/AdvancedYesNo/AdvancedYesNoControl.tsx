@@ -41,6 +41,8 @@ export interface IConfig {
   iconColor: string;
   checkedColorMode: ColorMode;
   checkedColor: string;
+  uncheckedColorMode: "Neutral" | ColorMode;
+  uncheckedColor: string;
   selectionBackgroundMode: ColorMode;
   selectionColor: string;
   selectionBorderMode: "Off" | ColorMode;
@@ -138,18 +140,54 @@ interface IIconViewProps {
   // What to render when `name` is blank, unregistered, or a web resource that fails to load.
   // Only the Icon display style passes one (its default glyph); elsewhere no icon is shown.
   fallbackName?: string;
+  // Draw an MDL2 glyph as SVG text instead of an HTML font glyph (see renderMdl2SvgGlyph).
+  svgGlyph?: boolean;
 }
 
-const IconView = ({ name, color, size, deemphasized, fallbackName }: IIconViewProps): React.ReactElement | null => {
+// An MDL2 glyph as SVG <text>. Chrome snaps HTML text to whole device pixels but draws a
+// border-radius circle anti-aliased at its true, often fractional, position. In the Labeled
+// switch thumb (a white circle) that put ring-shaped icons such as Completed and ErrorBadge up to
+// a device pixel off-centre at browser zoom levels other than 100% (user: "they just don't look
+// centred when zoomed out"). SVG text is placed geometrically, so it stays concentric.
+// MDL2 glyphs fill exactly one em square sitting on the baseline (measured: ascent 1em, descent
+// 0, advance 1em), so text at y = font size covers the same box the <Icon> did.
+// null when the registry has no glyph/font for the name; the caller then uses the HTML <Icon>.
+const renderMdl2SvgGlyph = (name: string, color: string, size: number, filter?: string): React.ReactElement | null => {
+  const record = getIcon(name);
+  const glyph = typeof record?.code === "string" ? record.code : undefined;
+  const fontFamily = record?.subset?.fontFace?.fontFamily;
+  if (!glyph || !fontFamily) return null;
+  const em = size - 2;
+  return (
+    <svg
+      className="lops-ayn-icon"
+      aria-hidden="true"
+      width={size}
+      height={size}
+      viewBox={`0 0 ${size} ${size}`}
+      style={{ display: "block", overflow: "visible", filter }}
+    >
+      <text x={1} y={1 + em} fontSize={em} fontFamily={fontFamily} fill={color} style={{ textRendering: "geometricPrecision" }}>
+        {glyph}
+      </text>
+    </svg>
+  );
+};
+
+const IconView = ({ name, color, size, deemphasized, fallbackName, svgGlyph }: IIconViewProps): React.ReactElement | null => {
   const filter = deemphasized ? DEEMPHASIZED_FILTER : undefined;
   const renderFallback = (): React.ReactElement | null =>
     fallbackName && fallbackName !== name
-      ? <IconView name={fallbackName} color={color} size={size} deemphasized={deemphasized} />
+      ? <IconView name={fallbackName} color={color} size={size} deemphasized={deemphasized} svgGlyph={svgGlyph} />
       : null;
 
   if (!name) return renderFallback();
   if (WEB_RESOURCE_NAME_PATTERN.test(name)) {
     return <WebResourceIcon name={name} size={size} filter={filter} renderFallback={renderFallback} />;
+  }
+  if (isRegisteredMdl2Icon(name) && svgGlyph) {
+    const svg = renderMdl2SvgGlyph(name, color, size, filter);
+    if (svg) return svg;
   }
   if (isRegisteredMdl2Icon(name)) {
     return (
@@ -443,6 +481,12 @@ export const AdvancedYesNoControl = ({ value, options, onChange, isDisabled, con
   };
 
   const checkedFill = resolveModeColor(config.checkedColorMode, options.yes.color, config.checkedColor, FADE_BACKGROUND);
+  // Toggle / Labeled switch track when the value is No (user: "there is no way to set the
+  // unchecked color"). Neutral (default) = the original grey track; an empty value always stays
+  // neutral, so "not set" still looks different from No. Same modes as Checked, using No color.
+  const uncheckedFill = config.uncheckedColorMode !== "Neutral" && value === false
+    ? resolveModeColor(config.uncheckedColorMode, options.no.color, config.uncheckedColor, FADE_BACKGROUND)
+    : null;
 
   const renderCheckbox = () => renderSwitchRow(
     <span
@@ -460,13 +504,17 @@ export const AdvancedYesNoControl = ({ value, options, onChange, isDisabled, con
 
   const renderToggle = () => renderSwitchRow(
     <span
-      className={`lops-ayn-toggle${value === true ? " is-on" : ""}`}
+      className={`lops-ayn-toggle${value === true ? " is-on" : ""}${uncheckedFill ? " is-filled" : ""}`}
       aria-hidden="true"
-      style={value === true ? { backgroundColor: checkedFill, borderColor: checkedFill } : undefined}
+      style={value === true
+        ? { backgroundColor: checkedFill, borderColor: checkedFill }
+        : uncheckedFill ? { backgroundColor: uncheckedFill, borderColor: uncheckedFill } : undefined}
     >
       <span
         className="lops-ayn-thumb"
-        style={value === true && !isColorDark(checkedFill) ? { backgroundColor: darkenHexColor(checkedFill) } : undefined}
+        style={value === true && !isColorDark(checkedFill)
+          ? { backgroundColor: darkenHexColor(checkedFill) }
+          : uncheckedFill ? { backgroundColor: isColorDark(uncheckedFill) ? "#FFFFFF" : darkenHexColor(uncheckedFill) } : undefined}
       />
     </span>,
     "switch"
@@ -691,13 +739,15 @@ export const AdvancedYesNoControl = ({ value, options, onChange, isDisabled, con
   const renderLabeledSwitch = () => {
     const on = value === true;
     const current = value === null ? null : optionFor(value);
-    const trackText = on ? blackOrWhiteOn(checkedFill) : MUTED_TEXT_COLOR;
+    const trackText = on ? blackOrWhiteOn(checkedFill) : uncheckedFill ? blackOrWhiteOn(uncheckedFill) : MUTED_TEXT_COLOR;
     const track = (
       <span
-        className={`lops-ayn-lswitch${on ? " is-on" : ""}${isTall ? " is-tall" : ""}${config.showLabels ? "" : " is-no-label"}`}
+        className={`lops-ayn-lswitch${on ? " is-on" : ""}${uncheckedFill ? " is-filled" : ""}${isTall ? " is-tall" : ""}${config.showLabels ? "" : " is-no-label"}`}
         aria-hidden="true"
         // Never Fixed width: a switch sized like a button read as "too wide" (user).
-        style={on ? { backgroundColor: checkedFill, borderColor: checkedFill } : undefined}
+        style={on
+          ? { backgroundColor: checkedFill, borderColor: checkedFill }
+          : uncheckedFill ? { backgroundColor: uncheckedFill, borderColor: uncheckedFill } : undefined}
       >
         {/* Both labels share one grid cell, so the track is as wide as the longer one and doesn't
             jump when the value changes; only the current one is visible. */}
@@ -711,8 +761,11 @@ export const AdvancedYesNoControl = ({ value, options, onChange, isDisabled, con
           {current && value !== null && (
             <IconView
               name={iconNameFor(value)}
-              color={resolveIconColor(config, current.color, "#FFFFFF", on ? darkenHexColor(checkedFill) : MUTED_TEXT_COLOR)}
-              size={isTall ? 16 : 14}
+              color={resolveIconColor(config, current.color, "#FFFFFF", on ? darkenHexColor(checkedFill) : uncheckedFill ? darkenHexColor(uncheckedFill) : MUTED_TEXT_COLOR)}
+              // 16px box / 14px glyph in the 20px thumb (Tall 18 / 16 in 24px); was 14 / 12 (Tall
+              // 16 / 14), user: "a tiny bit bigger". +2px keeps a whole-pixel inset (2px, Tall 3px).
+              size={isTall ? 18 : 16}
+              svgGlyph
             />
           )}
         </span>

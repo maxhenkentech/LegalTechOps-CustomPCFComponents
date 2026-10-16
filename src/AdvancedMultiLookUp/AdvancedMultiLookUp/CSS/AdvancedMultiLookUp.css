@@ -230,6 +230,14 @@
   font-size: 13px;
   box-sizing: border-box;
   width: 100%;
+  /* Wrap, always: the form designer's field cell can hand down white-space: nowrap, and the
+     messages are full of long unbroken tokens (column names, lookupfield.column, hex values) that
+     only break with overflow-wrap (AdvancedLookUp, 2026-10-16). */
+  white-space: normal;
+  overflow-wrap: anywhere;
+  max-width: 100%;
+  min-width: 0;
+  text-align: left; /* a host or harness container can hand down center, too */
 }
 
 .lops-aml-config-error-title {

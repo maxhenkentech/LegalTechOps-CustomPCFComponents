@@ -227,9 +227,10 @@ export interface IAdvancedLookUpProps {
   // override either way - the committed LookupValue's `name` is still always the true primary
   // name (see ITargetRecordData.name).
   labelColumnName?: string;
-  // Comma-separated, NOT semicolon - a deliberately different delimiter/semantic from the three
-  // properties above. This isn't a fallback chain: every listed column is searched at once
-  // (OR'd together), not tried in priority order, so "first non-empty wins" doesn't apply here.
+  // Semicolon-separated like every other column list (user, 2026-10-16: "Use ; everywhere"). Not a
+  // fallback chain: every listed column is searched at once (OR'd together). Commas are still
+  // accepted, because this property was documented as comma-separated up to v1.11.4 and released
+  // properties must stay backward compatible.
   searchColumns?: string;
   // Optional, single column (not a fallback chain - a sort only has one key). Always ascending -
   // there's no separate direction property, per an explicit "should always be ascending" request.
@@ -501,14 +502,14 @@ async function resolveDotNotationIconValue(candidate: IconCandidate, targetId: s
 }
 
 // Shared fallback-chain syntax for Icon Column/Tooltip Column/Label Column: semicolon-separated
-// column names, tried in order, first one with a non-empty value on a given record wins. Comma is
-// deliberately NOT reused here - searchColumns already means something different with commas
-// (search every listed column at once, unioned via OR), and overloading the same delimiter for a
-// completely different "try these in priority order" semantic would be actively confusing on a
-// property right next to it in the properties panel.
+// column names, tried in order, first one with a non-empty value on a given record wins. Every
+// column list in the repo uses ';' (Additional Display/Search Columns too, where all listed
+// columns are used); the property description says whether it is a fallback chain.
+// Documented as ";" (user, 2026-10-16: "Use ; everywhere"), but "," is accepted too - no column,
+// MDL2 icon or web resource name can contain a comma.
 function parseColumnList(value: string | undefined): string[] {
   return (value || "")
-    .split(";")
+    .split(/[;,]/)
     .map((c) => c.trim())
     .filter((c) => c.length > 0);
 }
@@ -848,14 +849,14 @@ export const AdvancedLookUpControl: React.FC<IAdvancedLookUpProps> = (props) => 
   // delimiter does NOT mean "fallback chain, first wins" for this particular property, unlike every
   // other caller of parseColumnList.
   const additionalDisplayColumnNames = React.useMemo(() => parseColumnList(additionalDisplayColumns), [additionalDisplayColumns]);
-  // Comma-separated, NOT parseColumnList's semicolon split - see searchColumns' own comment on
-  // IAdvancedLookUpProps. Memoized once here (was previously re-split inline at each of
+  // Same split as parseColumnList (';', ',' also accepted) - see searchColumns' own comment on
+  // IAdvancedLookUpProps. Kept separate because it is NOT a fallback chain. Memoized once here (was previously re-split inline at each of
   // configErrors/runSearch's own call sites) so resolveMetadata's Lookup-column-search resolution
   // below, configErrors, and runSearch all agree on the exact same parsed list.
   const additionalSearchColumnNames = React.useMemo(
     () =>
       (searchColumns || "")
-        .split(",")
+        .split(/[;,]/)
         .map((c) => c.trim())
         .filter((c) => c.length > 0),
     [searchColumns]

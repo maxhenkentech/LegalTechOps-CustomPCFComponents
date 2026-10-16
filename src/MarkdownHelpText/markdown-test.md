@@ -141,9 +141,31 @@ a custom tag invented for this control:
 This line has <span style="color:red">red text</span>, <span style="color:#2b8a3e">a hex green</span>,
 and <span style="background-color:yellow">a yellow highlight</span> mixed into <span style="color:blue">**bold blue**</span> and regular text.
 
-Only `color`/`background-color` survive, and only on `<span>` - other HTML tags/attributes/style
-properties written in the source are stripped rather than rendered, e.g. this `<script>` tag and
-this `<div style="color:red">` are both neutralized: <script>alert('unsafe')</script><div style="color:red">still just plain text</div>
+Only `color`, `background-color`/`background` (a single color) and `font-size` survive, and only on
+`<span>`, `<div>` and `<p>` - other HTML tags/attributes/style properties written in the source are
+stripped rather than rendered, e.g. this `<script>` tag and this `<div style="position:fixed;background:url(x.png)">`
+are both neutralized: <script>alert('unsafe')</script><div style="position:fixed;background:url(x.png)">still just plain text</div>
+
+## Font Size &amp; Background
+
+Inline sizes: <span style="font-size:0.8em">small 0.8em</span>, <span style="font-size:1.25em">larger 1.25em</span>,
+<span style="font-size:large">the keyword large</span>, <span style="font-size:18px">a fixed 18px</span> and
+<span style="font-size:300px">300px, clamped to 48px</span>. Combined:
+<span style="font-size:1.2em;background:#fff4ce;color:#8a5a00">**a big amber highlight**</span>.
+
+<div style="background-color:#EDF3FB">
+
+**A shaded block.** A `<div>` with a background gets a little padding and rounded corners, and
+the Markdown inside it - **bold**, *italic*, [links](https://www.example.com), lists - still works:
+
+- first point
+- second point
+
+</div>
+
+<p style="background:#F3F2F1;font-size:0.9em">A single shaded paragraph, written as a &lt;p&gt; with background and a smaller font size.</p>
+
+<div style="font-size:1.5em;color:#255BA4">A larger block without a background (no padding).</div>
 
 ## Dynamic Field Tags
 

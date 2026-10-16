@@ -50,11 +50,11 @@ function truncateLabel(label: string, maxChars: number): string {
 
 // Shared fallback-chain syntax, same delimiter/semantics AdvancedLookUp uses for its Icon/Tooltip/
 // Label Column properties: semicolon-separated, tried in order, first non-empty wins on a given
-// record. Comma is deliberately not used - it means something different elsewhere in this repo
-// (AdvancedLookUp's searchColumns unions every listed column instead of prioritizing them).
+// record. Documented as ";" (user, 2026-10-16: "Use ; everywhere"), but "," is accepted too - no column,
+// MDL2 icon or web resource name can contain a comma.
 function parseColumnList(value: string): string[] {
   return (value || "")
-    .split(";")
+    .split(/[;,]/)
     .map((c) => c.trim())
     .filter((c) => c.length > 0);
 }

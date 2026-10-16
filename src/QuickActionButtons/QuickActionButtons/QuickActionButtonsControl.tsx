@@ -310,7 +310,14 @@ export const QuickActionButtonsControl = ({ buttons, isDisabled, config, formAva
             backgroundColor: '#FDE7E9',
             color: '#A4262C',
             fontSize: '13px',
-            fontFamily: "inherit" // the app theme font - see ThemeFont.tsx
+            fontFamily: "inherit", // the app theme font - see ThemeFont.tsx
+            // Wrap, always: the form designer can hand down nowrap, and JSON/expressions are long
+            // unbroken tokens (AdvancedLookUp, 2026-10-16).
+            whiteSpace: 'normal',
+            overflowWrap: 'anywhere',
+            textAlign: 'left',
+            boxSizing: 'border-box',
+            maxWidth: '100%'
           }}
         >
           <div style={{ fontWeight: 600, marginBottom: '6px' }}>Quick Action Buttons: configuration error</div>
@@ -504,7 +511,10 @@ export const QuickActionButtonsControl = ({ buttons, isDisabled, config, formAva
             borderRadius: '4px',
             backgroundColor: '#FDE7E9',
             color: '#A4262C',
-            fontSize: '12px'
+            fontSize: '12px',
+            whiteSpace: 'normal',
+            overflowWrap: 'anywhere',
+            textAlign: 'left'
           }}
         >
           <div style={{ fontWeight: 600, marginBottom: '2px' }}>&quot;{lastApplied.label}&quot; did not fully apply:</div>
@@ -523,7 +533,10 @@ export const QuickActionButtonsControl = ({ buttons, isDisabled, config, formAva
             borderRadius: '4px',
             backgroundColor: '#FDE7E9',
             color: '#A4262C',
-            fontSize: '12px'
+            fontSize: '12px',
+            whiteSpace: 'normal',
+            overflowWrap: 'anywhere',
+            textAlign: 'left'
           }}
         >
           <div style={{ fontWeight: 600, marginBottom: '2px' }}>&quot;{lastApplied.label}&quot; set the field values, but the save afterward failed:</div>

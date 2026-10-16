@@ -43,7 +43,8 @@ export const TEST_MODE_DEFAULT_FIXTURE = "plain";
 
 // Shown instead of the harness's "val" placeholder (index.ts testModeValue), so icons and colors
 // are visible without typing anything; type any other value (or clear it) to override. The icons
-// are the MDL2 check/cancel badges (user choice), so they follow the icon color modes; type
+// are the manifest defaults, the filled check/cancel badges (user, 2026-10-16: "lets use
+// StatusErrorFull and CompletedSolid"), so they follow the icon color modes; type
 // lops_checkbadge.svg / lops_cancelbadge.svg to see the web resource (image) path instead.
 export const TEST_MODE_DEFAULT_ICONS = { yes: "CompletedSolid", no: "StatusErrorFull" };
 export const TEST_MODE_DEFAULT_COLORS = { yes: "#107C10", no: "#D13438" };

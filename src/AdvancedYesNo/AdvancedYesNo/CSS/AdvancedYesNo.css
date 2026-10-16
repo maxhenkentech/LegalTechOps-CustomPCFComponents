@@ -131,15 +131,16 @@
   background-color: #ffffff;
 }
 
-.lops-ayn-switchrow:not(.is-disabled):hover .lops-ayn-toggle:not(.is-on) {
+.lops-ayn-switchrow:not(.is-disabled):hover .lops-ayn-toggle:not(.is-on):not(.is-filled) {
   border-color: #323130;
 }
 
-.lops-ayn-switchrow:not(.is-disabled):hover .lops-ayn-toggle:not(.is-on) .lops-ayn-thumb {
+.lops-ayn-switchrow:not(.is-disabled):hover .lops-ayn-toggle:not(.is-on):not(.is-filled) .lops-ayn-thumb {
   background-color: #323130;
 }
 
 .lops-ayn-switchrow:not(.is-disabled):hover .lops-ayn-toggle.is-on,
+.lops-ayn-switchrow:not(.is-disabled):hover .lops-ayn-toggle.is-filled,
 .lops-ayn-switchrow:not(.is-disabled):hover .lops-ayn-checkbox.is-checked {
   filter: brightness(0.92);
 }
@@ -483,7 +484,9 @@
   min-width: 52px;
   height: 24px;
   padding: 0 9px 0 26px;
-  border: 1px solid #8a8886;
+  /* #a9a9a9, the family focus-border grey (was #8a8886; user: the border is "kinda thick" - the
+     thumb's 1px shadow ring touches it, so it read as a 2px dark band on the thumb side). */
+  border: 1px solid #a9a9a9;
   border-radius: 999px;
   background-color: #f5f5f5;
   transition: background-color 0.15s ease-in-out, border-color 0.15s ease-in-out, padding 0.15s ease-in-out;
@@ -553,10 +556,12 @@
   left: calc(100% - 25px);
 }
 
-.lops-ayn-switchrow:not(.is-disabled):hover .lops-ayn-lswitch:not(.is-on) {
+.lops-ayn-switchrow:not(.is-disabled):hover .lops-ayn-lswitch:not(.is-on):not(.is-filled) {
   border-color: #323130;
 }
 
-.lops-ayn-switchrow:not(.is-disabled):hover .lops-ayn-lswitch.is-on {
+/* A colored track (Yes, or No with an Unchecked color) darkens on hover instead. */
+.lops-ayn-switchrow:not(.is-disabled):hover .lops-ayn-lswitch.is-on,
+.lops-ayn-switchrow:not(.is-disabled):hover .lops-ayn-lswitch.is-filled {
   filter: brightness(0.92);
 }

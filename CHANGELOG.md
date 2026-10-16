@@ -2,7 +2,30 @@
 
 # Changelog
 
-## Version 10.0.0.0 (Current)
+## Version 10.0.3.0 (Current)
+Updates since 10.0.0.0, in the same solution: Markdown Help Text can read its Markdown from any text column including formula (Fx) columns and supports font size and backgrounds, Advanced Yes/No gets an unchecked color and a refined Labeled switch, Quick Action Buttons follows Power Automate's expression rules more closely, list properties accept `;` everywhere, and configuration errors always wrap.
+
+#### 📝 Markdown Help Text Component
+- **NEW**: `Markdown Column` - bind any Single Line or Multiple Lines of Text column on the table, including a **formula (Fx) column** that builds the Markdown from the record. Used when `Text Column` has no value, before `Markdown Text`
+- **NEW**: **Font size** - `<span style="font-size:1.25em">`, also on `<p>` and `<div>`: sizes relative to the form's text (`em`, `rem`, `%`), fixed sizes (`px`, `pt`) or keywords (`small`, `large` ...), kept between 0.5x and 3x the form's text size
+- **NEW**: **Backgrounds** - `background` (a single color) next to `background-color`, now also on `<p>` and `<div>`, so a whole paragraph or block of Markdown can be shaded. Shaded blocks get padding and rounded corners
+- **CHANGED**: A `style` with color, background or font size on a `<div>` or `<p>` is now applied instead of removed. Every other style, tag and attribute is still stripped
+
+#### ✅ Advanced Yes/No Component
+- **NEW**: `Unchecked color mode` and `Unchecked color` - fill the Toggle and Labeled switch track when the value is No (custom color, the No color, or a faded No color). The default, Neutral, keeps the grey track; an empty value always stays grey
+- **NEW**: `Yes icon` and `No icon` default to `CompletedSolid` and `StatusErrorFull`, so a new Labeled switch shows an icon in its circle right away. Clear the field for no icon
+- **IMPROVED**: Labeled switch - the icon stays centered in the circle at every browser zoom level, is slightly larger (16px, Tall 18px), and the track border is a lighter grey
+
+#### ⚡ Quick Action Buttons Component
+- **IMPROVED**: Expressions follow Power Automate more closely: `div` of two whole numbers is a whole number, `div`/`mod` by zero is an error, `round()` rounds halves away from zero (1.005 -> 1.01), `coalesce` only skips nulls, and adding a month or year to the 31st lands on the month's last day
+- **NEW**: `formatDateTime` supports .NET custom and standard formats; `utcNow`, the `add*` functions and `addToTime` take an optional format
+- **FIX**: Text written to a Date Only or Date and Time field (including any `formatDateTime` result) is read as UTC - day first with dots or dashes, month first with slashes - never in the browser's time zone, and Date Only fields read as their own calendar day in every time zone
+
+#### 🎨 All Components
+- **IMPROVED**: Every property that takes a list (fallback columns, icon fallbacks, External Values, Additional Search and Display Columns, File Column(s)) is documented with `;` and also accepts `,`. Advanced LookUp's and Advanced Multi LookUp's `Additional Search Columns`, documented as comma-separated until now, keep working with commas
+- **FIX**: Configuration errors and status messages (Advanced LookUp, Advanced Multi LookUp, Quick Action Buttons, Activity Graph, Relationship View) always wrap and are left-aligned, also in the form designer and for long column names
+
+## Version 10.0.0.0 (Previous)
 Major release with everything since the last GitHub release (v9.0.0): a new component, Activity Graph, which shows a record's history as a GitHub-style activity graph with every change field by field, plus fixes for Advanced Yes/No, Advanced LookUp and Advanced Dropdown and animated README previews.
 
 #### 📊 Activity Graph Component (NEW)

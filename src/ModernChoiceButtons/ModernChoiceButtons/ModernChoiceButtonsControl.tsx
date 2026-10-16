@@ -528,7 +528,8 @@ export const ModernChoiceButtonsControl = ({ rawOptions, selectedKey, onChange, 
         // `;` fallback chain, same syntax as AdvancedDropDown/AdvancedMultiChoice
         // ("hek_Logo.svg;Tag"): entries are tried in order, the first one that renders wins,
         // and the configured default icon is the last resort. A single name is a chain of one.
-        const iconChain = (icon || '').split(';').map(s => s.trim()).filter(s => s.length > 0);
+        // ',' is accepted too (documented as ';'); the JSON-map form is parsed before this.
+        const iconChain = (icon || '').split(/[;,]/).map(s => s.trim()).filter(s => s.length > 0);
         const shouldShowIcon = iconChain.some(entry => validateAndGetIcon(entry).isValid);
         const iconFontSize = config.showChoiceValue ? ICON_FONT_SIZE : ICON_FONT_SIZE_NO_LABEL[config.tileSize];
         const isRowLayout = config.iconPosition === 'Left' || config.iconPosition === 'Right';

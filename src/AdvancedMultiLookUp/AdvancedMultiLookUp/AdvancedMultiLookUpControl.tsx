@@ -303,9 +303,10 @@ export const AdvancedMultiLookUpControl = (props: IProps): React.ReactElement =>
   const labelColumns = React.useMemo(() => parseColumnList(config.labelColumnName), [config.labelColumnName]);
   const tooltipColumns = React.useMemo(() => parseColumnList(config.tooltipColumnName), [config.tooltipColumnName]);
   const displayColumns = React.useMemo(() => parseColumnList(config.additionalDisplayColumns), [config.additionalDisplayColumns]);
-  // Comma-separated (search all at once), unlike the semicolon fallback chains - AdvancedLookUp.
+  // Semicolon-separated like every column list (all searched at once, not a fallback chain).
+  // Commas still accepted (documented as comma-separated up to v1.0.3), as in every list.
   const searchColumns = React.useMemo(
-    () => config.searchColumns.split(",").map((c) => c.trim()).filter((c) => c.length > 0),
+    () => config.searchColumns.split(/[;,]/).map((c) => c.trim()).filter((c) => c.length > 0),
     [config.searchColumns]
   );
   const linkedKey = linkedEntityNames.join(",");

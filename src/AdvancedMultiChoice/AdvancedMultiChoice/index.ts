@@ -5,7 +5,7 @@ import { AdvancedMultiChoiceControl, IChoiceOption, IConfig, IMetadataSource, se
 import { TEST_MODE_OPTIONS, TEST_MODE_DEFAULT_SELECTION, TEST_MODE_WEB_RESOURCES } from "./TestModeData";
 import { buildFontStack, readThemeFont } from "./ThemeFont";
 
-const CONTROL_VERSION = "1.0.0";
+const CONTROL_VERSION = "1.0.1";
 
 // Initialize icons for both test harness and production
 const initializeIconsForEnvironment = () => {

@@ -5,7 +5,7 @@ import { AdvancedYesNoControl, IConfig, IYesNoOptions, setWebResourceUrlOverride
 import { TEST_MODE_FIXTURES, TEST_MODE_DEFAULT_COLORS, TEST_MODE_DEFAULT_FIXTURE, TEST_MODE_DEFAULT_ICONS, TEST_MODE_DEFAULT_VALUE, TEST_MODE_WEB_RESOURCES } from "./TestModeData";
 import { buildFontStack, readThemeFont } from "./ThemeFont";
 
-const CONTROL_VERSION = "1.0.2";
+const CONTROL_VERSION = "1.1.1";
 
 // Initialize icons for both test harness and production
 const initializeIconsForEnvironment = () => {
@@ -110,6 +110,8 @@ export class AdvancedYesNo implements ComponentFramework.ReactControl<IInputs, I
 			iconColor: normalizeHex(p.iconColor?.raw, "#255BA4"),
 			checkedColorMode: p.checkedColorMode?.raw ?? "CustomColor",
 			checkedColor: normalizeHex(p.checkedColor?.raw, "#255BA4"),
+			uncheckedColorMode: p.uncheckedColorMode?.raw ?? "Neutral",
+			uncheckedColor: normalizeHex(p.uncheckedColor?.raw, "#605E5C"),
 			selectionBackgroundMode: p.selectionBackgroundMode?.raw ?? "CustomColorFaded",
 			selectionColor: normalizeHex(p.selectionColor?.raw, "#EDF3FB"),
 			selectionBorderMode: p.selectionBorderMode?.raw ?? "ChoiceColor",

@@ -428,3 +428,24 @@
 .mhtext-root .hljs-strong {
   font-weight: 600;
 }
+
+/* A shaded block: <div style="background-color:...">/<p style="background:..."> (user, 2026-10-16:
+   "add support for font size and background"). The color is the maker's (inline, sanitized by
+   rehypeSanitizeStyle.ts); this only keeps the text off the edge of its own fill. em, so the
+   padding follows the form's text size like everything else here. */
+.mhtext-root div[style*="background"],
+.mhtext-root p[style*="background"] {
+  padding: 0.5em 0.75em;
+  border-radius: 4px;
+  /* Two shaded blocks in a row would otherwise touch (a <div> has no margin of its own). */
+  margin: 0.75em 0;
+}
+
+/* Margins of the first/last child would otherwise poke out of the fill as uneven bands. */
+.mhtext-root div[style*="background"] > :first-child {
+  margin-top: 0;
+}
+
+.mhtext-root div[style*="background"] > :last-child {
+  margin-bottom: 0;
+}

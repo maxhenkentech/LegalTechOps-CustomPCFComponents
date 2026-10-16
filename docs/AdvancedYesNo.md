@@ -67,8 +67,8 @@ Properties are listed in the order they appear in the form editor.
 | `componentHeight` | Choice | Tall / Short | Height of the control, matching the other form fields (34px Short, 40px Tall) | Short |
 | `selectionShape` | Choice | Square / Rounded / Round | Corner shape of the buttons, segments, chip and checkbox | Rounded |
 | `makeFontBold` | Yes/No | - | Show the labels in bold. The selected option of Buttons and Segmented is always bold | No |
-| `yesIcon` | Text | MDL2 name or web resource name | Icon for Yes. The Icon style uses `CompletedSolid` (a check badge) when blank | - |
-| `noIcon` | Text | MDL2 name or web resource name | Icon for No. The Icon style uses `StatusErrorFull` (a cancel badge) when blank | - |
+| `yesIcon` | Text | MDL2 name or web resource name | Icon for Yes. A filled check badge by default; clear it to show no icon (the Icon style still shows `CompletedSolid`) | `CompletedSolid` |
+| `noIcon` | Text | MDL2 name or web resource name | Icon for No. A filled cancel badge by default; clear it to show no icon (the Icon style still shows `StatusErrorFull`) | `StatusErrorFull` |
 | `iconPosition` | Choice | Left / Right / Above / Below | Position of the icon relative to its label. Above and Below apply to Buttons and Toggle button; the other styles treat them as Left and Right. The Toggle shows no icons | Left |
 | `yesColor` | Text | Hex color | Color of the Yes option, used by every color mode set to *Yes / No color*. Blank uses each setting's fallback color | - |
 | `noColor` | Text | Hex color | Color of the No option, used the same way | - |
@@ -76,6 +76,8 @@ Properties are listed in the order they appear in the form editor.
 | `iconColor` | Text | Hex color | Icon color for `Fixed color`, and when `Yes color` / `No color` is blank | `#255BA4` |
 | `checkedColorMode` | Choice | Custom color / Yes / No color / Yes / No color (faded) | Checkbox, Toggle, Labeled switch and Radio buttons: the fill when the value is Yes | Custom color |
 | `checkedColor` | Text | Hex color | Checked fill for `Custom color`, and when `Yes color` is blank | `#255BA4` |
+| `uncheckedColorMode` | Choice | Neutral / Custom color / Yes / No color / Yes / No color (faded) | Toggle and Labeled switch: the track fill when the value is No. Neutral keeps the standard grey track; an empty value always shows the grey track | Neutral |
+| `uncheckedColor` | Text | Hex color | Unchecked fill for `Custom color`, and when `No color` is blank | `#605E5C` |
 | `selectionBackgroundMode` | Choice | Custom color / Yes / No color / Yes / No color (faded) | Buttons, Segmented, Toggle button and Status chip: background of the selected option | Yes / No color (faded) |
 | `selectionColor` | Text | Hex color | Selected background for `Custom color`, and when `Yes color` / `No color` is blank | `#EDF3FB` |
 | `selectionBorderMode` | Choice | Off / Custom color / Yes / No color / Yes / No color (faded) | Buttons, Segmented, Toggle button and Status chip: border of the selected option | Yes / No color |

@@ -58,7 +58,7 @@ Properties are listed in the order they appear in the form editor.
 |----------|------|---------|-------------|---------|
 | `records` | Data set | - | **Required.** The related records - add the control to a subgrid of an N:N relationship | - |
 | `relationshipName` | Text | N:N relationship schema name | Only needed when several N:N relationships connect the same two tables and can't be told apart (e.g. an empty subgrid). Blank detects it from the subgrid | - |
-| `searchColumns` | Text | Column logical names, comma-separated | Additional columns on the related table to search, besides its primary name. Text columns are matched directly; a lookup column is matched against the name of the record it points to | - |
+| `searchColumns` | Text | Column logical names, semicolon-separated | Additional columns on the related table to search, besides its primary name. Every listed column is searched (not a fallback chain). Text columns are matched directly; a lookup column is matched against the name of the record it points to | - |
 | `sortColumnName` | Text | Column logical name | Column to sort search results by, always ascending (text and number columns). Blank sorts by the primary name | - |
 | `showInactiveRecords` | Yes/No | - | Include inactive records in the search results | No |
 | `resultLimit` | Whole number | - | Maximum number of records fetched per search - re-queried on every search | 10 |

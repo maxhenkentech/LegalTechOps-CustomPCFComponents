@@ -9,16 +9,17 @@ import { AlertLabel } from "./AlertLabel";
 import { ALERT_LABEL_TAG_NAME, ALERT_TAG_NAME, remarkAlertCallouts } from "./remarkAlertCallouts";
 import { IFieldTagResolution, resolveFieldTags, resolveFieldTagsTestMode } from "./dynamicFieldTags";
 import { remarkFieldTags } from "./remarkFieldTags";
-import { rehypeSanitizeColorStyle } from "./rehypeSanitizeColorStyle";
+import { rehypeSanitizeStyle } from "./rehypeSanitizeStyle";
 import { TEST_MODE_FIELD_VALUES, TEST_MODE_LOOKUP_TARGETS } from "./TestModeData";
 
-// Extends hast-util-sanitize's default (GitHub-derived) schema with just enough to let inline
-// `<span style="color:...">`/`<span style="background-color:...">` HTML - the same syntax GitHub,
-// Obsidian, and most other Markdown editors use for font coloring - survive rehypeSanitize, since
-// "style" isn't in the default schema's attribute allowlist for any tag. rehypeSanitizeColorStyle
-// (run immediately after, in the pipeline below) then narrows that surviving "style" value down to
-// just color/background-color with a safe value - this schema only controls which *attribute*
-// passes through, not what's inside it.
+// Extends hast-util-sanitize's default (GitHub-derived) schema with just enough to let
+// `<span style="...">` (inline: Font Coloring, font size) and `<div style="...">`/`<p style="...">`
+// (blocks: a shaded box, a larger paragraph) - the same raw-HTML syntax GitHub, Obsidian, and most
+// other Markdown editors use - survive rehypeSanitize, since "style" isn't in the default schema's
+// attribute allowlist for any tag. rehypeSanitizeStyle (run immediately after, in the pipeline
+// below) then narrows that surviving "style" value down to color/background-color/background/
+// font-size with a safe value - this schema only controls which *attribute* passes through, not
+// what's inside it.
 //
 // Also allowlists this control's own custom hast tags (ALERT_TAG_NAME/ALERT_LABEL_TAG_NAME, plus
 // their "data-alert-type" attribute) produced by remarkAlertCallouts.ts - the default schema has
@@ -26,12 +27,14 @@ import { TEST_MODE_FIELD_VALUES, TEST_MODE_LOOKUP_TARGETS } from "./TestModeData
 // keeping its children), silently stripping the alert callout's colored box/icon down to plain
 // paragraph text while leaving the body content behind - exactly the regression Font Coloring's
 // sanitizer introduced for alert callouts until this was added.
-const colorSanitizeSchema = {
+const styleSanitizeSchema = {
   ...defaultSchema,
   tagNames: [...(defaultSchema.tagNames ?? []), ALERT_TAG_NAME, ALERT_LABEL_TAG_NAME],
   attributes: {
     ...defaultSchema.attributes,
     span: [...(defaultSchema.attributes?.span ?? []), "style"],
+    div: [...(defaultSchema.attributes?.div ?? []), "style"],
+    p: [...(defaultSchema.attributes?.p ?? []), "style"],
     // hast-util-sanitize matches attribute allowlist entries against the hast tree's actual
     // property keys, not literal HTML attribute names - mdast-util-to-hast normalizes the
     // "data-alert-type" hProperties key from remarkAlertCallouts.ts into the DOM-style camelCase
@@ -135,7 +138,7 @@ export const MarkdownHelpTextControl = (props: IMarkdownHelpTextControlProps): R
     <div className={rootClassName} style={rootStyle}>
       <ReactMarkdown
         remarkPlugins={remarkPlugins}
-        rehypePlugins={[rehypeRaw, [rehypeSanitize, colorSanitizeSchema], rehypeSanitizeColorStyle, rehypeHighlight]}
+        rehypePlugins={[rehypeRaw, [rehypeSanitize, styleSanitizeSchema], rehypeSanitizeStyle, rehypeHighlight]}
         components={components}
       >
         {markdown}

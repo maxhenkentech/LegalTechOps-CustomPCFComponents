@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <manifest>
-  <control namespace="lops" constructor="ActivityGraph" version="1.0.7" display-name-key="lops.ActivityGraph" description-key="Shows the activity history of the current record as a GitHub-style contribution graph, aggregated by day, week, month or year" control-type="virtual">
+  <control namespace="lops" constructor="ActivityGraph" version="1.0.8" display-name-key="lops.ActivityGraph" description-key="Shows the activity history of the current record as a GitHub-style contribution graph, aggregated by day, week, month or year" control-type="virtual">
     <type-group name="anyValue">
       <type>SingleLine.Text</type>
       <type>Multiple</type>

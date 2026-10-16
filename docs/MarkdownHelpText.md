@@ -16,11 +16,12 @@ A field control that renders Markdown as formatted, visually polished help text 
 - **GitHub-Style Alert Callouts**: a blockquote starting with `[!NOTE]`, `[!TIP]`, `[!IMPORTANT]`, `[!WARNING]`, or `[!CAUTION]` renders as a colored, icon-labeled callout box instead of a plain blockquote
 - **Dynamic Field Tags**: `{!fieldLogicalName}` and `{!lookupField:targetField}` tags anywhere in the text are replaced with the current record's own field values, type-aware formatted the same way the platform itself would show them - see [Dynamic Field Tags](#dynamic-field-tags) below
 - **Font Coloring**: standard `<span style="color:...">`/`<span style="background-color:...">` HTML - the same syntax GitHub, Obsidian, and most other Markdown editors already support - colors inline text; every other HTML tag, attribute, and style property is stripped rather than rendered, see [Font Coloring](#font-coloring) below
+- **Font Size & Background**: `font-size` and `background` on a `<span>` (part of a line), a `<p>` (one paragraph) or a `<div>` (a whole block of Markdown) - make a note larger or smaller, or put it in a shaded box; sizes are limited to a sensible range, see [Font Size & Background](#font-size--background) below
 - **Configurable Callout Text Layout**: choose whether an alert callout's body text starts on the same line as its icon + label (default) or drops to its own line below
 - **Configurable Line Spacing**: tune the line-height multiplier applied to all rendered text (default 1.55) to match a tighter or looser form layout
-- **Two Ways to Provide Content**: bind `Text Column` to a Dataverse text column for dynamic, per-record help text, or set `Markdown Text` for static help text authored once at design time - `Text Column` takes priority when both are set, and the control can be added to a form with neither bound to any specific column
+- **Three Ways to Provide Content**: place the control on a text column (`Text Column`), bind `Markdown Column` to any other text column on the table - including a **formula (Fx) column** that builds the Markdown from the record - or type static Markdown into `Markdown Text` at design time. They are used in that order: the first one with a value wins, and the control can be added to a form with none of them bound to a specific column
 - **Scales With Form Text Size**: every element is sized in `em` relative to the control's own inherited font size, so it automatically matches whatever text size the form (or an individual field's text-size setting) applies - no manual scale property to tune
-- **Safe by Default**: raw HTML embedded in the Markdown source is sanitized against an allowlist before rendering - only `<span style="color:...">`/`<span style="background-color:...">` (for [Font Coloring](#font-coloring)) survive; every other tag, attribute, and event handler (`<script>`, `onerror`, `onclick`, `url()`/`expression()` smuggled through `style`, etc.) is stripped, so there is no way to inject markup or scripts through help text sourced from an editable column
+- **Safe by Default**: raw HTML embedded in the Markdown source is sanitized against an allowlist before rendering - only the `color`, `background-color`/`background` and `font-size` styles on `<span>`, `<p>` and `<div>` (for [Font Coloring](#font-coloring) and [Font Size & Background](#font-size--background)) survive; every other tag, attribute, and event handler (`<script>`, `onerror`, `onclick`, `url()`/`expression()` smuggled through `style`, etc.) is stripped, so there is no way to inject markup or scripts through help text sourced from an editable column
 - **Read-Only**: a pure display control, like a styled label - edit the Markdown through the normal Dataverse column editor or the static design-time property, not through the control itself
 - **Follows your app theme font**: uses the font of the app's modern [custom theme](https://learn.microsoft.com/power-apps/maker/model-driven-apps/modern-theme-overrides) (the `font` of its Custom theme definition), falling back to Segoe UI when no custom theme is set or the font can't be displayed
 
@@ -73,6 +74,7 @@ Each entry below shows the exact Markdown source next to what it renders as - ty
 - [Task Lists](#task-lists)
 - [Alert Callouts](#alert-callouts)
 - [Font Coloring](#font-coloring)
+- [Font Size & Background](#font-size--background)
 
 ### Headings
 
@@ -239,32 +241,63 @@ This line has <span style="color:red">red text</span>, <span style="color:#2b8a3
 and <span style="background-color:yellow">a yellow highlight</span> mixed into <span style="color:blue">**bold blue**</span> and regular text.
 ```
 
-Only the `color` and `background-color` CSS properties are honored, and only on a `<span>` - a hex code (`#2b8a3e`), an `rgb()`/`rgba()`/`hsl()`/`hsla()` function, or a plain CSS color name (`red`, `blue`, etc.) are all accepted values. Every other HTML tag, attribute, and style property written in the source - `<script>`, `<div style="...">`, `onclick`/`onerror`, `url(...)`/`expression(...)` smuggled inside a `style` value - is stripped down to plain text rather than rendered, so this remains safe to use with a user-editable text column.
+The `color` and `background-color` CSS properties are honored on a `<span>`, `<p>` or `<div>` (see [Font Size & Background](#font-size--background) for the other two styles) - a hex code (`#2b8a3e`), an `rgb()`/`rgba()`/`hsl()`/`hsla()` function, or a plain CSS color name (`red`, `blue`, etc.) are all accepted values. Every other HTML tag, attribute, and style property written in the source - `<script>`, `<div style="position:fixed">`, `onclick`/`onerror`, `url(...)`/`expression(...)` smuggled inside a `style` value - is stripped down to plain text rather than rendered, so this remains safe to use with a user-editable text column.
 
 > [!NOTE]
 > Markdown emphasis (`**bold**`, `*italic*`, etc.) still works nested inside a color span, since the span is just inline HTML wrapping ordinary Markdown content - see `**bold blue**` in the example above.
+
+## Font Size & Background
+
+*Make part of the text larger or smaller, or shade it - on a few words (`<span>`), one paragraph (`<p>`) or a whole block of Markdown (`<div>`), with the same `style` syntax as [Font Coloring](#font-coloring).*
+
+```markdown
+Inline: <span style="font-size:0.85em">small print</span>, <span style="font-size:1.25em">**larger text**</span>
+and <span style="font-size:1.2em;background:#fff4ce;color:#8a5a00">a big amber highlight</span>.
+
+<div style="background-color:#EDF3FB">
+
+**Before you submit:** check the contract value and attach the signed copy.
+
+- Values over 100,000 need a second approval
+- Use the *Notes* tab for exceptions
+
+</div>
+
+<p style="background:#F3F2F1;font-size:0.9em">A single shaded paragraph in a smaller size.</p>
+```
+
+- **`font-size`**: a size relative to the form's text (`0.8em`, `1.25em`, `1.5rem`, `120%`), a fixed size (`18px`, `12pt`), or a keyword (`small`, `large`, `x-large`, `smaller`, `larger` ...). Relative sizes follow the form's own text size, like everything else in this control. Sizes are kept between **0.5em and 3em** (50%-300%, 8px-48px, 6pt-36pt); a value outside that range uses the nearest limit.
+- **`background`**: a single color, written as `background` or `background-color`, with the same values as Font Coloring. Images, gradients and positions are not accepted.
+- **Shaded blocks**: a `<div>` or `<p>` with a background gets a little padding, rounded corners and space above and below, so the text doesn't touch the edge of the shading. Inline highlights (`<span>`) are not padded.
+- **Markdown inside a `<div>`** works when the `<div>` and `</div>` lines are separated from the content by an empty line, as in the example - that is how CommonMark switches back from HTML to Markdown.
+- Several styles can be combined in one `style` attribute, separated by `;`. Unsupported styles are dropped and the rest are kept.
 
 ## Properties
 
 | Property | Type | Options | Description | Default |
 |----------|------|---------|-------------|---------|
 | `boundText` (Text Column) | Single Line/Multiple Lines of Text | - | Optional: a text column containing Markdown. Takes priority over Markdown Text when both are set. Leave unbound to use this as a static help-text component with no backing column | - |
-| `markdownText` (Markdown Text) | Multiple Lines of Text | - | Static Markdown, set at design time, used when Text Column is not bound or has no value | - |
+| `markdownColumn` (Markdown Column) | Single Line/Multiple Lines of Text | - | Optional: another text column on the table that contains Markdown, including a formula (Fx) column. Turn on **Bind to table column** in the component settings and pick the column. Used when Text Column has no value | - |
+| `markdownText` (Markdown Text) | Multiple Lines of Text | - | Static Markdown, set at design time, used when Text Column and Markdown Column have no value | - |
 | `calloutTextLayout` (Callout Text Layout) | Choice | SameLine/NewLine | Where an alert callout's body text starts relative to its icon + label: on the same line as the label, or on the line below it | SameLine |
 | `lineSpacing` (Line Spacing) | Decimal | - | Line height multiplier applied to all rendered text | 1.55 |
 
 ## Configuring the Control
 
-Markdown Help Text can be used two ways, and both can be configured on the same instance:
+Markdown Help Text can get its Markdown three ways, and all three can be configured on the same instance (the first one with a value wins):
 
 1. **Bound to a column** - place the control directly on a Single Line or Multiple Lines of Text field, the same way Risk Matrix is placed on a field. Whatever Markdown is stored in that column renders live.
-2. **Static, no column needed** - insert the control as a standalone component (not bound to any field) and set `Markdown Text` to the desired Markdown directly in the form designer. Useful for banner-style guidance that does not need to vary per record.
-3. Author Markdown using standard [CommonMark](https://commonmark.org/help/)/[GFM](https://github.github.com/gfm/) syntax - tables, task lists, code fences, and `> [!NOTE]`/`[!TIP]`/`[!IMPORTANT]`/`[!WARNING]`/`[!CAUTION]` alert callouts are all supported out of the box
-4. Reference the current record's own field values inline with `{!fieldLogicalName}`, or a related record's field via `{!lookupField:targetField}` - see [Dynamic Field Tags](#dynamic-field-tags)
-5. Tune presentation with `calloutTextLayout` (Same Line/New Line for alert callout body text) and `lineSpacing` (line-height multiplier) if the defaults don't match your form's density
+2. **From another column, including a formula (Fx) column** - in the component settings, turn on **Bind to table column** under `Markdown Column` and pick any Single Line or Multiple Lines of Text column on the table. A formula column is a good fit for help text built from the record itself, e.g. `"> [!TIP]" & Char(10) & "> Matter **" & 'Name' & "** is " & Text('Status')`. The control can sit on any field (or none), and the formula's Markdown renders as usual.
+3. **Static, no column needed** - insert the control as a standalone component (not bound to any field) and set `Markdown Text` to the desired Markdown directly in the form designer. Useful for banner-style guidance that does not need to vary per record.
+4. Author Markdown using standard [CommonMark](https://commonmark.org/help/)/[GFM](https://github.github.com/gfm/) syntax - tables, task lists, code fences, and `> [!NOTE]`/`[!TIP]`/`[!IMPORTANT]`/`[!WARNING]`/`[!CAUTION]` alert callouts are all supported out of the box
+5. Reference the current record's own field values inline with `{!fieldLogicalName}`, or a related record's field via `{!lookupField:targetField}` - see [Dynamic Field Tags](#dynamic-field-tags)
+6. Tune presentation with `calloutTextLayout` (Same Line/New Line for alert callout body text) and `lineSpacing` (line-height multiplier) if the defaults don't match your form's density
 
 > [!TIP]
-> To combine both: bind `Text Column` for the common case, and leave `Markdown Text` set as a fallback shown only for records where that column is empty.
+> To combine them: bind `Text Column` (or `Markdown Column`) for the common case, and leave `Markdown Text` set as a fallback shown only for records where that column is empty.
+
+> [!NOTE]
+> `Markdown Text` itself can only be bound to a Multiple Lines of Text column in the form designer - use `Markdown Column` for a Single Line of Text or formula (Fx) column.
 
 > [!NOTE]
 > `calloutTextLayout` and `lineSpacing` apply to the whole control instance, not per alert type or per paragraph - set them once to match the density/style of the form section the control sits in.

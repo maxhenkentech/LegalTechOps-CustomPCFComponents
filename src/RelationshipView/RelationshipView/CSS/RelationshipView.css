@@ -15,6 +15,9 @@
 }
 
 .rv-status {
+  /* Wrap, always (the form designer can hand down nowrap; AdvancedLookUp, 2026-10-16). */
+  white-space: normal;
+  overflow-wrap: anywhere;
   padding: 12px 16px;
   color: #605e5c;
 }
@@ -396,6 +399,8 @@
 }
 
 .rv-quickview-status {
+  white-space: normal;
+  overflow-wrap: anywhere;
   color: #605e5c;
 }
 

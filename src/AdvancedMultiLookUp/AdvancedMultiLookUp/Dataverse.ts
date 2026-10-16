@@ -242,8 +242,10 @@ export function parseIconColumnRef(entry: string): { lookupFieldLogicalName?: st
 }
 
 // Semicolon-separated column list (fallback chain, or Additional Display Columns' "show all").
+// Documented as ";" (user, 2026-10-16: "Use ; everywhere"), but "," is accepted too - no column,
+// MDL2 icon or web resource name can contain a comma.
 export function parseColumnList(value: string | undefined): string[] {
-  return (value || "").split(";").map((c) => c.trim()).filter((c) => c.length > 0);
+  return (value || "").split(/[;,]/).map((c) => c.trim()).filter((c) => c.length > 0);
 }
 
 // A Choice option label naming an image file is a web resource; anything else an MDL2 name.

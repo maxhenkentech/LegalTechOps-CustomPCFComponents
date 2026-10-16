@@ -93,7 +93,7 @@ A field control that renders Markdown as formatted, visually polished help text 
 
 *Headings, alert callouts, a table, a numbered list and colored text rendered from a Multiple Lines of Text column.*
 
-📖 **[Full documentation](docs/MarkdownHelpText.md)** - full Markdown syntax gallery, Dynamic Field Tags, Font Coloring, and properties.
+📖 **[Full documentation](docs/MarkdownHelpText.md)** - full Markdown syntax gallery, Dynamic Field Tags, Font Coloring, font size & background, and properties.
 
 ---
 
@@ -462,16 +462,22 @@ If you encounter any issues or have suggestions for improvements, please open an
 
 Full version history lives in [CHANGELOG.md](CHANGELOG.md).
 
-### Version 10.0.0.0 (Current)
-Major release with everything since v9.0.0: a new component, Activity Graph, plus fixes for Advanced Yes/No, Advanced LookUp and Advanced Dropdown and animated README previews.
+### Version 10.0.3.0 (Current)
+Updates since 10.0.0.0: formula (Fx) columns, font size and backgrounds in Markdown Help Text, an unchecked color for Advanced Yes/No, Power Automate expression rules in Quick Action Buttons, `;` for every list property, and wrapping configuration errors.
 
-#### 📊 Activity Graph Component (NEW)
-- **NEW**: The record's audit history, related activities, notes or everything, by day (the GitHub layout), week, month or year, with 12 color schemes and a configurable first day of the week (Monday by default).
-- **NEW**: Click a square for every change, activity or note in it; expand a change for each field's previous, new and current value, formatted as on the form.
-- **NEW**: Fits the column and scrolls when narrow; the form designer shows a configuration error when the column is too narrow for the aggregation.
+#### 📝 Markdown Help Text
+- **NEW**: `Markdown Column` - Markdown from any text column on the table, including a formula (Fx) column.
+- **NEW**: Font size and backgrounds through `style` on `<span>`, `<p>` and `<div>`, including shaded blocks.
 
-#### ✅ Advanced Yes/No, 🔍 Advanced LookUp, 🔽 Advanced Dropdown
-- **FIX**: Readable white text on mid-tone Yes/No colors; the LookUp tooltip no longer opens behind the search list; Dropdown web resource icons appear together with the list.
+#### ✅ Advanced Yes/No
+- **NEW**: Unchecked color for the Toggle and Labeled switch; default Yes/No icons.
+- **IMPROVED**: Labeled switch icon centered at every zoom level, slightly larger, lighter border.
+
+#### ⚡ Quick Action Buttons
+- **IMPROVED**: Expressions follow Power Automate's rules for division, rounding, dates and `formatDateTime`; date text is read as UTC.
+
+#### 🎨 All Components
+- **IMPROVED**: List properties use `;` (`,` still accepted); configuration errors always wrap.
 
 See [CHANGELOG.md](CHANGELOG.md) for full details.
 

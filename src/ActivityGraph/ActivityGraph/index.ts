@@ -8,7 +8,7 @@ import { ActivityDate, Source, setUserTimeZoneOffset } from "./ActivityData";
 
 initializeIcons();
 
-const CONTROL_VERSION = "1.0.7";
+const CONTROL_VERSION = "1.0.8";
 
 export class ActivityGraph implements ComponentFramework.ReactControl<IInputs, IOutputs> {
 	constructor() {

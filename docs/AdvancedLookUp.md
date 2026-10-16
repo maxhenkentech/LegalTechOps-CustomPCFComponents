@@ -50,7 +50,7 @@ Properties are listed in the order they appear in the form editor, grouped as se
 | Property | Type | Options | Description | Default |
 |----------|------|---------|-------------|---------|
 | `lookupValue` | Lookup | - | **Required.** The lookup field this control replaces. Place the control directly on that field | - |
-| `searchColumns` | Text | Comma-separated logical names | Additional columns to search against, besides the target table's primary name column (always searched) | - |
+| `searchColumns` | Text | Column logical names, semicolon-separated | Additional columns to search against, besides the target table's primary name column (always searched). Every listed column is searched (not a fallback chain) | - |
 | `sortColumnName` | Text | A single column logical name | Column to sort search results by, always ascending. Both text and number columns are supported. Falls back to the target table's primary name column when left blank | - |
 | `showInactiveRecords` | Yes/No | - | Include inactive records in search results | No |
 | `resultLimit` | Whole Number | - | Maximum number of matching records shown per search - re-queried from the server on every search | 10 |
@@ -78,7 +78,7 @@ Advanced LookUp is a **field** control bound directly to a lookup field, the sam
 3. (Optional) Set `iconColumnName` to a picture column, an MDL2-icon-name text column, or a Choice column on the **target** table (the table the lookup points to, not the current table). Adjust `iconShape`, `iconBackgroundColor`, and `iconColor` to style it. Semicolon-separate multiple column names (`lops_col1;lops_col2`) to fall back to a second column when the first is blank on a given record. (Optional) Set `iconFixedName` to a literal MDL2 icon name shown when `iconColumnName` has no value for a record, or is left blank entirely.
 4. (Optional) Set `tooltipColumnName` to a column on the target table to show as a hover tooltip on the selected value - same semicolon fallback-chain syntax as `iconColumnName`.
 5. (Optional) Set `labelColumnName` to a column on the target table to display instead of its primary name - same semicolon fallback-chain syntax as `iconColumnName`.
-6. (Optional) Set `searchColumns` to widen what a typed search matches beyond the target table's primary name column.
+6. (Optional) Set `searchColumns` to widen what a typed search matches beyond the target table's primary name column - one or more columns on the target table, semicolon-separated (e.g. `accountnumber;emailaddress1`); every listed column is searched.
 7. (Optional) Set `sortColumnName` to a column on the target table to sort results by (always ascending, text and number columns both supported) - leave blank to sort by the primary name column.
 8. (Optional) Set `additionalDisplayColumns` to one or more columns on the target table (semicolon-separated, e.g. `accountnumber;primarycontactid`) to show as smaller context text under each record's name in the dropdown list - every column type is supported (Choice, Lookup, Currency, dates, numbers, and more).
 9. Adjust `showInactiveRecords`, `resultLimit`, `componentHeight`, `selectionShape`, `placeholderText`, and the list colors to match your form's needs.

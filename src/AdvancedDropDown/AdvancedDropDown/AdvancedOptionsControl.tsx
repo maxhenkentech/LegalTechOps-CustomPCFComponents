@@ -163,8 +163,10 @@ const warnOnce = (name: string, message: string): void => {
   console.warn(`${LOG_PREFIX} ${message}`);
 };
 
+// Documented as ";" (user, 2026-10-16: "Use ; everywhere"), but "," is accepted too - no column,
+// MDL2 icon or web resource name can contain a comma.
 const parseIconChain = (value: string | undefined): string[] =>
-  (value || "").split(";").map(s => s.trim()).filter(s => s.length > 0 && s !== 'undefined');
+  (value || "").split(/[;,]/).map(s => s.trim()).filter(s => s.length > 0 && s !== 'undefined');
 
 // "Show option color icon" off means "don't use color here": glyphs take the label color (see
 // iconColorFor) and images are desaturated. No opacity fade - monochrome, not de-emphasis.

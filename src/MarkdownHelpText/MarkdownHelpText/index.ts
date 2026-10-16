@@ -66,8 +66,13 @@ export class MarkdownHelpText implements ComponentFramework.ReactControl<IInputs
   public updateView(context: ComponentFramework.Context<IInputs>): React.ReactElement {
     const isTestMode = this.isTestMode();
     const boundText = context.parameters.boundText?.raw || undefined;
+    // Markdown Column: any text column bound through the designer, including a single-line formula
+    // (Fx) column, which Markdown Text (of-type Multiple, released) can't be pointed at in the
+    // designer (user, 2026-10-16: "it should work for a Fx column too"). Between the two by design:
+    // the field the control sits on wins, a typed design-time text is the last fallback.
+    const markdownColumn = context.parameters.markdownColumn?.raw || undefined;
     const markdownText = context.parameters.markdownText?.raw || undefined;
-    const markdown = boundText ?? markdownText ?? (isTestMode ? TEST_MODE_MARKDOWN : "");
+    const markdown = boundText ?? markdownColumn ?? markdownText ?? (isTestMode ? TEST_MODE_MARKDOWN : "");
     const calloutTextLayout = context.parameters.calloutTextLayout?.raw || "SameLine";
     const lineSpacing = context.parameters.lineSpacing?.raw ?? 1.55;
     const { entityTypeName, entityId } = resolveCurrentRecordContext(context.mode, context.utils);

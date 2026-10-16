@@ -245,6 +245,14 @@
   font-family: inherit; /* the app theme font - see ThemeFont.tsx */
   width: 100%;
   box-sizing: border-box;
+  /* Wrap, always: the form designer's field cell can hand down white-space: nowrap, and the
+     messages are full of long unbroken tokens (column names, lookupfield.column, hex values) that
+     only break with overflow-wrap (user, 2026-10-16: the error "does not wrap text"). */
+  white-space: normal;
+  overflow-wrap: anywhere;
+  max-width: 100%;
+  min-width: 0;
+  text-align: left; /* a host or harness container can hand down center, too */
 }
 
 .lops-alu-config-error-title {
@@ -266,6 +274,8 @@
    under the (still fully functional) field rather than replacing it. Amber, not red, since this
    isn't a maker-fixable misconfiguration the way an invalid hex color or a typo'd column name is. */
 .lops-alu-metadata-diagnostic {
+  white-space: normal;
+  overflow-wrap: anywhere;
   margin-top: 4px;
   font-size: 11px;
   color: #8a6d1a;
