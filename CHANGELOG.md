@@ -2,7 +2,14 @@
 
 # Changelog
 
-## Version 10.1.0.0 (Current)
+## Version 10.1.1.0 (Current)
+Fix for Advanced LookUp's *Filter by related rows*: it did nothing on fields configured in the form designer.
+
+#### 🔍 Advanced LookUp Component
+- **FIX**: *Filter by related rows* saved by the form designer is now applied. The designer stores the other field as `<table>.<column>` (for example `contact.parentcustomerid`), which the control did not recognise, so every record was shown
+- **NEW**: The **Self** option: when the other column belongs to the lookup's own table (for example Primary Contact on an account, limited to contacts whose parent customer is this account), the search is limited to records related to the record being edited. On a new, unsaved record no filter is applied
+
+## Version 10.1.0.0 (Previous)
 Advanced LookUp now respects the filters configured on the field in the form editor - its default view and *Filter by related rows* - instead of always searching the whole target table.
 
 #### 🔍 Advanced LookUp Component

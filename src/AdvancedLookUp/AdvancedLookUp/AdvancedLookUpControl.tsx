@@ -618,12 +618,30 @@ async function resolveFieldConfig(
   return cfg;
 }
 
-// Identifies the dependent field's current value, to notice that it changed between two searches.
+// The record the related filter is relative to. The designer saves DependentAttributeName as
+// "<table>.<attribute>" (e.g. "contact.parentcustomerid", measured on designer-made forms; a plain
+// attribute name is read too). If the attribute is a field of the form, its current value is the
+// related record; if it is not (the attribute lives on the lookup's own table), the related record
+// is the form's own record: the designer's "Self" (account form, Primary Contact: contacts whose
+// parent customer is this account). Empty = no filter, like the native lookup.
+const readDependentId = (dependentAttribute: string): string | undefined => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const page = (window as any).Xrm?.Page;
+  const dot = dependentAttribute.indexOf(".");
+  const attribute = page?.getAttribute?.(dependentAttribute) ?? (dot >= 0 ? page?.getAttribute?.(dependentAttribute.slice(dot + 1)) : undefined);
+  if (attribute) {
+    const v = attribute.getValue?.() as { id: string }[] | null | undefined;
+    return v?.[0]?.id ? stripBraces(v[0].id) : undefined;
+  }
+  if (dot < 0) return undefined;
+  const own = page?.data?.entity?.getId?.() as string | undefined;
+  return own ? stripBraces(own) : undefined;
+};
+
+// Identifies the dependent value, to notice that it changed between two searches.
 const relatedKey = (cfg: IFieldFilterConfig): string | undefined => {
   if (!cfg.relationship) return undefined;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const v = (window as any).Xrm?.Page?.getAttribute?.(cfg.relationship.dependentAttribute)?.getValue?.();
-  return v?.[0]?.id ? stripBraces(v[0].id) : "";
+  return readDependentId(cfg.relationship.dependentAttribute) ?? "";
 };
 
 // How the target table relates to the value of the dependent field. Resolved from the
@@ -639,10 +657,7 @@ async function resolveRelatedFilter(
   targetEntity: string,
   primaryIdAttribute: string
 ): Promise<RelatedFilter | undefined> {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const xrm = (window as any).Xrm;
-  const value = xrm?.Page?.getAttribute?.(rel.dependentAttribute)?.getValue?.() as { id: string; entityType?: string }[] | null | undefined;
-  const depId = value?.[0]?.id ? stripBraces(value[0].id) : undefined;
+  const depId = readDependentId(rel.dependentAttribute);
   if (!depId) return undefined; // nothing chosen in the dependent field: the platform applies no filter either
   const base = `/api/data/v9.2/RelationshipDefinitions(SchemaName='${rel.name}')`;
   let oneToMany: { ReferencingEntity: string; ReferencedEntity: string; ReferencingAttribute: string } | undefined;

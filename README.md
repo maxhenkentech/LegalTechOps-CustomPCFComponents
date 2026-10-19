@@ -462,11 +462,12 @@ If you encounter any issues or have suggestions for improvements, please open an
 
 Full version history lives in [CHANGELOG.md](CHANGELOG.md).
 
-### Version 10.1.0.0 (Current)
-Advanced LookUp respects the filters set on the field in the form editor: its default view and *Filter by related rows*.
+### Version 10.1.1.0 (Current)
+Fix for Advanced LookUp's *Filter by related rows*, which did nothing on fields configured in the form designer. Also supports the designer's *Self* option.
 
 #### 🔍 Advanced LookUp
-- **NEW**: Search limited to the field's default view and to records related to another field's value (*Filter by related rows*), with the typed search, additional search columns, sorting and result limit. Nothing to switch on; set neither to search every record.
+- **FIX**: *Filter by related rows* set in the form designer is applied (the designer saves the other column as `<table>.<column>`).
+- **NEW**: *Self* - limit the search to records related to the record being edited.
 
 See [CHANGELOG.md](CHANGELOG.md) for full details.
 
