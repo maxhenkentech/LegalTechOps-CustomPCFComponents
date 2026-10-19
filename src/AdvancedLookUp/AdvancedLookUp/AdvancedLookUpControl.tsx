@@ -514,6 +514,234 @@ function parseColumnList(value: string | undefined): string[] {
     .filter((c) => c.length > 0);
 }
 
+// ---- Apply Field View Filter -------------------------------------------------------------
+// The only filter the PCF API exposes for a lookup field is its default view (getViewId()). The
+// view's FetchXML is read once (5 min, like other schema reads), our search text / active-only /
+// sort / top are injected into it, and it is run for the matching IDs only. The normal OData
+// query then loads those IDs, so $select, annotations and icons stay on the existing code path.
+// Not applied: related-records filtering, "Only show records where" and form-script filters.
+const viewFetchXmlCache = new Map<string, { at: number; pending: Promise<string | undefined> }>();
+function loadViewFetchXml(webAPI: ComponentFramework.WebApi, viewId: string): Promise<string | undefined> {
+  const hit = viewFetchXmlCache.get(viewId);
+  if (hit && Date.now() - hit.at < METADATA_TTL_MS) return hit.pending;
+  const pending = (async () => {
+    for (const table of ["savedquery", "userquery"]) {
+      try {
+        const row = await webAPI.retrieveRecord(table, viewId, "?$select=fetchxml");
+        if (row.fetchxml) return row.fetchxml as string;
+      } catch {
+        // not a view of this kind - try the next
+      }
+    }
+    return undefined;
+  })();
+  viewFetchXmlCache.set(viewId, { at: Date.now(), pending });
+  pending.then((v) => (v === undefined ? viewFetchXmlCache.delete(viewId) : false)).catch(() => viewFetchXmlCache.delete(viewId));
+  return pending;
+}
+
+// The platform does not hand the field's view configuration to a PCF: getViewId() stays null and
+// enableViewPicker stays true even when the form XML sets DefaultViewId on the field (measured on
+// the test form, Solution 10.0.4.0; the native lookup right next to it did apply the view). So the
+// view is read from the form definition: current form id (Xrm) -> systemform.formxml -> the
+// field's <control> -> <DefaultViewId>. Falls back to the table's default lookup view, which is
+// what the native lookup shows when the form sets none.
+const formXmlCache = new Map<string, { at: number; pending: Promise<string | undefined> }>();
+function loadFormXml(webAPI: ComponentFramework.WebApi, formId: string): Promise<string | undefined> {
+  const hit = formXmlCache.get(formId);
+  if (hit && Date.now() - hit.at < METADATA_TTL_MS) return hit.pending;
+  const pending = webAPI.retrieveRecord("systemform", formId, "?$select=formxml").then((r) => r.formxml as string | undefined);
+  formXmlCache.set(formId, { at: Date.now(), pending });
+  pending.catch(() => formXmlCache.delete(formId));
+  return pending;
+}
+
+const stripBraces = (id: string) => id.replace(/[{}]/g, "").toLowerCase();
+
+// What the field's form configuration says: its default view and its "related records filtering"
+// (Filter by related records: records related, through FilterRelationshipName, to the value of
+// another field on the same form, DependentAttributeName).
+interface IFieldFilterConfig {
+  viewId?: string;
+  relationship?: { name: string; dependentAttribute: string; dependentType: string };
+}
+
+async function resolveFieldConfig(
+  webAPI: ComponentFramework.WebApi,
+  lookupProperty: ComponentFramework.PropertyTypes.LookupProperty,
+  fieldLogicalName: string | undefined,
+  controlId: string | undefined
+): Promise<IFieldFilterConfig> {
+  const cfg: IFieldFilterConfig = {};
+  const direct = typeof lookupProperty.getViewId === "function" ? lookupProperty.getViewId() : undefined;
+  if (direct) cfg.viewId = stripBraces(direct);
+  try {
+    // Same window.Xrm-only reach-in as QuickActionButtons (XrmFieldAccess.getXrm).
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const xrm = (window as any).Xrm;
+    const formId: string | undefined = xrm?.Page?.ui?.formSelector?.getCurrentItem?.()?.getId?.();
+    if (formId && fieldLogicalName) {
+      const formXml = await loadFormXml(webAPI, stripBraces(formId));
+      if (formXml) {
+        const doc = new DOMParser().parseFromString(formXml, "text/xml");
+        const controls = Array.from(doc.getElementsByTagName("control")).filter((c) => c.getAttribute("datafieldname") === fieldLogicalName);
+        // Several controls can show the same field (one per tab in the test forms): the real
+        // configuration lives on the native control and/or on the default customControl of the
+        // control description; prefer the control whose description turns the setting on.
+        const descriptionOf = (c: Element) =>
+          Array.from(doc.getElementsByTagName("controlDescription")).find((d) => stripBraces(d.getAttribute("forControl") || "") === stripBraces(c.getAttribute("uniqueid") || ""));
+        // The control's own id comes from the DOM (data-control-name on an ancestor, e.g. hek_matter3):
+        // the same field can be on several tabs with different settings. Without it, the first
+        // control of the field that has a view or a related filter configured is used.
+        const own = controls.filter((c) => !!controlId && c.getAttribute("id") === controlId);
+        const ordered = own.length > 0 ? own : controls;
+        const text = (root: Element | undefined, tag: string) => root?.getElementsByTagName(tag)[0]?.textContent || undefined;
+        for (const c of ordered) {
+          const d = descriptionOf(c);
+          // Native controls keep the parameters on <control>; PCF ones on the description's first (default) customControl.
+          const roots = [c, d?.getElementsByTagName("customControl")[0]];
+          const pick = (tag: string) => roots.map((r) => text(r, tag)).find((v) => !!v);
+          const view = pick("DefaultViewId");
+          const relName = pick("FilterRelationshipName");
+          const dep = pick("DependentAttributeName");
+          if (view || (relName && dep)) {
+            if (!cfg.viewId && view) cfg.viewId = stripBraces(view);
+            if (relName && dep) cfg.relationship = { name: relName, dependentAttribute: dep, dependentType: pick("DependentAttributeType") || "" };
+            break;
+          }
+        }
+      }
+    }
+  } catch (err) {
+    console.warn("AdvancedLookUp: could not read the field's configuration from the form definition", err);
+  }
+  return cfg;
+}
+
+// Identifies the dependent field's current value, to notice that it changed between two searches.
+const relatedKey = (cfg: IFieldFilterConfig): string | undefined => {
+  if (!cfg.relationship) return undefined;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const v = (window as any).Xrm?.Page?.getAttribute?.(cfg.relationship.dependentAttribute)?.getValue?.();
+  return v?.[0]?.id ? stripBraces(v[0].id) : "";
+};
+
+// How the target table relates to the value of the dependent field. Resolved from the
+// relationship's metadata (cached); the dependent value itself is read live on every search.
+type RelatedFilter =
+  | { kind: "attribute"; attribute: string; id: string } // target holds the lookup to the dependent record (1:N, target = referencing)
+  | { kind: "ids"; ids: string[] } // the dependent record holds the lookup to the target (1:N, target = referenced)
+  | { kind: "nn"; intersect: string; targetColumn: string; otherColumn: string; id: string }; // N:N
+
+async function resolveRelatedFilter(
+  webAPI: ComponentFramework.WebApi,
+  rel: { name: string; dependentAttribute: string; dependentType: string },
+  targetEntity: string,
+  primaryIdAttribute: string
+): Promise<RelatedFilter | undefined> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const xrm = (window as any).Xrm;
+  const value = xrm?.Page?.getAttribute?.(rel.dependentAttribute)?.getValue?.() as { id: string; entityType?: string }[] | null | undefined;
+  const depId = value?.[0]?.id ? stripBraces(value[0].id) : undefined;
+  if (!depId) return undefined; // nothing chosen in the dependent field: the platform applies no filter either
+  const base = `/api/data/v9.2/RelationshipDefinitions(SchemaName='${rel.name}')`;
+  let oneToMany: { ReferencingEntity: string; ReferencedEntity: string; ReferencingAttribute: string } | undefined;
+  try {
+    oneToMany = await fetchMetadata(`${base}/Microsoft.Dynamics.CRM.OneToManyRelationshipMetadata?$select=ReferencingEntity,ReferencedEntity,ReferencingAttribute`, "Failed to read relationship");
+  } catch {
+    oneToMany = undefined;
+  }
+  if (oneToMany) {
+    if (oneToMany.ReferencingEntity === targetEntity) return { kind: "attribute", attribute: oneToMany.ReferencingAttribute, id: depId };
+    if (oneToMany.ReferencedEntity === targetEntity) {
+      const dep = await webAPI.retrieveRecord(oneToMany.ReferencingEntity, depId, `?$select=_${oneToMany.ReferencingAttribute}_value`);
+      const target = dep[`_${oneToMany.ReferencingAttribute}_value`] as string | undefined;
+      return { kind: "ids", ids: target ? [target] : [] };
+    }
+    throw new Error(`Relationship ${rel.name} does not involve ${targetEntity}.`);
+  }
+  const nn = await fetchMetadata<{ Entity1LogicalName: string; Entity2LogicalName: string; IntersectEntityName: string; Entity1IntersectAttribute: string; Entity2IntersectAttribute: string }>(
+    `${base}/Microsoft.Dynamics.CRM.ManyToManyRelationshipMetadata?$select=Entity1LogicalName,Entity2LogicalName,IntersectEntityName,Entity1IntersectAttribute,Entity2IntersectAttribute`,
+    "Failed to read relationship"
+  );
+  const targetIsFirst = nn.Entity1LogicalName === targetEntity;
+  return {
+    kind: "nn",
+    intersect: nn.IntersectEntityName,
+    targetColumn: targetIsFirst ? nn.Entity1IntersectAttribute : nn.Entity2IntersectAttribute,
+    otherColumn: targetIsFirst ? nn.Entity2IntersectAttribute : nn.Entity1IntersectAttribute,
+    id: depId,
+  };
+}
+
+function buildViewIdQuery(
+  viewFetchXml: string | undefined,
+  opts: {
+    entityName: string;
+    primaryIdAttribute: string;
+    searchColumns: string[];
+    text: string;
+    activeOnly: boolean;
+    sortColumn: string;
+    top: number;
+    related?: RelatedFilter;
+    // Additional Search Columns that are lookups: matched against the related record's name.
+    lookupSearches?: { field: string; relatedEntity: string; relatedPrimaryIdAttribute: string; relatedPrimaryNameAttribute: string }[];
+  }
+): string {
+  const doc = new DOMParser().parseFromString(viewFetchXml || `<fetch version="1.0" mapping="logical"><entity name="${opts.entityName}" /></fetch>`, "text/xml");
+  const fetchEl = doc.documentElement;
+  const entity = Array.from(fetchEl.children).find((e) => e.tagName === "entity");
+  if (!entity) throw new Error("The view's FetchXML has no entity element.");
+  ["page", "count", "aggregate", "returntotalrecordcount"].forEach((a) => fetchEl.removeAttribute(a));
+  fetchEl.setAttribute("top", String(opts.top));
+  Array.from(entity.children)
+    .filter((e) => e.tagName === "attribute" || e.tagName === "all-attributes" || e.tagName === "order")
+    .forEach((e) => entity.removeChild(e));
+  const el = (name: string, attrs: Record<string, string>) => {
+    const n = doc.createElement(name);
+    Object.keys(attrs).forEach((k) => n.setAttribute(k, attrs[k]));
+    return n;
+  };
+  // Existing top-level filters of the view are combined with ours under one AND filter.
+  const root = el("filter", { type: "and" });
+  Array.from(entity.children).filter((e) => e.tagName === "filter").forEach((f) => root.appendChild(f));
+  if (opts.activeOnly) root.appendChild(el("condition", { attribute: "statecode", operator: "eq", value: "0" }));
+  const related = opts.related;
+  if (related?.kind === "attribute") root.appendChild(el("condition", { attribute: related.attribute, operator: "eq", value: related.id }));
+  if (related?.kind === "ids") {
+    // An empty list can match nothing: compare the id with the nil guid.
+    const ids = related.ids.length > 0 ? related.ids : ["00000000-0000-0000-0000-000000000000"];
+    root.appendChild(el("condition", { attribute: opts.primaryIdAttribute, operator: "in" }));
+    const cond = root.lastChild as Element;
+    ids.forEach((id) => { const v = doc.createElement("value"); v.textContent = id; cond.appendChild(v); });
+  }
+  if (related?.kind === "nn") {
+    const link = el("link-entity", { name: related.intersect, from: related.targetColumn, to: opts.primaryIdAttribute, intersect: "true" });
+    const lf = el("filter", { type: "and" });
+    lf.appendChild(el("condition", { attribute: related.otherColumn, operator: "eq", value: related.id }));
+    link.appendChild(lf);
+    entity.appendChild(link);
+  }
+  const trimmed = opts.text.trim();
+  if (trimmed && (opts.searchColumns.length > 0 || (opts.lookupSearches || []).length > 0)) {
+    const like = `%${trimmed.replace(/[[%_]/g, (c) => `[${c}]`)}%`;
+    const or = el("filter", { type: "or" });
+    opts.searchColumns.forEach((c) => or.appendChild(el("condition", { attribute: c, operator: "like", value: like })));
+    // Outer joins, so a record without the lookup set still matches on its other columns.
+    (opts.lookupSearches || []).forEach((info, i) => {
+      const alias = `lops_s${i}`;
+      entity.appendChild(el("link-entity", { name: info.relatedEntity, from: info.relatedPrimaryIdAttribute, to: info.field, "link-type": "outer", alias }));
+      or.appendChild(el("condition", { entityname: alias, attribute: info.relatedPrimaryNameAttribute, operator: "like", value: like }));
+    });
+    root.appendChild(or);
+  }
+  entity.appendChild(el("attribute", { name: opts.primaryIdAttribute }));
+  entity.appendChild(el("order", { attribute: opts.sortColumn }));
+  entity.appendChild(root);
+  return new XMLSerializer().serializeToString(doc);
+}
+
 function buildSelectColumns(
   entityMeta: IEntityMeta,
   iconCandidates: IconCandidate[],
@@ -723,6 +951,11 @@ export const AdvancedLookUpControl: React.FC<IAdvancedLookUpProps> = (props) => 
 
   const debounceRef = React.useRef<number | undefined>(undefined);
   const searchRequestIdRef = React.useRef(0);
+  const fieldConfigPromiseRef = React.useRef<Promise<IFieldFilterConfig> | undefined>(undefined);
+  // The dependent field's value the last search used: when it has changed by the time the menu
+  // opens again, the cached default list is stale and is searched again (handleMenuOpen).
+  const lastRelatedKeyRef = React.useRef<string | undefined>(undefined);
+  const fieldConfigRef = React.useRef<IFieldFilterConfig | undefined>(undefined);
   const hasSearchedOnceRef = React.useRef(false);
   // Fluent's ComboBox does not open its results panel on a plain click into the input by default -
   // by design, only its caret button does that. focus(true) is the documented way to force it
@@ -784,7 +1017,7 @@ export const AdvancedLookUpControl: React.FC<IAdvancedLookUpProps> = (props) => 
   // by the same resolveMetadata effect, only for entries that actually resolve to a Lookup-like
   // AttributeType on this entity.
   const [lookupSearchColumnInfo, setLookupSearchColumnInfo] = React.useState<
-    Record<string, { navigationProperty: string; relatedPrimaryNameAttribute: string }>
+    Record<string, { navigationProperty: string; relatedPrimaryNameAttribute: string; field: string; relatedEntity: string; relatedPrimaryIdAttribute: string }>
   >({});
   // Per-mount memoization cache for dot-notation Icon Column candidates - see resolveIconForRecord's
   // own comment for why. Reset whenever iconCandidates changes so a reconfigured Icon Column can't
@@ -1067,7 +1300,7 @@ export const AdvancedLookUpControl: React.FC<IAdvancedLookUpProps> = (props) => 
         const lookupSearchFields = ownAttrNames
           ? additionalSearchColumnNames.filter((c) => isLookupLikeAttributeType(ownAttrNames!.get(c.toLowerCase())))
           : [];
-        const newLookupSearchColumnInfo: Record<string, { navigationProperty: string; relatedPrimaryNameAttribute: string }> = {};
+        const newLookupSearchColumnInfo: Record<string, { navigationProperty: string; relatedPrimaryNameAttribute: string; field: string; relatedEntity: string; relatedPrimaryIdAttribute: string }> = {};
         await Promise.all(
           lookupSearchFields.map(async (field) => {
             try {
@@ -1077,7 +1310,13 @@ export const AdvancedLookUpControl: React.FC<IAdvancedLookUpProps> = (props) => 
               ]);
               if (!navigationProperty || !fieldTargetEntity) return;
               const relatedMeta = await resolveEntityMetadata(fieldTargetEntity);
-              newLookupSearchColumnInfo[field.toLowerCase()] = { navigationProperty, relatedPrimaryNameAttribute: relatedMeta.primaryNameAttribute };
+              newLookupSearchColumnInfo[field.toLowerCase()] = {
+                navigationProperty,
+                relatedPrimaryNameAttribute: relatedMeta.primaryNameAttribute,
+                field,
+                relatedEntity: fieldTargetEntity,
+                relatedPrimaryIdAttribute: relatedMeta.primaryIdAttribute,
+              };
             } catch (err) {
               console.error(`AdvancedLookUp: failed to resolve navigation property for Additional Search Column "${field}"`, err);
             }
@@ -1263,6 +1502,9 @@ export const AdvancedLookUpControl: React.FC<IAdvancedLookUpProps> = (props) => 
         try {
           const filterParts: string[] = [];
           const trimmed = text.trim();
+          let lookupSearchInfosForView: { field: string; relatedEntity: string; relatedPrimaryIdAttribute: string; relatedPrimaryNameAttribute: string }[] = [];
+          const searchableLabelColsForView = labelColumnNames.filter((c) => isTextSearchableAttributeType(knownColumnNames?.get(c.toLowerCase())));
+          const textSearchColsForView = additionalSearchColumnNames.filter((c) => isTextSearchableAttributeType(knownColumnNames?.get(c.toLowerCase())));
           if (trimmed) {
             const escaped = trimmed.replace(/'/g, "''");
             // labelColumnNames is included here too, not just Additional Search Columns/
@@ -1294,10 +1536,12 @@ export const AdvancedLookUpControl: React.FC<IAdvancedLookUpProps> = (props) => 
             // until knownColumnNames/lookupSearchColumnInfo actually resolve - a genuinely
             // unsupported type is a configErrors entry already, not something to guess around here.
             const textSearchCols = additionalSearchColumnNames.filter((c) => isTextSearchableAttributeType(knownColumnNames?.get(c.toLowerCase())));
-            const lookupSearchClauses = additionalSearchColumnNames
+            const lookupSearchInfos = additionalSearchColumnNames
               .filter((c) => isLookupLikeAttributeType(knownColumnNames?.get(c.toLowerCase())))
               .map((c) => lookupSearchColumnInfo[c.toLowerCase()])
-              .filter((info): info is { navigationProperty: string; relatedPrimaryNameAttribute: string } => !!info)
+              .filter((info): info is { navigationProperty: string; relatedPrimaryNameAttribute: string; field: string; relatedEntity: string; relatedPrimaryIdAttribute: string } => !!info);
+            lookupSearchInfosForView = lookupSearchInfos;
+            const lookupSearchClauses = lookupSearchInfos
               .map((info) => `contains(${info.navigationProperty}/${info.relatedPrimaryNameAttribute},'${escaped}')`);
             const cols = Array.from(new Set([entityMeta.primaryNameAttribute, ...searchableLabelCols, ...textSearchCols]));
             const searchOr = [...cols.map((c) => `contains(${c},'${escaped}')`), ...lookupSearchClauses].join(" or ");
@@ -1311,8 +1555,53 @@ export const AdvancedLookUpControl: React.FC<IAdvancedLookUpProps> = (props) => 
           // No type-specific handling needed here for text vs. number columns: OData's $orderby
           // sorts by whichever type the underlying attribute actually is.
           const effectiveSortColumn = sortColumnLogicalName || entityMeta.primaryNameAttribute;
-          const query = `?$select=${selectCols.join(",")}${filterClause}&$orderby=${effectiveSortColumn} asc&$top=${resultLimit}`;
+          let query = `?$select=${selectCols.join(",")}${filterClause}&$orderby=${effectiveSortColumn} asc&$top=${resultLimit}`;
+          let viewOrderedIds: string[] | undefined;
+          {
+            if (!fieldConfigPromiseRef.current) {
+              fieldConfigPromiseRef.current = resolveFieldConfig(
+                webAPI,
+                lookupValueProperty,
+                (lookupValueProperty.attributes as { LogicalName?: string } | undefined)?.LogicalName,
+                rootRef.current?.closest("[data-control-name]")?.getAttribute("data-control-name") || undefined
+              );
+              fieldConfigPromiseRef.current.catch(() => { fieldConfigPromiseRef.current = undefined; });
+            }
+            const fieldConfig = await fieldConfigPromiseRef.current;
+            const related = fieldConfig.relationship
+              ? await resolveRelatedFilter(webAPI, fieldConfig.relationship, targetEntityLogicalName, entityMeta.primaryIdAttribute)
+              : undefined;
+            fieldConfigRef.current = fieldConfig;
+            lastRelatedKeyRef.current = relatedKey(fieldConfig);
+            const viewFetchXml = fieldConfig.viewId ? await loadViewFetchXml(webAPI, fieldConfig.viewId) : undefined;
+            if (fieldConfig.viewId && !viewFetchXml) throw new Error(`The field's view (${fieldConfig.viewId}) could not be read.`);
+            if (viewFetchXml || related) {
+              const trimmedText = text.trim();
+              const viewSearchCols = trimmedText
+                ? Array.from(new Set([entityMeta.primaryNameAttribute, ...searchableLabelColsForView, ...textSearchColsForView]))
+                : [];
+              const fetchXml = buildViewIdQuery(viewFetchXml, {
+                entityName: targetEntityLogicalName,
+                primaryIdAttribute: entityMeta.primaryIdAttribute,
+                searchColumns: viewSearchCols,
+                text,
+                activeOnly: !showInactiveRecords,
+                sortColumn: effectiveSortColumn,
+                top: resultLimit,
+                related,
+                lookupSearches: trimmedText ? lookupSearchInfosForView : [],
+              });
+              const idResponse = await webAPI.retrieveMultipleRecords(targetEntityLogicalName, `?fetchXml=${encodeURIComponent(fetchXml)}`);
+              viewOrderedIds = idResponse.entities.map((e) => e[entityMeta.primaryIdAttribute] as string);
+              const idFilter = viewOrderedIds.map((id) => `${entityMeta.primaryIdAttribute} eq ${id}`).join(" or ");
+              query = `?$select=${selectCols.join(",")}&$filter=${idFilter || `${entityMeta.primaryIdAttribute} eq 00000000-0000-0000-0000-000000000000`}`;
+            }
+          }
           const response = await webAPI.retrieveMultipleRecords(targetEntityLogicalName, query);
+          if (viewOrderedIds) {
+            const order = viewOrderedIds;
+            response.entities.sort((a, b) => order.indexOf(a[entityMeta.primaryIdAttribute] as string) - order.indexOf(b[entityMeta.primaryIdAttribute] as string));
+          }
           if (searchRequestIdRef.current !== requestId) return; // a newer search has since started
           setSearchDiagnostic(undefined);
 
@@ -1395,6 +1684,7 @@ export const AdvancedLookUpControl: React.FC<IAdvancedLookUpProps> = (props) => 
       additionalDisplayColumnNames,
       knownColumnNames,
       showInactiveRecords,
+      lookupValueProperty,
       resultLimit,
       webAPI,
     ]
@@ -1527,6 +1817,7 @@ export const AdvancedLookUpControl: React.FC<IAdvancedLookUpProps> = (props) => 
     menuOpenRef.current = true;
     setUserNavigated(false);
     if (!hasSearchedOnceRef.current) runSearch("");
+    else if (fieldConfigRef.current && relatedKey(fieldConfigRef.current) !== lastRelatedKeyRef.current) runSearch("");
   }, [runSearch]);
 
   const handleMenuDismissed = React.useCallback(() => {

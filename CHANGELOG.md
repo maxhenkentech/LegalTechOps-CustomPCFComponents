@@ -2,7 +2,16 @@
 
 # Changelog
 
-## Version 10.0.3.0 (Current)
+## Version 10.1.0.0 (Current)
+Advanced LookUp now respects the filters configured on the field in the form editor - its default view and *Filter by related rows* - instead of always searching the whole target table.
+
+#### 🔍 Advanced LookUp Component
+- **NEW**: **Default view filter** - when the field has a default view with filter conditions (set in the form editor), the dropdown and the typed search only offer records that view would show
+- **NEW**: **Filter by related rows** (classic editor: *Only show records where*) - the search is limited to records related to the value of another field on the form, for the relationship shapes the form editor offers: the lookup's table holds the reference (e.g. matters of the category chosen above), the other table holds it (e.g. the category of the chosen matter), and many-to-many. An empty other field applies no filter, like the native lookup. When that field changes, the list is searched again the next time it opens
+- **NEW**: Both filters work together with the typed search, `Additional Search Columns` (including lookup columns, matched against the related record's name), `Sort Column`, `Show Inactive Records` and `Result Limit`
+- **NOTE**: There is nothing to switch on: the control applies what the form sets on the field. To search every record, set neither. Filters added by form scripts are not applied. Fields that already had a default view with conditions or a related filter configured will now return fewer records, matching the native lookup
+
+## Version 10.0.3.0 (Previous)
 Updates since 10.0.0.0, in the same solution: Markdown Help Text can read its Markdown from any text column including formula (Fx) columns and supports font size and backgrounds, Advanced Yes/No gets an unchecked color and a refined Labeled switch, Quick Action Buttons follows Power Automate's expression rules more closely, list properties accept `;` everywhere, and configuration errors always wrap.
 
 #### 📝 Markdown Help Text Component

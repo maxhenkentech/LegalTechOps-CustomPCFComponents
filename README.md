@@ -111,7 +111,7 @@ A field control that replaces a standard choice field with a horizontal row of c
 
 ### 🔍 Advanced LookUp Component
 
-A field control that replaces a standard lookup field with a searchable, type-to-filter dropdown - type to search live Dataverse records, with a per-record icon (from a picture column, an MDL2 icon-name column, or a fixed icon) and a hover tooltip on the selected value.
+A field control that replaces a standard lookup field with a searchable, type-to-filter dropdown - type to search live Dataverse records, with a per-record icon (from a picture column, an MDL2 icon-name column, or a fixed icon) and a hover tooltip on the selected value. It follows the filters set on the field in the form editor (default view and *Filter by related rows*).
 
 <img src="Screenshots/AdvancedLookUp/Hero.gif" alt="Advanced LookUp Overview" width="50%">
 
@@ -462,22 +462,11 @@ If you encounter any issues or have suggestions for improvements, please open an
 
 Full version history lives in [CHANGELOG.md](CHANGELOG.md).
 
-### Version 10.0.3.0 (Current)
-Updates since 10.0.0.0: formula (Fx) columns, font size and backgrounds in Markdown Help Text, an unchecked color for Advanced Yes/No, Power Automate expression rules in Quick Action Buttons, `;` for every list property, and wrapping configuration errors.
+### Version 10.1.0.0 (Current)
+Advanced LookUp respects the filters set on the field in the form editor: its default view and *Filter by related rows*.
 
-#### 📝 Markdown Help Text
-- **NEW**: `Markdown Column` - Markdown from any text column on the table, including a formula (Fx) column.
-- **NEW**: Font size and backgrounds through `style` on `<span>`, `<p>` and `<div>`, including shaded blocks.
-
-#### ✅ Advanced Yes/No
-- **NEW**: Unchecked color for the Toggle and Labeled switch; default Yes/No icons.
-- **IMPROVED**: Labeled switch icon centered at every zoom level, slightly larger, lighter border.
-
-#### ⚡ Quick Action Buttons
-- **IMPROVED**: Expressions follow Power Automate's rules for division, rounding, dates and `formatDateTime`; date text is read as UTC.
-
-#### 🎨 All Components
-- **IMPROVED**: List properties use `;` (`,` still accepted); configuration errors always wrap.
+#### 🔍 Advanced LookUp
+- **NEW**: Search limited to the field's default view and to records related to another field's value (*Filter by related rows*), with the typed search, additional search columns, sorting and result limit. Nothing to switch on; set neither to search every record.
 
 See [CHANGELOG.md](CHANGELOG.md) for full details.
 
