@@ -2,7 +2,14 @@
 
 # Changelog
 
-## Version 10.1.2.0 (Current)
+## Version 10.1.3.0 (Current)
+Markdown Help Text accepts text-area columns, and a fix for alert callouts whose text starts with formatting.
+
+#### 📝 Markdown Help Text Component
+- **FIX**: A text column (including a formula column) formatted as a **Text area** could not be chosen for `Markdown Column`, or used as the field the control sits on. It can now
+- **FIX**: An alert callout whose text starts with bold, italic, code or a link right after the marker, such as `> [!CAUTION] **INACTIVE**`, lost that text and showed only the label. The text is kept now
+
+## Version 10.1.2.0 (Previous)
 Fix for Markdown Help Text alert callouts whose text starts with formatting.
 
 #### 📝 Markdown Help Text Component

@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <manifest>
-  <control namespace="lops" constructor="MarkdownHelpText" version="1.5.1" display-name-key="lops.MarkdownHelpText" description-key="Renders Markdown-formatted help text, scaled to the text size of the form" control-type="virtual">
+  <control namespace="lops" constructor="MarkdownHelpText" version="1.5.2" display-name-key="lops.MarkdownHelpText" description-key="Renders Markdown-formatted help text, scaled to the text size of the form" control-type="virtual">
     <type-group name="strings">
       <type>SingleLine.Text</type>
       <type>Multiple</type>
+      <type>SingleLine.TextArea</type>
     </type-group>
     <property name="boundText" display-name-key="Text Column" description-key="Optional: a Single Line of Text or Multiple Lines of Text column containing Markdown. Takes priority over Markdown Text when both are set. Leave unbound to use this as a static help-text component with no backing column." of-type-group="strings" usage="bound" required="false" />
     <property name="markdownColumn" display-name-key="Markdown Column" description-key="Optional: another Single Line or Multiple Lines of Text column on this table that contains Markdown, including formula (Fx) columns - turn on Bind to table column and pick it. Used when Text Column has no value, before Markdown Text." of-type-group="strings" usage="input" required="false" />
