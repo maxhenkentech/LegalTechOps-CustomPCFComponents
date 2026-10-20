@@ -49,10 +49,13 @@ export const remarkAlertCallouts: Plugin<[], Root> = () => (tree) => {
     const remainder = textNode.value.slice(match[0].length);
     const labelNode = buildLabelNode(alertType);
 
-    if (remainder.length > 0) {
+    if (remainder.length > 0 || firstParagraph.children.length > 1) {
       // Marker and body text share one soft-wrapped line/paragraph (the common case) - strip the
-      // marker text and splice the label in right before what's left of it.
-      textNode.value = remainder;
+      // marker text and splice the label in right before what's left of it. The body may start with
+      // inline formatting (`> [!CAUTION] **INACTIVE**`), leaving the text node empty but the
+      // paragraph non-empty: drop only the empty text node, keep the rest.
+      if (remainder.length > 0) textNode.value = remainder;
+      else firstParagraph.children.shift();
       firstParagraph.children.unshift(labelNode);
     } else {
       // Marker sat alone on its own line/paragraph (e.g. a blank line before the body) - drop that

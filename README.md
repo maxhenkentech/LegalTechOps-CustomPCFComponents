@@ -462,7 +462,15 @@ If you encounter any issues or have suggestions for improvements, please open an
 
 Full version history lives in [CHANGELOG.md](CHANGELOG.md).
 
-### Version 10.1.1.0 (Current)
+### Version 10.1.2.0 (Current)
+Fix for Markdown Help Text alert callouts whose text starts with formatting.
+
+#### 📝 Markdown Help Text
+- **FIX**: `> [!CAUTION] **INACTIVE**` lost its bold text and showed only the label. The text is kept now.
+
+See [CHANGELOG.md](CHANGELOG.md) for full details.
+
+### Version 10.1.1.0 (Previous)
 Fix for Advanced LookUp's *Filter by related rows*, which did nothing on fields configured in the form designer. Also supports the designer's *Self* option.
 
 #### 🔍 Advanced LookUp
